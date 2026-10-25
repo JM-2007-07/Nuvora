@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files: secrets never leave the developer's machine.
+# Only the .env.example templates are committed.
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma generated client (regenerated with `pnpm db:generate`)
+apps/api/src/generated/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
+*.pem
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/

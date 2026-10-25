@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 -1 100 109" role="img" aria-labelledby="nv-symbol-title">
+  <title id="nv-symbol-title">Nuvora</title>
+  <defs>
+    <linearGradient id="nv-symbol-stem-left" x1="26" y1="30" x2="26" y2="106" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3B3FD8"/>
+      <stop offset="1" stop-color="#6C7DFF"/>
+    </linearGradient>
+    <linearGradient id="nv-symbol-band" x1="16" y1="28" x2="106" y2="106" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6FB0FF"/>
+      <stop offset="0.55" stop-color="#6D5CF6"/>
+      <stop offset="1" stop-color="#C3B4FF"/>
+    </linearGradient>
+    <linearGradient id="nv-symbol-stem-right" x1="94" y1="23" x2="94" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2FE6D2"/>
+      <stop offset="0.6" stop-color="#1AA8EE"/>
+      <stop offset="1" stop-color="#2F5BE6"/>
+    </linearGradient>
+    <linearGradient id="nv-symbol-star" x1="56" y1="1" x2="78" y2="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00E5C2"/>
+      <stop offset="1" stop-color="#22C3F0"/>
+    </linearGradient>
+  </defs>
+  <!-- Left stem (behind the band), right stem, diagonal ribbon band, four-point spark -->
+  <path fill="url(#nv-symbol-stem-left)" d="M12 38 Q12 34.15 14.2 37.33 L40 74.6 V96 Q40 106 30 106 H22 Q12 106 12 96 Z"/>
+  <path fill="url(#nv-symbol-stem-right)" d="M80 37 A14 14 0 0 1 108 37 V99.8 L80 59.4 Z"/>
+  <path fill="url(#nv-symbol-band)" d="M30 28 H38 Q54 28 63.1 41.15 L97.76 91.2 Q108 106 90 106 H72 Q66 106 62.6 101.1 L22.24 42.8 Q12 28 30 28 Z"/>
+  <path fill="url(#nv-symbol-star)" d="M67 1 Q69 10 78 12 Q69 14 67 23 Q65 14 56 12 Q65 10 67 1 Z"/>
+</svg>

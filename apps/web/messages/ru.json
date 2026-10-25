@@ -1,0 +1,27 @@
+{
+  "Metadata": {
+    "title": "Nuvora",
+    "description": "Многоязычная образовательная платформа"
+  },
+  "Brand": {
+    "tagline": "Discover more. Become more."
+  },
+  "Header": {
+    "home": "Nuvora — главная",
+    "language": "Язык",
+    "theme": "Оформление",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "themeSystem": "Как в системе"
+  },
+  "Status": {
+    "heading": "Состояние системы",
+    "intro": "Проверка инфраструктуры: веб → API → PostgreSQL.",
+    "api": "API",
+    "database": "База данных",
+    "up": "Подключено",
+    "down": "Недоступно",
+    "version": "PostgreSQL {version}",
+    "apiUnreachable": "API недоступен."
+  }
+}

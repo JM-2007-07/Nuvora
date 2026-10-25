@@ -1,0 +1,27 @@
+{
+  "Metadata": {
+    "title": "Nuvora",
+    "description": "Платформаи бисёрзабонаи таълимӣ"
+  },
+  "Brand": {
+    "tagline": "Discover more. Become more."
+  },
+  "Header": {
+    "home": "Nuvora — саҳифаи асосӣ",
+    "language": "Забон",
+    "theme": "Намуди зоҳирӣ",
+    "themeLight": "Равшан",
+    "themeDark": "Торик",
+    "themeSystem": "Мувофиқи система"
+  },
+  "Status": {
+    "heading": "Ҳолати система",
+    "intro": "Санҷиши инфрасохтор: веб → API → PostgreSQL.",
+    "api": "API",
+    "database": "Пойгоҳи додаҳо",
+    "up": "Пайваст",
+    "down": "Дастнорас",
+    "version": "PostgreSQL {version}",
+    "apiUnreachable": "API дастнорас аст."
+  }
+}

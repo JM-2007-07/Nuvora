@@ -1,0 +1,13 @@
+// Nuvora database schema (Prisma 7.10.1).
+// Gate G1: infrastructure only, no models. Product tables arrive at Gate G2
+// (see docs/04-data/data-model.md). The connection URL lives in prisma.config.ts.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}

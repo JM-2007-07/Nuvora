@@ -1,0 +1,27 @@
+{
+  "Metadata": {
+    "title": "Nuvora",
+    "description": "Multilingual learning platform"
+  },
+  "Brand": {
+    "tagline": "Discover more. Become more."
+  },
+  "Header": {
+    "home": "Nuvora home",
+    "language": "Language",
+    "theme": "Appearance",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "Status": {
+    "heading": "System status",
+    "intro": "Infrastructure check: web → API → PostgreSQL.",
+    "api": "API",
+    "database": "Database",
+    "up": "Connected",
+    "down": "Unavailable",
+    "version": "PostgreSQL {version}",
+    "apiUnreachable": "The API is not reachable."
+  }
+}
