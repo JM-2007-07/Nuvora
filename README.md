@@ -81,7 +81,7 @@ The web app runs on http://localhost:3000 (it opens `/tg`) and the API on http:/
 
 ### Checks
 
-`pnpm lint`, `pnpm typecheck`, `pnpm test`, and `pnpm build` must pass before a change is done. They need no database. Tools differ per app: see [AGENTS.md](AGENTS.md#per-app-tooling).
+`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and `pnpm seed:check` must pass before a change is done. They need no database. The browser smoke test runs separately and needs Microsoft Edge: `pnpm --filter @nuvora/web test:e2e`. Tools differ per app: see [AGENTS.md](AGENTS.md#per-app-tooling).
 
 Documentation index: [docs/README.md](docs/README.md).
 

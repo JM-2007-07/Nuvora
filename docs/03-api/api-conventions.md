@@ -6,7 +6,7 @@ Status: conventions **Approved** (G0 baseline, owner, 2026-10-25). The resource 
 
 - REST over HTTPS, JSON bodies, `camelCase` field names.
 - Base path: `/api/v1`. Breaking changes need a new version or a coordinated change in the same PR (both apps live in one repo).
-- Resource paths are plural nouns (`/subjects`, `/quizzes/:quizId/attempts`). Use slugs for content addressed by URL and ids for learner data.
+- Resource paths are plural nouns (`/subjects`, `/quizzes/:quizId/attempts`). Use slugs for content addressed by URL and ids for learner data. Content slugs are unique per entity type, so a slug alone identifies a topic, lesson, or quiz ([data-model.md](../04-data/data-model.md#conventions)).
 - The current learner is `/me` (e.g. `/me/progress`). Never put a user id in a path that the client controls.
 - Timestamps are ISO 8601 UTC strings. Percentages are integers 0–100.
 

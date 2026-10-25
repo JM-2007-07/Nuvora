@@ -48,6 +48,22 @@ G1 proves the stack works end to end on the demo laptop. Required items are what
 
 **Deferred from G1** (added on the day the feature needs it): shadcn components other than `button` and `dropdown-menu` · TanStack Query provider (Wed) · Motion (Thu/Fri) · react-markdown (Tue/Wed) · identity and sessions (Wed) · seed script (Tue) · PNG/ICO icon exports · CI service · Playwright · any hosting.
 
+## Gate G2 checklist
+
+| # | Item |
+| --- | --- |
+| 1 | Shared Zod schemas: `LocalizedText`, enums, and seed content types (`packages/shared`) |
+| 2 | Prisma schema for the 13 MVP entities in [data-model.md](../04-data/data-model.md). No "Later" tables |
+| 3 | Migration SQL created from the schema and **reviewed by the owner before it is applied** to `nuvora_dev` |
+| 4 | Seed content format: one TypeScript file per topic in `apps/api/src/seed/content/`, no new dependencies |
+| 5 | `pnpm seed:check` (no database): all three languages, ≥ 3 questions per topic quiz, exactly one correct option per question, valid prerequisites, no cycles, unique slugs and keys. Broken fixtures prove each failure |
+| 6 | Template topic "Variables and data types" in tg, ru, en. Tajik marked `needs-review` |
+| 7 | **Tajik copy review** of `apps/web/messages/tg.json` and the template topic by a Tajik-speaking teammate |
+| 8 | Playwright smoke test (installed Edge): language and theme switching, `<html lang>`, clean console |
+| 9 | Lint, typecheck, test, build pass |
+
+The content loader (`db:seed`, writing to the database) follows on Tuesday per the schedule.
+
 ## Implementation sequence (dependency order)
 
 1. Walking skeleton (G1)

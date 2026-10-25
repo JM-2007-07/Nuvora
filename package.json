@@ -18,7 +18,8 @@
     "db:validate": "pnpm --filter @nuvora/api run db:validate",
     "db:generate": "pnpm --filter @nuvora/api run db:generate",
     "db:migrate": "pnpm --filter @nuvora/api run db:migrate",
-    "db:status": "pnpm --filter @nuvora/api run db:status"
+    "db:status": "pnpm --filter @nuvora/api run db:status",
+    "seed:check": "pnpm run prep && pnpm --filter @nuvora/api run seed:check"
   },
   "devDependencies": {
     "prettier": "3.9.10",

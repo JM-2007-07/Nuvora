@@ -67,6 +67,6 @@ A PR can merge only when all of these hold:
 | Q5 | No secrets, no unjustified dependencies | Review + PR template |
 | Q6 | Docs updated if behaviour/decisions changed | Review + PR template |
 
-**Release gate (Fri Oct 30):** Q1–Q6 on `main`, demo reset run, manual demo script passed by two people in all locales and both themes **with the network disconnected** (the demo is local, D-10), Lighthouse targets met on lesson and quiz pages, backup video recorded.
+**Release gate (Fri Oct 30):** Q1–Q6 on `main`, **Tajik copy review** (a Tajik-speaking teammate has reviewed every Tajik UI string and all core demo content, and no content file still marks `tg` as `needs-review`), demo reset run, manual demo script passed by two people in all locales and both themes **with the network disconnected** (the demo is local, D-10), Lighthouse targets met on lesson and quiz pages, backup video recorded.
 
 There is no CI service yet. Gates run locally. Adding GitHub Actions to run Q1 automatically is a good post-G1 improvement, but it's not required for the MVP.

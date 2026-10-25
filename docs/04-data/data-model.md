@@ -5,10 +5,11 @@ Status: **Approved** (G0 baseline, owner, 2026-10-25). This is a conceptual mode
 ## Conventions
 
 - PostgreSQL via Prisma. Model names are `PascalCase` singular. Table names are mapped to `snake_case` plural.
-- Primary keys: `id` as `cuid()` strings. Content entities also have a unique, human-readable `slug`, which seed files use for stable references.
+- Primary keys: `id` as `cuid()` strings.
+- **Stable references for seeding (G2, decision 4):** subjects, topics, lessons, and quizzes have a `slug` that is **unique per entity type** (globally, not just within the parent), because API routes resolve them by slug alone (`/topics/:topicSlug`). Questions, answer options, and resources have a `key` that is unique within their parent (quiz, question, topic). Re-seeding upserts by slug or key, so it updates existing rows instead of creating duplicates.
 - Every table has `createdAt` and `updatedAt`.
 - `LocalizedText` = `jsonb` of `{ tg?, ru?, en? }` ([ADR-0003](../01-architecture/adr/0003-localized-content-as-json.md)), always validated with Zod.
-- Deleting content cascades to its children. Deleting a user cascades to their attempts and progress.
+- Deletion follows the [deletion policy](#deletion-policy): content cascades to other content, but never to learner history. Deleting a user cascades to their history.
 
 ## Entity relationship diagram (MVP)
 
@@ -45,10 +46,10 @@ erDiagram
 | **Topic** | `subjectId`, `slug`, `title`, `summary` (LocalizedText), `order`, `mapX`, `mapY` | `mapX`/`mapY` are Knowledge Map positions (D-09) |
 | **TopicPrerequisite** | `topicId`, `prerequisiteId` (both → Topic) | Composite PK. Same subject only, no cycles (seed check) |
 | **Lesson** | `topicId`, `slug`, `title: LocalizedText`, `body: LocalizedText` (Markdown, D-12), `estimatedMinutes`, `order` | Worked examples and takeaways are sections inside `body` |
-| **Resource** | `topicId`, `type` (`BOOK` \| `ARTICLE` \| `VIDEO` \| `EXERCISE`), `title: LocalizedText`, `author`, `url?`, `languages: Locale[]`, `whyUseful: LocalizedText`, `order` | "Recommended books and materials" |
+| **Resource** | `topicId`, `key` (unique per topic), `type` (`BOOK` \| `ARTICLE` \| `VIDEO` \| `EXERCISE`), `title: LocalizedText`, `author`, `url?`, `languages: Locale[]`, `whyUseful: LocalizedText`, `order` | "Recommended books and materials" |
 | **Quiz** | `subjectId`, `topicId?`, `slug`, `title: LocalizedText`, `kind` (`TOPIC` \| `CHECKPOINT`) | A topic quiz has `topicId`. The checkpoint quiz (MVP-Should) spans several topics |
-| **Question** | `quizId`, `topicId`, `type` (`SINGLE_CHOICE`), `prompt: LocalizedText` (Markdown, may contain a Python code block), `explanation: LocalizedText` (Markdown), `order` | `topicId` drives weak-topic analysis. Multi-select etc. are Later |
-| **AnswerOption** | `questionId`, `text: LocalizedText`, `isCorrect`, `order` | Exactly one correct option per single-choice question (seed check). `isCorrect` is never sent before submission (FR-QUIZ-06) |
+| **Question** | `quizId`, `topicId`, `key` (unique per quiz), `type` (`SINGLE_CHOICE`), `prompt: LocalizedText` (Markdown, may contain a Python code block), `explanation: LocalizedText` (Markdown), `order` | `topicId` drives weak-topic analysis. Multi-select etc. are Later |
+| **AnswerOption** | `questionId`, `key` (unique per question), `text: LocalizedText`, `isCorrect`, `order` | Exactly one correct option per single-choice question (seed check). `isCorrect` is never sent before submission (FR-QUIZ-06) |
 
 ### Learner data (written at runtime)
 
@@ -80,9 +81,38 @@ Sketched so the MVP schema doesn't block them. **Do not create these tables in t
 | `Question.difficulty`, question bank tags | Adaptive question selection (FR-ADAPT-04) |
 | `Class`, `Enrollment` | Teacher features |
 
+## Deletion policy
+
+Decision D-21 (owner, 2026-10-25). Enforced by foreign keys and tested in `apps/api/src/prisma/deletion-policy.spec.ts`.
+
+**Learner history is never erased by content changes.** The five foreign keys from history tables to content use `ON DELETE RESTRICT`:
+
+| History row | References | On content delete |
+| --- | --- | --- |
+| `QuizAttempt.quizId` | Quiz | **RESTRICT** |
+| `AttemptAnswer.questionId` | Question | **RESTRICT** |
+| `AttemptAnswer.selectedOptionId` | AnswerOption | **RESTRICT** |
+| `TopicMastery.topicId` | Topic | **RESTRICT** |
+| `LessonProgress.lessonId` | Lesson | **RESTRICT** |
+
+What this means:
+
+- **Content without learner history can be deleted.** Content-to-content links still cascade (subject → topics → lessons, resources, quizzes → questions → options).
+- **Content with learner history cannot be deleted, directly or indirectly.** For example, deleting a subject whose quiz has attempts fails as a whole, with a foreign-key error, instead of silently removing those attempts. The seed loader must therefore never delete content rows. Retiring content is a later feature (an `isPublished`-style flag), not a delete.
+- **User cleanup is unchanged.** Deleting a user cascades to their attempts, answers, mastery, and lesson progress. Guest cleanup and demo reset (ADR-0006) rely on this. An answer is always deleted together with its attempt.
+- `TopicMastery.lastAttemptId` stays `SET NULL`. It only fires when an attempt itself is deleted, which happens through user cleanup.
+
+### Published questions keep their meaning
+
+`AttemptAnswer.isCorrect` is stored at scoring time, so scores survive content edits. But a re-opened result shows the question's *current* text, options, and explanation. Therefore, **once learners may have answered a question:**
+
+- Fixing typos, translations, or explanation wording **in place** is fine.
+- **Changing what the question asks, which option is correct, or what an option means is not.** Give the changed question a **new `key`** instead, so it becomes a new question. Removing the old one is a content deletion and is blocked while it has answers.
+- The same applies to answer-option `key`s: never reuse a key for a different answer.
+
 ## Integrity rules (enforced by the seed check, and DB constraints where possible)
 
-- Slugs are unique within their parent (topic slug within subject, etc.).
+- Slugs are unique per entity type (subject, topic, lesson, quiz). Keys are unique within their parent (question within quiz, option within question, resource within topic).
 - Prerequisite graph is acyclic and stays within one subject.
 - Each single-choice question has exactly one correct option and at least 2 options.
 - Topic quizzes have ≥ 3 questions (the MVP plan is 4). A checkpoint quiz has ≥ 3 questions per topic it covers.

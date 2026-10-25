@@ -42,6 +42,9 @@ Run them as `pnpm <script>` (pnpm, [D-17](docs/01-architecture/decisions.md)). T
 | Prisma | 7.10.1 (client, adapter-pg) | Not the 8.0 release candidate that npm currently tags as latest |
 | next-intl / next-themes / Zod | 4.14.9 / 0.4.6 / 4.6.7 | |
 | shadcn/ui | 4.22.1, preset `radix-vega` | Colours mapped to Nuvora tokens in `apps/web/src/app/globals.css` |
+| Playwright | `@playwright/test` 1.64.1 (web, dev only) | `channel: 'msedge'`: runs on the installed Microsoft Edge, no browser download |
+
+**Migrations are forward-only and immutable once applied.** Never edit an applied `migration.sql`, because Prisma checksums it byte for byte. Change the schema with a new migration, which the owner reviews before it is applied. After applying, pin its SHA-256 in `apps/api/src/prisma/migrations-integrity.spec.ts`. `.gitattributes` keeps migration files LF on every OS.
 
 **Dependency install scripts:** pnpm denies them by default. `allowBuilds` in `pnpm-workspace.yaml` is the only allow list. Never add a `true` entry, run `pnpm approve-builds`, or set `dangerouslyAllowAllBuilds` without the owner's approval.
 
@@ -54,7 +57,7 @@ Linting and testing are set **per workspace**. No single linter or test runner c
 | Workspace | Lint | Tests | Module format |
 | --- | --- | --- | --- |
 | `apps/api` (NestJS 12) | **oxlint** with type-aware checks (`.oxlintrc.json`) | **Vitest** (`*.spec.ts`) | ESM (`"type": "module"`). Relative imports end in `.js` |
-| `apps/web` (Next.js 16) | **ESLint** with `eslint-config-next` (`eslint.config.mjs`) | Node's built-in runner (`node --test`) for the i18n key-parity test. Manual demo script for UI | ESM (bundled by Next.js) |
+| `apps/web` (Next.js 16) | **ESLint** with `eslint-config-next` (`eslint.config.mjs`) | Node's built-in runner (`node --test`) for the i18n key-parity test. **Playwright** smoke test (`pnpm --filter @nuvora/web test:e2e`, separate from `pnpm test`, uses the installed Edge). Manual demo script for UI | ESM (bundled by Next.js) |
 | `packages/shared` | TypeScript type-check only | None yet | ESM |
 
 Formatting uses one root Prettier config for every workspace. Don't add Jest, or a second linter to a workspace, without a decision entry.
@@ -116,7 +119,7 @@ Work stops at each gate until the team explicitly approves.
 | --- | --- | --- |
 | **G0** ✅ | Phase 0 docs, brand assets, all decisions. Approved 2026-10-25 | Any scaffolding |
 | **G1** ✅ | Walking skeleton per the [G1 checklist](docs/05-planning/roadmap.md#gate-g1-checklist-mon-oct-26). Approved 2026-10-25 | Feature work |
-| **G2** | Prisma schema + seed content format | Running the first migration that other work depends on |
-| **G3** | Feature freeze (Fri Oct 30, 12:00) | Anything except bug fixes and content |
+| **G2** | Prisma schema, migration SQL (reviewed before it is applied), seed content format + `seed:check`, template topic. Includes a **Tajik copy review** of `messages/tg.json` and the template topic by a Tajik-speaking teammate ([G2 checklist](docs/05-planning/roadmap.md#gate-g2-checklist)) | Applying the migration to `nuvora_dev`; content writing at scale |
+| **G3** | Feature freeze (Fri Oct 30, 12:00). The release gate includes the Tajik copy review ([quality gates](docs/06-quality/quality-standards.md#quality-gates)) | Anything except bug fixes and content |
 
 Also requires approval at any time: changing an **Approved** decision, adding a new framework/library with architectural impact, changing the database schema after G2, or removing an MVP requirement.
