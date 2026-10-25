@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 const APPLIED_MIGRATIONS: Record<string, string> = {
   '20261025000000_baseline': 'd0f78106d592fc373c26629c504f561f36353fe5a96b856443b8d51e2f3dd4bd',
   '20261025120000_content_and_learner_schema': 'c04c6cea898ac780a2669fd72a58bc68856df04fb53686018017d6ad2cc2eff9',
+  '20261025180000_protect_learner_history': 'db0a582bb0ae94a27f222919db5f53dee7db20e050654e8f6f6ad6b636f091ce',
 };
 
 const migrationsDir = fileURLToPath(new URL('../../prisma/migrations/', import.meta.url));
