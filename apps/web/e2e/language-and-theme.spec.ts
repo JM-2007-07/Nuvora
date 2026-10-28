@@ -2,9 +2,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, type Page, test } from '@playwright/test';
 
-/** The homepage headline per locale, read from the message files so copy edits don't break the test. */
-const headline = (locale: 'tg' | 'ru' | 'en'): string =>
-  JSON.parse(readFileSync(join(__dirname, '..', 'messages', `${locale}.json`), 'utf8')).Home.headline;
+/** The homepage headline per locale (two parts in the Faroz design), read from the message files so copy edits don't break the test. */
+const headline = (locale: 'tg' | 'ru' | 'en'): string => {
+  const home = JSON.parse(readFileSync(join(__dirname, '..', 'messages', `${locale}.json`), 'utf8')).Home;
+  return `${home.h1a} ${home.h1b}`;
+};
 
 /** Collects every console error/warning and uncaught page error. */
 function trackConsoleProblems(page: Page): string[] {
@@ -18,9 +20,9 @@ function trackConsoleProblems(page: Page): string[] {
   return problems;
 }
 
-async function chooseFromMenu(page: Page, trigger: string, item: string) {
-  await page.getByRole('button', { name: trigger }).click();
-  await page.getByRole('menuitemradio', { name: item }).click();
+/** The header language buttons (EN / RU / TJ) are labelled with each language's native name. */
+async function chooseLanguage(page: Page, nativeName: string) {
+  await page.getByRole('banner').getByRole('button', { name: nativeName, exact: true }).click();
 }
 
 // Regression coverage for FR-I18N-01/02, FR-THEME-01, and the G1 clean-console fix
@@ -35,24 +37,25 @@ test('language and theme switching work and keep the console clean', async ({ pa
   await expect(page).toHaveURL(/\/ru$/);
   await expect(html).toHaveAttribute('lang', 'ru');
   await expect(heading).toHaveText(headline('ru'));
+  await expect(html).toHaveAttribute('data-theme', 'dark'); // Faroz is dark by default
 
-  await chooseFromMenu(page, 'Оформление', 'Тёмная');
-  await expect(html).toHaveClass(/\bdark\b/);
+  await page.getByRole('button', { name: 'Оформление' }).click();
+  await expect(html).toHaveAttribute('data-theme', 'light');
 
-  await chooseFromMenu(page, 'Язык', 'Тоҷикӣ');
+  await chooseLanguage(page, 'Тоҷикӣ');
   await expect(page).toHaveURL(/\/tg$/);
   await expect(html).toHaveAttribute('lang', 'tg');
   await expect(heading).toHaveText(headline('tg'));
-  await expect(html).toHaveClass(/\bdark\b/); // theme survives the language switch
+  await expect(html).toHaveAttribute('data-theme', 'light'); // theme survives the language switch
 
-  await chooseFromMenu(page, 'Забон', 'English');
+  await chooseLanguage(page, 'English');
   await expect(page).toHaveURL(/\/en$/);
   await expect(html).toHaveAttribute('lang', 'en');
   await expect(heading).toHaveText(headline('en'));
-  await expect(html).toHaveClass(/\bdark\b/);
+  await expect(html).toHaveAttribute('data-theme', 'light');
 
-  await chooseFromMenu(page, 'Appearance', 'Light');
-  await expect(html).not.toHaveClass(/\bdark\b/);
+  await page.getByRole('button', { name: 'Appearance' }).click();
+  await expect(html).toHaveAttribute('data-theme', 'dark');
 
   // The language choice is remembered for the next visit to "/".
   await page.goto('/');

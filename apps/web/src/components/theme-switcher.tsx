@@ -1,50 +1,29 @@
 'use client';
 
-import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { MoonIcon, SunIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
-/** Light / dark / system switcher (FR-THEME-01). */
+/**
+ * Sun/moon toggle between the dark (default) and light theme (handoff §3, FR-THEME-01).
+ * Both icons are rendered and CSS shows the right one, so the server HTML never
+ * depends on the saved theme (no hydration mismatch).
+ */
 export function ThemeSwitcher() {
   const t = useTranslations('Header');
-  const { theme, setTheme } = useTheme();
-
-  const options = [
-    { value: 'light', label: t('themeLight'), Icon: SunIcon },
-    { value: 'dark', label: t('themeDark'), Icon: MoonIcon },
-    { value: 'system', label: t('themeSystem'), Icon: MonitorIcon },
-  ] as const;
+  const { resolvedTheme, setTheme } = useTheme();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-11" aria-label={t('theme')}>
-          <SunIcon className="dark:hidden" aria-hidden="true" />
-          <MoonIcon className="hidden dark:block" aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{t('theme')}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup value={theme ?? 'system'} onValueChange={setTheme}>
-          {options.map(({ value, label, Icon }) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              <Icon aria-hidden="true" />
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-11 rounded-xl border border-(--line) text-(--text)"
+      aria-label={t('theme')}
+      onClick={() => setTheme(resolvedTheme === 'light' ? 'dark' : 'light')}
+    >
+      <SunIcon className="hidden dark:block" aria-hidden="true" />
+      <MoonIcon className="dark:hidden" aria-hidden="true" />
+    </Button>
   );
 }

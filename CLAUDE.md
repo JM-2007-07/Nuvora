@@ -15,6 +15,19 @@ Repository conventions are in AGENTS.md and apply in full:
 - **Visual work** follows `docs/engineering/VISUAL_EXPERIENCE.md`: the luminous knowledge core, never a generic card grid. Brand assets in `assets/brand/` are the source of truth; don't redraw them unless asked (`docs/02-design/BRAND_GUIDELINES.md`).
 - **Record significant changes** as dated stories (`new-story` skill, `docs/stories/README.md`).
 
+## Design: Faroz (since 2026-10-28)
+
+The product is now **Faroz** (D-23); "Nuvora" never appears anywhere visible. Older docs that still describe the Nuvora brand or the knowledge-core homepage (BRAND_GUIDELINES, design-system, VISUAL_EXPERIENCE, HOMEPAGE_BRIEF) are superseded where they conflict.
+
+- **Spec:** `docs/02-design/FAROZ_HANDOFF.md` (screen map, components, roles, demo data, build order). Screenshots, artboards and demo JSON are in the untracked `faroz-handoff/faroz-handoff/design/`; compare every page with its screenshot at 1440 and 390 px, dark and light.
+- **Tokens and fonts:** only the variables from `assets/brand/faroz/tokens.css` (copied to `apps/web/src/styles/faroz-tokens.css`); never hand-written colours. Unbounded for headings, buttons and the wordmark, Inter for text.
+- **Theme:** dark by default; sun/moon toggle; the choice persists (`faroz-theme`, `data-theme` on `<html>`).
+- **Logo:** files from `assets/brand/faroz/` (copied to `apps/web/public/brand/`); header and sidebar use the symbol plus the name as live text.
+- **Demo numbers and names:** only from the handoff's `design/data/*.json`; never invented.
+- **Permissions are checked on the server** (route handlers, server actions, guards); client checks are UI only.
+- **Privacy:** students see their own results; teachers see their groups answer by answer; **centers see group totals and participation only**, never individual scores or answers, and never who got targeted practice.
+- Restyle working pages instead of rewriting their logic.
+
 ## Skills, agents, and reviews
 
 Project skills (`.claude/skills/`), invoked as `/<name>`:

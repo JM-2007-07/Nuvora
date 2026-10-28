@@ -12,10 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useDemoProfiles, useLeave, useLearner, useStartSession } from '@/features/learning/hooks';
+import { Link } from '@/i18n/navigation';
 
 /** Header: current learner with a "Demo" badge, switch learner, leave (FR-AUTH-03). */
 export function LearnerMenu() {
   const t = useTranslations('Learner');
+  const tHeader = useTranslations('Header');
   const learner = useLearner();
   const profiles = useDemoProfiles();
   const start = useStartSession();
@@ -40,6 +42,11 @@ export function LearnerMenu() {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => start.mutate({ guest: true })}>{t('continueGuest')}</DropdownMenuItem>
+        {current ? (
+          <DropdownMenuItem asChild>
+            <Link href="/progress">{tHeader('progress')}</Link>
+          </DropdownMenuItem>
+        ) : null}
         {current ? <DropdownMenuItem onSelect={() => leave.mutate()}>{t('leave')}</DropdownMenuItem> : null}
       </DropdownMenuContent>
     </DropdownMenu>

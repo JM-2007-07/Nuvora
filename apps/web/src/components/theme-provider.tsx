@@ -18,13 +18,15 @@ const scriptProps = {
   type: typeof window === 'undefined' ? 'text/javascript' : 'text/plain',
 } as const;
 
-/** Light / dark / system themes with the `.dark` class on <html> (D-15). */
+/** Faroz themes (handoff §3): dark by default, light as the alternative, `data-theme` on <html>, remembered as `faroz-theme`. */
 export function ThemeProvider(props: ComponentProps<typeof NextThemesProvider>) {
   return (
     <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
+      attribute="data-theme"
+      themes={['dark', 'light']}
+      defaultTheme="dark"
+      enableSystem={false}
+      storageKey="faroz-theme"
       disableTransitionOnChange
       scriptProps={scriptProps}
       {...props}

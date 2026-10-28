@@ -57,3 +57,5 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-26 | [Harness engineering foundation](2026-10-26-harness-engineering-foundation.md) | verified (docs and tooling) |
 | 2026-10-26 | [G4-B preparation: D-22, Motion, homepage brief](2026-10-26-g4b-motion-and-homepage-brief.md) | implemented and verified; redesign planned |
 | 2026-10-26 | [Russian becomes the default interface language](2026-10-26-default-locale-russian.md) | implemented and verified |
+| 2026-10-28 | [Faroz foundation (rebrand phase 1)](2026-10-28-faroz-foundation.md) | implemented and verified |
+| 2026-10-28 | [Faroz homepage (rebrand phase 2)](2026-10-28-faroz-homepage.md) | implemented and verified |

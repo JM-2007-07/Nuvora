@@ -1,54 +1,82 @@
 import type { Locale } from '@nuvora/shared';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/brand/logo';
-import { LanguageSwitcher } from '@/components/language-switcher';
 import { LearnerMenu } from '@/components/learner-menu';
+import { LocaleButtons } from '@/components/locale-buttons';
+import { SiteHeaderShell } from '@/components/site-header-shell';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link } from '@/i18n/navigation';
 import { getSubjects } from '@/lib/api';
 
+/** Website header (Faroz Home artboard): logo, section links, language, theme, learner, primary CTA. */
 export async function SiteHeader() {
   const t = await getTranslations('Header');
+  const tBrand = await getTranslations('Brand');
   const locale = (await getLocale()) as Locale;
+  // The CTA leads into the learning flow; without the API it falls back to "How it works".
   const subject = await getSubjects(locale)
     .then((s) => s?.items[0])
     .catch(() => undefined);
+  const startHref = subject ? `/subjects/${subject.slug}` : '/#how';
 
-  const nav = (
+  const links = [
+    { href: '/#how', label: t('navHow') },
+    { href: '/#learners', label: t('navLearners') },
+    { href: '/#library', label: t('navLibrary') },
+    { href: '/#teachers', label: t('navTeachers') },
+    { href: '/#centers', label: t('navCenters') },
+  ];
+
+  const bar = (
     <>
-      {subject ? (
-        <Link href={`/subjects/${subject.slug}`} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium hover:bg-muted">
-          {t('subjects')}
+      <Link href="/" aria-label={t('home')} className="shrink-0 rounded-md">
+        <Logo name={tBrand('name')} size={34} textClass="text-xl" />
+      </Link>
+      <nav aria-label={t('primaryNav')} className="hidden gap-0.5 min-[1081px]:flex">
+        {links.map((l) => (
+          <Link key={l.href} href={l.href} className="rounded-[10px] px-3 py-2.5 text-sm font-semibold text-(--muted) no-underline hover:text-(--text)">
+            {l.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="ml-auto flex items-center gap-2 min-[1081px]:ml-0">
+        <div className="hidden min-[1081px]:block">
+          <LocaleButtons compact />
+        </div>
+        <ThemeSwitcher />
+        <LearnerMenu />
+        <Link href={startHref} className="fz-btn fz-btn-primary hidden min-h-11 px-[18px] min-[1081px]:inline-flex">
+          {t('cta')}
         </Link>
-      ) : null}
-      <Link href="/progress" className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-medium hover:bg-muted">
-        {t('progress')}
+      </div>
+    </>
+  );
+
+  const menu = (
+    <>
+      {links.map((l) => (
+        <Link key={l.href} href={l.href} className="rounded-[10px] px-1 py-3.5 text-[17px] font-semibold text-(--text) no-underline">
+          {l.label}
+        </Link>
+      ))}
+      <div className="py-3.5">
+        <LocaleButtons />
+      </div>
+      <Link href={startHref} className="fz-btn fz-btn-primary">
+        {t('cta')}
       </Link>
     </>
   );
 
   return (
-    <header className="border-b border-border bg-card">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground">
+    <header className="sticky top-0 z-30 border-b border-(--line) bg-(--bar-bg) backdrop-blur-[10px]">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-(--btn) focus:px-4 focus:py-2 focus:text-(--btn-ink)"
+      >
         {t('skip')}
       </a>
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4">
-        <Link href="/" aria-label={t('home')} className="shrink-0 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4">
-          {/* No `priority`: one of the two logo files is always hidden by CSS, so preloading both wastes a request. */}
-          <Logo width={120} />
-        </Link>
-        <nav aria-label={t('home')} className="hidden items-center gap-1 md:flex">
-          {nav}
-        </nav>
-        <div className="flex items-center gap-0.5">
-          <LearnerMenu />
-          <LanguageSwitcher />
-          <ThemeSwitcher />
-        </div>
-      </div>
-      <nav aria-label={t('home')} className="flex justify-center gap-1 border-t border-border px-4 md:hidden">
-        {nav}
-      </nav>
+      <SiteHeaderShell bar={bar} menu={menu} openLabel={t('openMenu')} closeLabel={t('closeMenu')} />
     </header>
   );
 }

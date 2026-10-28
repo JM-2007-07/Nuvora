@@ -1,45 +1,49 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-/* Brand + semantic tokens. Copied from assets/brand/tokens.css (the source of truth, D-16). */
+/* Faroz tokens: copied from assets/brand/faroz/tokens.css (the source of truth). Dark is the default. */
+@import "../styles/faroz-tokens.css";
+/* Website tokens and shared classes (buttons, wrap, orbit motion), from the Home artboard. */
+@import "../styles/faroz-site.css";
+/* Legacy Nuvora primitives, still read by the old homepage until it is rebuilt for Faroz. */
 @import "../styles/brand-tokens.css";
 
-@custom-variant dark (&:is(.dark *));
+/* The theme lives in data-theme on <html> (Faroz handoff §3); `dark:` utilities follow it. */
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 /*
- * shadcn/ui variable names → Nuvora semantic tokens (docs/02-design/design-system.md#theme-tokens).
- * No colour values live here; they come from brand-tokens.css, including the .dark theme.
+ * shadcn/ui variable names → Faroz tokens. No colour values live here.
+ * `--muted` is deliberately not redefined: in Faroz it is the secondary TEXT colour,
+ * so shadcn's muted background is mapped straight to --panel2 in @theme below.
  */
 :root {
-  /* next/font exposes hashed font families as variables, so the token stacks point at them. */
+  /* next/font exposes hashed font families as variables. */
   --nv-font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
-  --nv-font-brand: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --nv-font-brand: var(--font-unbounded), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --background: var(--nv-bg);
-  --foreground: var(--nv-text);
-  --card: var(--nv-surface);
-  --card-foreground: var(--nv-text);
-  --popover: var(--nv-surface);
-  --popover-foreground: var(--nv-text);
-  --primary: var(--nv-primary);
-  --primary-foreground: var(--nv-on-primary);
-  --secondary: var(--nv-surface-muted);
-  --secondary-foreground: var(--nv-text);
-  --muted: var(--nv-surface-muted);
-  --muted-foreground: var(--nv-text-muted);
-  --accent: var(--nv-accent);
-  --accent-foreground: var(--nv-on-accent);
-  --destructive: var(--nv-status-weak);
-  --border: var(--nv-border);
-  --input: var(--nv-border);
-  --ring: var(--nv-focus-ring);
-  /* Cards 0.75rem; buttons and inputs use the derived md radius (design-system.md). */
-  --radius: 0.75rem;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--panel);
+  --card-foreground: var(--text);
+  --popover: var(--panel);
+  --popover-foreground: var(--text);
+  --primary: var(--btn);
+  --primary-foreground: var(--btn-ink);
+  --secondary: var(--panel2);
+  --secondary-foreground: var(--text);
+  --accent: var(--mint);
+  --accent-foreground: var(--bg);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line2);
+  --ring: var(--mint);
+  /* Faroz cards 20–26 px, buttons 14 px, inputs 12 px (handoff §3). */
+  --radius: 1.25rem;
 }
 
 @theme inline {
   --font-sans: var(--nv-font-sans);
-  --font-heading: var(--nv-font-sans);
+  --font-heading: var(--nv-font-brand);
   --font-brand: var(--nv-font-brand);
   --font-mono: ui-monospace, Consolas, "Cascadia Mono", Menlo, monospace;
 
@@ -53,8 +57,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--panel2);
+  --color-muted-foreground: var(--muted);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
@@ -62,20 +66,20 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Status colours: always paired with an icon and a text label. */
-  --color-status-weak: var(--nv-status-weak);
-  --color-status-developing: var(--nv-status-developing);
-  --color-status-mastered: var(--nv-status-mastered);
-  --color-status-not-started: var(--nv-status-not-started);
-  --color-accent-text: var(--nv-accent-text);
+  /* Status colours (Faroz): always paired with an icon and a text label. */
+  --color-status-weak: var(--mag-ink);
+  --color-status-developing: var(--gold-ink);
+  --color-status-mastered: var(--mint-ink);
+  --color-status-not-started: var(--faint);
+  --color-accent-text: var(--mint-ink);
 
   --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-md: calc(var(--radius) * 0.7);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.2);
+  --radius-2xl: calc(var(--radius) * 1.4);
+  --radius-3xl: calc(var(--radius) * 1.8);
+  --radius-4xl: calc(var(--radius) * 2.2);
 }
 
 /* Homepage motion (design-system.md#motion): transform/opacity only, calm, off for reduced motion. */
@@ -138,5 +142,12 @@
   }
   html {
     @apply font-sans;
+  }
+  /* Unbounded for headings and the wordmark (handoff §3). */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 }

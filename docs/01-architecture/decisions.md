@@ -22,6 +22,7 @@ This is the authoritative list of decisions and their status. Read it before bui
 | D-08 | **Demo subject:** introductory Computer Science / Informatics, six connected topics ([topic graph](../00-product/mvp-scope.md#demo-subject-introductory-informatics)) | Owner, 2026-10-25 |
 | D-10 | **Demo environment:** local presentation on the team's laptop, with a recorded backup video | Owner, 2026-10-25 |
 | D-20 | **Python is used only as an optional language for educational code examples** in Informatics lessons and questions (identifiers in English, comments and explanations translated). It is **not** part of the application stack: no Python runtime, tooling, or code execution in the app | Owner, 2026-10-25 |
+| D-23 | **Rebrand to Faroz** (Tajik «Фароз», only inside Tajik copy): new name, logo, colours, fonts and screens from the Claude Design canvas "Faroz — Game Mode" ([FAROZ_HANDOFF.md](../02-design/FAROZ_HANDOFF.md)). Supersedes the Nuvora name and logo (A-01), the knowledge-core direction (D-22) and the Poppins brand font. Dark "Game Mode" theme by default with a remembered sun/moon toggle (`data-theme`, next-themes; D-15 kept, system option dropped). Fonts: Unbounded (headings, buttons, wordmark) + Inter (D-07 kept). Tokens: `assets/brand/faroz/tokens.css`. "Nuvora" must not appear anywhere visible; internal package names (`@nuvora/*`) stay for now | Owner, 2026-10-28 |
 
 ### Technology and architecture (approved with G0)
 
