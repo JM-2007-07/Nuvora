@@ -11,6 +11,13 @@ export interface LearnerRecord {
   demoSlug: string | null;
 }
 
+/**
+ * Demo profiles offered in the profile picker, in this order. Amina Rahimova is the
+ * Faroz demo learner (group B-12); her classmates are demo learners too, so the
+ * teacher views have real history, but they are not offered here.
+ */
+export const PICKER_PROFILES = ['amina-rahimova', 'farzona', 'rustam'];
+
 export const toLearner = (user: LearnerRecord): Learner => ({ kind: user.kind, displayName: user.displayName, demoSlug: user.demoSlug });
 
 /** Demo profiles and guest mode (ADR-0006). No passwords; never for public deployment. */
@@ -29,8 +36,11 @@ export class IdentityService {
   }
 
   async listDemoProfiles(): Promise<DemoProfile[]> {
-    const users = await this.prisma.user.findMany({ where: { kind: 'DEMO' }, orderBy: { demoSlug: 'asc' }, select: { demoSlug: true, displayName: true } });
-    return users.filter((u) => u.demoSlug).map((u) => ({ slug: u.demoSlug!, displayName: u.displayName }));
+    const users = await this.prisma.user.findMany({ where: { kind: 'DEMO', demoSlug: { in: PICKER_PROFILES } }, select: { demoSlug: true, displayName: true } });
+    return PICKER_PROFILES.flatMap((slug) => {
+      const user = users.find((u) => u.demoSlug === slug);
+      return user ? [{ slug, displayName: user.displayName }] : [];
+    });
   }
 
   /** Resolves the learner for a new session: an existing demo profile or a brand-new guest. */

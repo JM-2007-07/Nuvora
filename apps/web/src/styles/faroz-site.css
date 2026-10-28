@@ -197,3 +197,26 @@ button:focus-visible,
     transform: scale(1.08);
   }
 }
+
+/* Skeleton shimmer (handoff §3: "Skeleton loading uses the shimmer gradient"). */
+@keyframes fz-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Buttons on the HUD card (next quest): their own tokens so they read in both themes. */
+@layer components {
+  .fz-btn-hud {
+    background: var(--hud-btn);
+    color: var(--hud-btn-ink);
+  }
+  .fz-btn-hud-ghost {
+    background: transparent;
+    color: var(--hud-text);
+    border-color: var(--hud-muted);
+  }
+}

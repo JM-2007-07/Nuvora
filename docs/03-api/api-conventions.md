@@ -85,10 +85,11 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `DELETE /session` | `204`, clears the cookie | — |
 | `GET /me` 🔒 | `Learner` | `401` |
 | `POST /quizzes/:quizSlug/attempts` 🔒 | `201 AttemptResult`: score, per-question correctness and explanations, per-topic breakdown with updated mastery, up to 3 recommendations. Scored on the server in one transaction | `404 QUIZ_NOT_FOUND`, `422 QUIZ_INCOMPLETE` / `UNKNOWN_QUESTION` / `DUPLICATE_ANSWER` / `OPTION_NOT_IN_QUESTION` |
-| `GET /me/progress?subject=` 🔒 | `Progress`: mastery and lesson completion per topic, attempt history, current recommendations | `404 SUBJECT_NOT_FOUND` |
+| `GET /me/progress?subject=` 🔒 | `Progress`: mastery and lesson completion per topic, each topic's first lesson and topic quiz, **before/after** per topic (the topic in the first CHECKPOINT attempt vs the latest later attempt, computed from stored answers), the subject's CHECKPOINT quizzes with the latest attempt, attempt history (kind, correct/total), current recommendations | `404 SUBJECT_NOT_FOUND` |
+| `GET /me/attempts/:attemptId` 🔒 | `AttemptResult` of one of the current learner's own attempts, rebuilt from the stored answers (the same builder as `POST …/attempts`). Another learner's id answers `404` like an unknown id | `400 VALIDATION_FAILED` (not a cuid), `404 ATTEMPT_NOT_FOUND` |
 | `PUT /me/lessons/:lessonSlug/completion` 🔒 | `LessonCompletion`, idempotent | `404 LESSON_NOT_FOUND` |
 
-Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`), `GET /me/attempts/:attemptId`, and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
+Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`) and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
 
 ## Draft resource outline (not a contract)
 

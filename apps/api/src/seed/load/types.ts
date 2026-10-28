@@ -69,7 +69,8 @@ export interface SeedWriter {
   updateLesson(id: string, data: LessonData): Promise<void>;
   createResource(input: { key: string; topicId: string } & ResourceData): Promise<string>;
   updateResource(id: string, data: ResourceData): Promise<void>;
-  createQuiz(input: { slug: string; subjectId: string; topicId: string } & QuizData): Promise<string>;
+  /** topicId is null for a subject-level CHECKPOINT quiz. */
+  createQuiz(input: { slug: string; subjectId: string; topicId: string | null } & QuizData): Promise<string>;
   updateQuiz(id: string, data: QuizData): Promise<void>;
   createQuestion(input: { key: string; quizId: string; topicId: string } & QuestionData): Promise<string>;
   updateQuestion(id: string, data: QuestionData): Promise<void>;

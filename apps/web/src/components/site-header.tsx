@@ -1,23 +1,17 @@
-import type { Locale } from '@nuvora/shared';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/brand/logo';
 import { LearnerMenu } from '@/components/learner-menu';
 import { LocaleButtons } from '@/components/locale-buttons';
 import { SiteHeaderShell } from '@/components/site-header-shell';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link } from '@/i18n/navigation';
-import { getSubjects } from '@/lib/api';
 
 /** Website header (Faroz Home artboard): logo, section links, language, theme, learner, primary CTA. */
 export async function SiteHeader() {
   const t = await getTranslations('Header');
   const tBrand = await getTranslations('Brand');
-  const locale = (await getLocale()) as Locale;
-  // The CTA leads into the learning flow; without the API it falls back to "How it works".
-  const subject = await getSubjects(locale)
-    .then((s) => s?.items[0])
-    .catch(() => undefined);
-  const startHref = subject ? `/subjects/${subject.slug}` : '/#how';
+  // The CTA leads into the learner app (diagnostic → quests → retest).
+  const startHref = '/app';
 
   const links = [
     { href: '/#how', label: t('navHow') },

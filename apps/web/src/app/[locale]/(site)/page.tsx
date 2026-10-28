@@ -1,15 +1,13 @@
-import type { Locale } from '@nuvora/shared';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Faq } from '@/features/home/faq';
 import { Icon, ICONS } from '@/features/home/icon';
 import { LearningLoop } from '@/features/home/learning-loop';
 import { Link } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
-import { getSubjects } from '@/lib/api';
 
 /** Tint, ink and border tokens for the coloured tiles (canvas: blue, mint, magenta, gold). */
 const TONES = {
@@ -36,11 +34,8 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   setRequestLocale(locale);
   const t = await getTranslations('Home');
 
-  // Entry into the learning flow; the page still renders when the API is down.
-  const subject = await getSubjects(locale as Locale)
-    .then((s) => s?.items[0])
-    .catch(() => undefined);
-  const startHref = subject ? `/subjects/${subject.slug}` : '/#how';
+  // Entry into the learner app (diagnostic → quests → retest), same as the header CTA.
+  const startHref = '/app';
 
   const subjects = [
     { key: 'math', tone: 'blue' },
@@ -75,7 +70,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   ];
 
   const panels: ReactNode[] = [
-    <>
+    <Fragment key="scan">
       <div className="flex justify-between text-[13px] font-semibold text-(--faint)">
         <span>{t('p0Progress')}</span>
         <span className="text-(--mint-ink)">{t('p0Saved')}</span>
@@ -94,8 +89,8 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         <span className="rounded-[14px] border border-(--line2) bg-(--panel2) p-3.5">[1, 2, 3]</span>
         <span className="rounded-[14px] border border-(--line2) bg-(--panel2) p-3.5">12</span>
       </div>
-    </>,
-    <>
+    </Fragment>,
+    <Fragment key="spot">
       <div className="flex items-baseline justify-between">
         <span className="font-brand text-xl font-semibold tracking-[-0.02em]">{t('p1Title')}</span>
         <span className="font-brand text-lg font-bold">
@@ -116,8 +111,8 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
       <p className="m-0 rounded-[14px] border border-(--mag) bg-(--mag-tint) px-4 py-3.5 text-sm leading-relaxed">
         {t.rich('p1Pattern', { b: (chunks) => <strong>{chunks}</strong> })}
       </p>
-    </>,
-    <>
+    </Fragment>,
+    <Fragment key="quest">
       <div className="flex flex-col gap-2 rounded-[20px] border border-(--hud-border) p-5 text-(--hud-text)" style={HUD}>
         <div className="flex justify-between">
           <span className="fz-kicker text-[11px] text-(--hud-btn)">{t('p2Kicker')}</span>
@@ -142,8 +137,8 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
           <span className="text-xs font-bold text-(--gold-ink)">{q.xp}</span>
         </div>
       ))}
-    </>,
-    <>
+    </Fragment>,
+    <Fragment key="retest">
       <span className="font-brand text-xl font-semibold tracking-[-0.02em]">{t('p3Title')}</span>
       <div className="grid grid-cols-2 gap-3.5">
         <div className="flex flex-col gap-2.5 rounded-[18px] border border-(--mag) bg-(--mag-tint) p-5">
@@ -156,7 +151,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         </div>
       </div>
       <p className="m-0 text-sm leading-relaxed text-(--muted)">{t('p3Note')}</p>
-    </>,
+    </Fragment>,
   ];
 
   const photo = (caption: string, extra?: ReactNode, className = '') => (

@@ -76,7 +76,7 @@ export class MemorySeedStore implements SeedStore {
         return row.id;
       },
       updateResource: async (rowId, data) => patch(draft.resources, rowId, data),
-      createQuiz: async (input: { slug: string; subjectId: string; topicId: string } & QuizData) => {
+      createQuiz: async (input: { slug: string; subjectId: string; topicId: string | null } & QuizData) => {
         write();
         const row = { id: id('quiz'), ...structuredClone(input) };
         draft.quizzes.push(row);

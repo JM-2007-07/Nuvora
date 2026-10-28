@@ -44,7 +44,7 @@ export function LearnerMenu() {
         <DropdownMenuItem onSelect={() => start.mutate({ guest: true })}>{t('continueGuest')}</DropdownMenuItem>
         {current ? (
           <DropdownMenuItem asChild>
-            <Link href="/progress">{tHeader('progress')}</Link>
+            <Link href="/app/progress">{tHeader('progress')}</Link>
           </DropdownMenuItem>
         ) : null}
         {current ? <DropdownMenuItem onSelect={() => leave.mutate()}>{t('leave')}</DropdownMenuItem> : null}

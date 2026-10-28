@@ -51,7 +51,7 @@ export async function applySeedPlan(writer: SeedWriter, operations: SeedOperatio
           const id = await writer.createQuiz({
             slug: op.parents.slug,
             subjectId: need(subjectIds, op.parents.subjectSlug, 'subject'),
-            topicId: need(topicIds, op.parents.topicSlug, 'topic'),
+            topicId: op.parents.topicSlug === null ? null : need(topicIds, op.parents.topicSlug, 'topic'),
             ...op.data,
           });
           quizIds.set(op.parents.slug, id);

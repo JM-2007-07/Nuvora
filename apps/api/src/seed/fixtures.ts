@@ -6,7 +6,7 @@ import { variables } from './content/informatics/01-variables.js';
  * Stable test base: the subject plus the template topic only. Tests and fixtures
  * build on it so that adding real topics never changes what they exercise.
  */
-export const TEMPLATE_CONTENT: ContentSet = { subjects: content.subjects, topics: [variables] };
+export const TEMPLATE_CONTENT: ContentSet = { subjects: content.subjects.filter((s) => s.slug === 'informatics'), topics: [variables] };
 
 /**
  * Deliberately broken content sets that prove `seed:check` catches each rule.

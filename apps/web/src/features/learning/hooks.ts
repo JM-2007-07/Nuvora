@@ -14,12 +14,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
 import { z } from 'zod';
-import { clientFetch, withLearner } from '@/lib/client-api';
+import { ApiRequestError, clientFetch, withLearner } from '@/lib/client-api';
 
 export const learnerKeys = {
   me: ['me'] as const,
   demoProfiles: ['demo-profiles'] as const,
   progress: (subject: string, locale: Locale) => ['progress', subject, locale] as const,
+  attempt: (id: string, locale: Locale) => ['attempt', id, locale] as const,
 };
 
 /** The current learner, or null when no session exists (GET /session never answers 401). */
@@ -96,3 +97,31 @@ export const useSubmitAttempt = (quizSlug: string) =>
   useLearnerAction((body: AttemptRequest, locale) =>
     clientFetch(`/quizzes/${quizSlug}/attempts`, AttemptResultSchema, { locale, method: 'POST', body }),
   );
+
+/** One of the learner's own recorded attempts (results page). */
+export function useAttempt(attemptId: string, enabled: boolean) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: learnerKeys.attempt(attemptId, locale),
+    queryFn: () => clientFetch(`/me/attempts/${encodeURIComponent(attemptId)}`, AttemptResultSchema, { locale }),
+    enabled,
+    retry: (count, error) => !(error instanceof ApiRequestError && error.status < 500) && count < 2,
+  });
+}
+
+/**
+ * Quest submission for a learner who already has a session. Unlike useSubmitAttempt it never
+ * starts a guest on 401: an expired session must not silently move the answers to a new guest.
+ * The caller keeps the answers and asks the learner to choose again.
+ */
+export function useSubmitQuest(quizSlug: string) {
+  const locale = useLocale();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AttemptRequest) => clientFetch(`/quizzes/${quizSlug}/attempts`, AttemptResultSchema, { locale, method: 'POST', body }),
+    onSuccess: async (result) => {
+      queryClient.setQueryData(learnerKeys.attempt(result.attemptId, locale), result);
+      await queryClient.invalidateQueries({ queryKey: ['progress'] });
+    },
+  });
+}

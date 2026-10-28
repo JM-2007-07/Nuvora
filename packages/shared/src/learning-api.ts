@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ContentRefSchema, ResourceSchema, SlugSchema } from './content-api.js';
-import { MASTERY_STATUSES, USER_KINDS } from './enums.js';
+import { MASTERY_STATUSES, QUIZ_KINDS, USER_KINDS } from './enums.js';
 
 /**
  * Learning-loop API contract (G4): identity (ADR-0006), quiz attempts, mastery,
@@ -60,6 +60,9 @@ export type Recommendation = z.infer<typeof RecommendationSchema>;
 export const AttemptResultSchema = z.strictObject({
   attemptId: z.string(),
   quiz: ContentRefSchema,
+  quizKind: z.enum(QUIZ_KINDS),
+  /** The subject the quiz belongs to (for links back to the learner's dashboard). */
+  subject: ContentRefSchema,
   submittedAt: z.string(),
   correctCount: z.number().int(),
   totalCount: z.number().int(),
@@ -68,6 +71,8 @@ export const AttemptResultSchema = z.strictObject({
   questions: z.array(
     z.strictObject({
       key: z.string(),
+      /** The topic this question measures. */
+      topic: ContentRefSchema,
       prompt: z.string(),
       options: z.array(z.strictObject({ key: z.string(), text: z.string() })),
       selectedOptionKey: z.string(),
@@ -90,9 +95,24 @@ export const AttemptResultSchema = z.strictObject({
 });
 export type AttemptResult = z.infer<typeof AttemptResultSchema>;
 
+/** GET /me/attempts/:attemptId: database ids are cuids (lowercase letters and digits). */
+export const AttemptIdSchema = z.string().regex(/^[a-z0-9]{10,40}$/, 'Not an attempt id');
+
 // ---------- Progress ----------
 
 export const ProgressQuerySchema = z.strictObject({ subject: SlugSchema });
+
+/** A learner's score on one topic within one recorded attempt (computed from stored answers). */
+export const TopicScoreSchema = z.strictObject({
+  attemptId: z.string(),
+  quiz: ContentRefSchema,
+  quizKind: z.enum(QUIZ_KINDS),
+  correctCount: z.number().int().min(0),
+  totalCount: z.number().int().min(1),
+  scorePercent: z.number().int().min(0).max(100),
+  submittedAt: z.string(),
+});
+export type TopicScore = z.infer<typeof TopicScoreSchema>;
 
 export const ProgressSchema = z.strictObject({
   learner: LearnerSchema,
@@ -105,10 +125,35 @@ export const ProgressSchema = z.strictObject({
       status: MasteryStatusSchema,
       scorePercent: z.number().int().min(0).max(100).nullable(),
       lessonCompleted: z.boolean(),
+      /** The topic's first lesson and its practice/retest quiz. */
+      lesson: ContentRefSchema.nullable(),
+      quiz: ContentRefSchema.nullable(),
+      /** Before: this topic in the learner's first CHECKPOINT (diagnostic) attempt. */
+      before: TopicScoreSchema.nullable(),
+      /** After: this topic in the learner's most recent attempt after `before` (or the most recent one if there is no `before`). */
+      after: TopicScoreSchema.nullable(),
+    }),
+  ),
+  /** Subject-level CHECKPOINT quizzes (the diagnostic) and the learner's latest attempt at each. */
+  checkpoints: z.array(
+    z.strictObject({
+      quiz: ContentRefSchema,
+      questionCount: z.number().int().min(0),
+      latestAttempt: z
+        .strictObject({ id: z.string(), correctCount: z.number().int(), totalCount: z.number().int(), scorePercent: z.number().int(), submittedAt: z.string() })
+        .nullable(),
     }),
   ),
   attempts: z.array(
-    z.strictObject({ id: z.string(), quiz: ContentRefSchema, scorePercent: z.number().int(), submittedAt: z.string() }),
+    z.strictObject({
+      id: z.string(),
+      quiz: ContentRefSchema,
+      quizKind: z.enum(QUIZ_KINDS),
+      correctCount: z.number().int(),
+      totalCount: z.number().int(),
+      scorePercent: z.number().int(),
+      submittedAt: z.string(),
+    }),
   ),
   recommendations: z.array(RecommendationSchema).max(3),
 });

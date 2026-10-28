@@ -1,4 +1,6 @@
 import {
+  type CheckpointContent,
+  CheckpointContentSchema,
   LOCALES,
   type SubjectContent,
   SubjectContentSchema,
@@ -25,9 +27,9 @@ export interface ContentCheckResult {
   issues: ContentIssue[];
   errors: number;
   warnings: number;
-  stats: { subjects: number; topics: number; lessons: number; questions: number; resources: number };
+  stats: { subjects: number; topics: number; lessons: number; questions: number; resources: number; checkpoints: number };
   /** The Zod-parsed content (defaults applied). Only safe to load when `errors === 0`. */
-  parsed: { subjects: SubjectContent[]; topics: TopicContent[] };
+  parsed: { subjects: SubjectContent[]; topics: TopicContent[]; checkpoints: CheckpointContent[] };
 }
 
 function formatPath(path: PropertyKey[]): string {
@@ -77,6 +79,11 @@ export function checkContent(content: ContentSet): ContentCheckResult {
   const issues: ContentIssue[] = [];
   const error = (where: string, message: string) => issues.push({ level: 'error', where, message });
   const warn = (where: string, message: string) => issues.push({ level: 'warning', where, message });
+  const checkOptions = (qWhere: string, options: { key: string; correct: boolean }[]) => {
+    const correct = options.filter((o) => o.correct).length;
+    if (correct !== 1) error(qWhere, `Has ${correct} correct options; exactly 1 is required`);
+    for (const duplicate of findDuplicates(options.map((o) => o.key))) error(qWhere, `Duplicate option key "${duplicate}"`);
+  };
 
   // 1. Shape and translations (Zod): every text needs tg, ru and en.
   const subjects: SubjectContent[] = [];
@@ -93,13 +100,20 @@ export function checkContent(content: ContentSet): ContentCheckResult {
     if (parsed.success) topics.push(parsed.data);
     else issues.push(...zodIssues(`topic "${slug}"`, parsed.error));
   });
+  const checkpoints: CheckpointContent[] = [];
+  (content.checkpoints ?? []).forEach((raw, index) => {
+    const slug = (raw as { slug?: string }).slug ?? `#${index}`;
+    const parsed = CheckpointContentSchema.safeParse(raw);
+    if (parsed.success) checkpoints.push(parsed.data);
+    else issues.push(...zodIssues(`checkpoint "${slug}"`, parsed.error));
+  });
 
   // 2. Slugs unique per entity type (API routes resolve by slug alone).
   const slugGroups: [string, string[]][] = [
     ['subject', subjects.map((s) => s.slug)],
     ['topic', topics.map((t) => t.slug)],
     ['lesson', topics.flatMap((t) => t.lessons.map((l) => l.slug))],
-    ['quiz', topics.map((t) => t.quiz.slug)],
+    ['quiz', [...topics.map((t) => t.quiz.slug), ...checkpoints.map((c) => c.slug)]],
   ];
   for (const [kind, slugs] of slugGroups) {
     for (const duplicate of findDuplicates(slugs)) error(`${kind} "${duplicate}"`, `Duplicate ${kind} slug (slugs must be unique per entity type)`);
@@ -123,12 +137,7 @@ export function checkContent(content: ContentSet): ContentCheckResult {
     }
 
     // 5. Exactly one correct option per single-choice question.
-    for (const question of topic.quiz.questions) {
-      const qWhere = `${where} › question "${question.key}"`;
-      const correct = question.options.filter((o) => o.correct).length;
-      if (correct !== 1) error(qWhere, `Has ${correct} correct options; exactly 1 is required`);
-      for (const duplicate of findDuplicates(question.options.map((o) => o.key))) error(qWhere, `Duplicate option key "${duplicate}"`);
-    }
+    for (const question of topic.quiz.questions) checkOptions(`${where} › question "${question.key}"`, question.options);
 
     // 6. Prerequisites exist, are not self-references, and stay within the subject.
     for (const prerequisite of topic.prerequisites) {
@@ -145,8 +154,33 @@ export function checkContent(content: ContentSet): ContentCheckResult {
     error(`topic "${cycle[0]}"`, `Prerequisite cycle: ${cycle.join(' → ')}`);
   }
 
+  // 8. Checkpoints: known subject, unique question keys, every question measures a topic of that subject.
+  for (const checkpoint of checkpoints) {
+    const where = `checkpoint "${checkpoint.slug}"`;
+    if (!subjectSlugs.has(checkpoint.subject)) error(where, `Unknown subject "${checkpoint.subject}"`);
+    for (const duplicate of findDuplicates(checkpoint.questions.map((q) => q.key))) error(where, `Duplicate question key "${duplicate}"`);
+    // At least 3 questions per topic the checkpoint covers (data-model.md#integrity-rules).
+    const perTopic = new Map<string, number>();
+    for (const q of checkpoint.questions) if (topicsBySlug.get(q.topic)?.subject === checkpoint.subject) perTopic.set(q.topic, (perTopic.get(q.topic) ?? 0) + 1);
+    if (perTopic.size === 0) error(where, 'Covers no topic of its subject');
+    for (const [topic, count] of perTopic) {
+      if (count < MIN_QUESTIONS_PER_TOPIC) error(where, `Has ${count} question(s) on topic "${topic}"; at least ${MIN_QUESTIONS_PER_TOPIC} are required per topic covered`);
+    }
+    for (const question of checkpoint.questions) {
+      const qWhere = `${where} › question "${question.key}"`;
+      const topic = topicsBySlug.get(question.topic);
+      if (!topic) error(qWhere, `Unknown topic "${question.topic}"`);
+      else if (topic.subject !== checkpoint.subject) error(qWhere, `Topic "${question.topic}" belongs to another subject`);
+      checkOptions(qWhere, question.options);
+    }
+  }
+
   // Warnings: translations not yet reviewed by a native speaker.
-  for (const item of [...subjects.map((s) => ['subject', s] as const), ...topics.map((t) => ['topic', t] as const)]) {
+  for (const item of [
+    ...subjects.map((s) => ['subject', s] as const),
+    ...topics.map((t) => ['topic', t] as const),
+    ...checkpoints.map((c) => ['checkpoint', c] as const),
+  ]) {
     const [kind, entity] = item;
     const pending = LOCALES.filter((locale) => entity.review[locale] === 'needs-review');
     if (pending.length) warn(`${kind} "${entity.slug}"`, `Translation needs native-speaker review: ${pending.join(', ')}`);
@@ -157,13 +191,14 @@ export function checkContent(content: ContentSet): ContentCheckResult {
     issues,
     errors,
     warnings: issues.length - errors,
-    parsed: { subjects, topics },
+    parsed: { subjects, topics, checkpoints },
     stats: {
       subjects: subjects.length,
       topics: topics.length,
       lessons: topics.reduce((n, t) => n + t.lessons.length, 0),
-      questions: topics.reduce((n, t) => n + t.quiz.questions.length, 0),
+      questions: topics.reduce((n, t) => n + t.quiz.questions.length, 0) + checkpoints.reduce((n, c) => n + c.questions.length, 0),
       resources: topics.reduce((n, t) => n + t.resources.length, 0),
+      checkpoints: checkpoints.length,
     },
   };
 }
@@ -172,7 +207,7 @@ export function formatReport(result: ContentCheckResult, label: string): string 
   const { stats } = result;
   const lines = [
     `seed:check: ${label}`,
-    `  ${stats.subjects} subject(s), ${stats.topics} topic(s), ${stats.lessons} lesson(s), ${stats.questions} question(s), ${stats.resources} resource(s)`,
+    `  ${stats.subjects} subject(s), ${stats.topics} topic(s), ${stats.checkpoints} checkpoint(s), ${stats.lessons} lesson(s), ${stats.questions} question(s), ${stats.resources} resource(s)`,
     ...result.issues.map((i) => `  ${i.level === 'error' ? '✖ error  ' : '⚠ warning'} ${i.where}: ${i.message}`),
     result.errors ? `  FAILED: ${result.errors} error(s), ${result.warnings} warning(s)` : `  OK: 0 errors, ${result.warnings} warning(s)`,
   ];

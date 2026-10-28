@@ -59,3 +59,4 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-26 | [Russian becomes the default interface language](2026-10-26-default-locale-russian.md) | implemented and verified |
 | 2026-10-28 | [Faroz foundation (rebrand phase 1)](2026-10-28-faroz-foundation.md) | implemented and verified |
 | 2026-10-28 | [Faroz homepage (rebrand phase 2)](2026-10-28-faroz-homepage.md) | implemented and verified |
+| 2026-10-28 | [Defense audit, plan, and the learner slice](2026-10-28-defense-audit-and-plan.md) | learner slice implemented and verified; teacher, center, PWA planned |
