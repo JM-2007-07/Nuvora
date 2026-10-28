@@ -62,3 +62,4 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-28 | [Defense audit, plan, and the learner slice](2026-10-28-defense-audit-and-plan.md) | learner slice implemented and verified; teacher, center, PWA planned |
 | 2026-10-28 | [Teacher workspace (Faroz phase 4)](2026-10-28-teacher-workspace.md) | core implemented and verified; assessments, builder, assign practice not built |
 | 2026-10-28 | [Center workspace (Faroz phase 5)](2026-10-28-center-workspace.md) | core implemented and verified; group wizard, invitations, permission editing not built |
+| 2026-10-28 | [Defense readiness: PWA, QA, real vs prototype](2026-10-28-defense-readiness.md) | PWA implemented and verified; release QA partly run |
