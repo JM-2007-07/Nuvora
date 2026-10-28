@@ -12,7 +12,7 @@ Priority labels (assigned in [mvp-scope.md](mvp-scope.md)):
 
 ### J1: First visit
 
-1. A learner opens Nuvora. The interface appears in **Tajik** (the default), and the theme follows the system setting.
+1. A learner opens Nuvora. The interface appears in **Russian** (the default), and the theme follows the system setting.
 2. They can switch language (Тоҷикӣ / Русский / English) and theme (light / dark / system) from the header at any time. The choice persists.
 3. They see the list of subjects and can read any lesson without choosing a learner.
 4. They can pick a **demo learner** (to see a learner with history) or **continue as a guest** (start fresh). If they do neither, guest mode starts automatically the first time they take a quiz or mark a lesson complete.
@@ -108,7 +108,7 @@ Priority labels (assigned in [mvp-scope.md](mvp-scope.md)):
 
 | ID | Requirement | Acceptance criteria |
 | --- | --- | --- |
-| FR-I18N-01 | Interface languages | Every UI string exists in `tg`, `ru`, and `en`. A missing key fails a test. Tajik is the default: `/` opens `/tg` unless the learner chose another language before. |
+| FR-I18N-01 | Interface languages | Every UI string exists in `tg`, `ru`, and `en`. A missing key fails a test. Russian is the default: `/` opens `/ru` unless the learner chose another language before. |
 | FR-I18N-02 | Language switcher | The header switcher is on every page and lists languages by native name. Switching keeps the current page, changes the URL locale, and persists across visits. `<html lang>` matches the locale. |
 | FR-I18N-03 | Localized content | All core demo content is available in all three languages (the seed check fails otherwise). Other content falls back by the [documented order](../01-architecture/architecture.md#content-fallback-strategy) and shows a "not yet translated" label. |
 | FR-I18N-04 | Locale-correct formatting | Dates, percentages, and counts read correctly in each language and look the same on server and client render. Tajik doesn't depend on browser `Intl` data (D-19). |

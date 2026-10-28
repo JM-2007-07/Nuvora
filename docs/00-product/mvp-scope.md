@@ -41,7 +41,7 @@ flowchart LR
 
 ### Demo storyline (scripted, verified on Friday)
 
-1. In Tajik, choose demo learner **Farzona**. Her seeded history: Variables **mastered**, Conditions **weak** (50%), everything else **not started**. The Knowledge Map shows this immediately.
+1. Open `/tg` first (Russian is the default since 2026-10-26, so `/` opens `/ru`), or switch to Тоҷикӣ in the language menu. In Tajik, choose demo learner **Farzona**. Her seeded history: Variables **mastered**, Conditions **weak** (50%), everything else **not started**. The Knowledge Map shows this immediately.
 2. Open **Loops**, read the lesson, mark it complete, and take the Loops quiz, answering 2 of 4 questions wrongly. Result: Loops **weak** (50%).
 3. Recommendations: **1. Conditions lesson** ("Prerequisite for Loops"), then **2. the recommended Loops book** ("You scored 50% on Loops"). The book appears because the Loops lesson is already completed ([ADR-0004](../01-architecture/adr/0004-rule-based-mastery-and-recommendations.md)).
 4. Review Conditions and retake the Conditions quiz → **mastered**. The progress page and map update.
@@ -72,7 +72,7 @@ All core content exists in all three languages (D-06). Python code stays identic
 | Quizzes | Single-choice questions, server scoring, explanations, per-topic breakdown, retake | MVP-Must | FR-QUIZ-01..06 |
 | Adaptive Quiz (analysis) | Rule-based weak-topic detection + up to 3 recommendations, prerequisites first | MVP-Must | FR-ADAPT-01..03 |
 | Learning progress | Topic mastery + progress page with attempts and completed lessons | MVP-Must | FR-PROG-01..02 |
-| Multilingual UI | Tajik default, switcher, persisted, correct formatting | MVP-Must | FR-I18N-01..04 |
+| Multilingual UI | Russian default, switcher, persisted, correct formatting | MVP-Must | FR-I18N-01..04 |
 | Light / dark / system | Theme switcher, no flash, correct logo | MVP-Must | FR-THEME-01..03 |
 | Demo profiles + guest mode | Choose a demo learner or continue as guest, demo reset | MVP-Must | FR-AUTH-01..04 |
 | **Knowledge Map** | Graph with status, keyboard navigation, **list view** alternative | **MVP target** (graph view is MVP-Should, list view is MVP-Must) | FR-MAP-01..04 |
@@ -80,7 +80,7 @@ All core content exists in all three languages (D-06). Python code stays identic
 | Checkpoint quiz | One multi-topic quiz | MVP-Should | (content) |
 | Motion | Subtle transitions, respects reduced motion | MVP-Should | (design system) |
 
-**Cut order if behind schedule** (decided at G3, Friday 12:00): Motion polish → checkpoint quiz → FR-JOUR-01 trend → Knowledge Map **graph** view (the list view stays, so the map's information is still shown). MVP-Must items are not cut. If one is at risk, raise it immediately.
+**Cut order if behind schedule** (decided at the feature freeze, Friday 12:00): Motion polish → checkpoint quiz → FR-JOUR-01 trend → Knowledge Map **graph** view (the list view stays, so the map's information is still shown). MVP-Must items are not cut. If one is at risk, raise it immediately.
 
 ## Deferred (after the presentation)
 

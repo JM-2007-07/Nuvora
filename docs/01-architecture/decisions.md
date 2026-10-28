@@ -17,7 +17,7 @@ This is the authoritative list of decisions and their status. Read it before bui
 | A-03 | Appearance: light, dark, and system | Owner, before Phase 0 |
 | A-04 | Presentation on Sat, Oct 31, 2026 with an end-to-end learning loop | Owner, before Phase 0 |
 | D-03 | **Accounts:** seeded demo profiles plus guest mode. No email/password registration in the MVP ([ADR-0006](adr/0006-demo-profiles-and-guest-mode.md)) | Owner, 2026-10-25 |
-| D-06 | **Localization:** Tajik (`tg`) is the default interface language, and Russian and English are available through a language switcher. Core demo content must exist in all three languages. Fallback strategy: [architecture](architecture.md#localization) | Owner, 2026-10-25 |
+| D-06 | **Localization:** Russian (`ru`) is the default interface language, and Tajik and English are available through a language switcher (order: Русский, Тоҷикӣ, English). Core demo content must exist in all three languages. Fallback strategy: [architecture](architecture.md#localization). Changed from a Tajik default by the owner on 2026-10-26 | Owner, 2026-10-25; default changed 2026-10-26 |
 | D-07 | **Interface font: Inter**, verified for the Tajik letters and Russian Cyrillic ([verification](architecture.md#fonts-d-07)). The brand wordmark stays independent of the interface font (vector SVG) | Owner, 2026-10-25 |
 | D-08 | **Demo subject:** introductory Computer Science / Informatics, six connected topics ([topic graph](../00-product/mvp-scope.md#demo-subject-introductory-informatics)) | Owner, 2026-10-25 |
 | D-10 | **Demo environment:** local presentation on the team's laptop, with a recorded backup video | Owner, 2026-10-25 |
@@ -42,6 +42,11 @@ This is the authoritative list of decisions and their status. Read it before bui
 | D-18 | **Database: the existing native PostgreSQL 18.6** (Windows service `postgresql-x64-18`, port 5432) for local development. Docker is not required. **Creating roles or databases, changing PostgreSQL configuration, or changing firewall settings needs the owner's explicit approval each time** | Owner, 2026-10-25 |
 | D-21 | **Deletion policy:** content deletion never erases learner history. The five history → content foreign keys use `ON DELETE RESTRICT`; user deletion still cascades. A published question's meaning is never changed in place (new key instead). Forward-only migration `20261025180000_protect_learner_history` | Owner, 2026-10-25 ([data-model](../04-data/data-model.md#deletion-policy)) |
 | D-19 | **Tajik formatting:** deterministic date (`dd.MM.yyyy` or our own month names) and percentage (`{value}%`) formatting. `Intl` locale data is never relied on for `tg`, which prevents SSR hydration mismatches. Tajik plural messages use only the `other` form | Owner, 2026-10-25 ([architecture](architecture.md#formatting-d-19)) |
+| D-22 | **Homepage visual direction** ([VISUAL_EXPERIENCE.md](../engineering/VISUAL_EXPERIENCE.md)): a luminous knowledge core with connected subject/topic nodes drawn from real prerequisite data, restrained violet and teal light on deep navy, atmospheric depth, purposeful motion with a reduced-motion path, integrated imagery, and a distinctive responsive layout (mobile composed, not shrunk). Not a grid of course cards. **Approved:** the direction, and installing **Motion for React** (`motion`, pinned) for G4-B after compatibility checks. **Conditional, each needs its own justification and test before use:** Canvas 2D particles; Three.js / React Three Fiber / Drei (only if a prototype and measurement show SVG/CSS/Motion can't reach the intended depth, and only after a further owner OK). **Not now:** GSAP or any other animation framework | Owner, 2026-10-26 |
+
+## Proposed
+
+None.
 
 ## Open
 

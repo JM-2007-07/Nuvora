@@ -12,7 +12,112 @@
     "theme": "Appearance",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "skip": "Skip to content",
+    "subjects": "Learn",
+    "progress": "My progress"
+  },
+  "Learner": {
+    "menu": "Learner",
+    "demo": "Demo",
+    "guest": "Guest",
+    "notChosen": "Choose learner",
+    "chooseDemo": "Demo learners",
+    "continueGuest": "Continue as guest",
+    "leave": "Leave"
+  },
+  "Home": {
+    "eyebrow": "Introductory informatics · Тоҷикӣ · Русский · English",
+    "headline": "Every topic connects. Learn how.",
+    "lead": "Study a lesson, test yourself, and Nuvora shows which topic to strengthen next, including the prerequisite you may have missed.",
+    "ctaStart": "Start learning",
+    "ctaProgress": "See my progress",
+    "coreLabel": "Knowledge core: {count} connected topics in {subject}",
+    "loopTitle": "The learning loop",
+    "loopLead": "One cycle, repeated until every topic glows.",
+    "step1": "Choose a topic",
+    "step2": "Study the lesson",
+    "step3": "Take the quiz",
+    "step4": "See weak topics",
+    "step5": "Review what is recommended",
+    "step6": "Watch your progress grow",
+    "mapTitle": "{subject}: six connected topics",
+    "mapLead": "Each arrow is a prerequisite. Start on the left; Nuvora tells you when to step back."
+  },
+  "Subject": {
+    "mapTitle": "Knowledge map",
+    "listTitle": "Topics in order",
+    "requires": "Requires: {topics}",
+    "startHere": "Start here",
+    "topicCount": "{count, plural, one {# topic} other {# topics}}",
+    "legend": "Status"
+  },
+  "Mastery": {
+    "NOT_STARTED": "Not started",
+    "WEAK": "Weak",
+    "DEVELOPING": "Developing",
+    "MASTERED": "Mastered"
+  },
+  "Topic": {
+    "lesson": "Lesson",
+    "resources": "Recommended books and materials",
+    "quiz": "Check yourself",
+    "takeQuiz": "Take the quiz",
+    "questions": "{count, plural, one {# question} other {# questions}}",
+    "minutes": "{count} min read",
+    "prerequisites": "Before this topic",
+    "availableIn": "Available in: {languages}",
+    "open": "Open",
+    "noQuiz": "No quiz for this topic yet.",
+    "subject": "Subject"
+  },
+  "Lesson": {
+    "markComplete": "Mark as complete",
+    "completed": "Completed",
+    "takeQuiz": "Take the quiz",
+    "backToTopic": "Back to the topic",
+    "next": "When you are ready",
+    "notTranslated": "Not yet translated"
+  },
+  "Quiz": {
+    "progress": "Question {current} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit answers",
+    "submitting": "Checking…",
+    "chooseAnswer": "Choose one answer",
+    "resultsTitle": "Your results",
+    "score": "{correct} of {total} correct",
+    "percent": "{value}%",
+    "yourAnswer": "Your answer",
+    "correctAnswer": "Correct answer",
+    "correct": "Correct",
+    "incorrect": "Incorrect",
+    "explanation": "Why",
+    "topics": "By topic",
+    "recommendations": "What to review next",
+    "noRecommendations": "Nothing to review right now. Well done!",
+    "retake": "Retake the quiz",
+    "viewProgress": "See my progress",
+    "error": "Something went wrong. Please try again."
+  },
+  "Reason": {
+    "PREREQUISITE": "Prerequisite for {topic}",
+    "WEAK_TOPIC": "You scored {score}% on {topic}",
+    "NEXT_TOPIC": "Next topic to study",
+    "lesson": "Lesson",
+    "book": "Book",
+    "material": "Material"
+  },
+  "Progress": {
+    "title": "My learning journey",
+    "topics": "Topics",
+    "attempts": "Quiz attempts",
+    "noAttempts": "No quiz attempts yet.",
+    "recommendations": "Recommended next",
+    "lessonDone": "Lesson completed",
+    "noLearner": "Choose a demo learner or continue as a guest to track your progress.",
+    "learner": "Learner"
   },
   "Status": {
     "heading": "System status",
@@ -23,5 +128,9 @@
     "down": "Unavailable",
     "version": "PostgreSQL {version}",
     "apiUnreachable": "The API is not reachable."
+  },
+  "Errors": {
+    "notFound": "This page does not exist.",
+    "backHome": "Back to the start"
   }
 }

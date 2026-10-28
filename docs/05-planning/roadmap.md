@@ -1,6 +1,6 @@
 # Roadmap, implementation sequence, and Definition of Done
 
-Status: **Approved** (G0 baseline, owner, 2026-10-25). G0 was approved on Sun Oct 25, and D-17 and D-18 were decided the same day. Every day of delay comes out of the Knowledge Map graph view and polish, never the core loop.
+Status: **Approved** (G0 baseline, owner, 2026-10-25). G0 was approved on Sun Oct 25, and D-17 and D-18 were decided the same day. The [G4 sub-milestones](#g4-user-facing-mvp) were added on 2026-10-26. Every day of delay comes out of the Knowledge Map graph view and decorative polish, never the core loop or the homepage's identity.
 
 ## Principles
 
@@ -17,7 +17,7 @@ Status: **Approved** (G0 baseline, owner, 2026-10-25). G0 was approved on Sun Oc
 | **Tue Oct 27** | Seed script + integrity checks. API: catalog, topics, lessons, quiz delivery, attempt scoring (+ unit tests) | Topics 4–6. Translations of topics 2–3 | Loop works **via API** |
 | **Wed Oct 28** | Identity: demo profiles, guest mode, cookie session. Web: subjects, subject, topic, lesson, quiz, results with explanations | Translations of topics 4–6. Demo learner history script | **Rough loop works in the browser** |
 | **Thu Oct 29** | Mastery + recommendations (+ unit tests), progress page, mark-complete, Knowledge Map (list view first, then graph). Demo reset command | All content complete in tg, ru, en. Translation review by a second person | Full storyline works |
-| **Fri Oct 30** | 12:00 **feature freeze (G3)**. Afternoon: bug fixes, a11y and responsive pass, light/dark × 3-language check, demo rehearsal ×2, **record backup video** | Final content fixes only | Demo-ready build tagged |
+| **Fri Oct 30** | 12:00 **feature freeze** (a milestone, not a gate). Afternoon: bug fixes, a11y and responsive pass, light/dark × 3-language check, demo rehearsal ×2, **record backup video** | Final content fixes only | Demo-ready build tagged |
 | **Sat Oct 31** | Presentation. Reseed, then no code changes on the day | — | 🎤 |
 
 ### Team split (assign names at G0)
@@ -64,6 +64,31 @@ G1 proves the stack works end to end on the demo laptop. Required items are what
 
 The content loader (`db:seed`, writing to the database) follows on Tuesday per the schedule.
 
+## Gate status
+
+| Gate | Scope | Status (2026-10-26) |
+| --- | --- | --- |
+| G0 | Phase 0 docs, brand, decisions | ✅ Approved 2026-10-25 |
+| G1 | Walking skeleton ([checklist](#gate-g1-checklist-mon-oct-26)) | ✅ Approved 2026-10-25 |
+| G2 | Schema, migrations, seed format, `seed:check`, template topic ([checklist](#gate-g2-checklist)) | Schema and migrations applied with approval 2026-10-25. **Item 7, the Tajik copy review, is still open** |
+| G3 | Seed loader (`db:seed`, `db:seed:dry-run`) and read-only Content API, verified against PostgreSQL | ✅ Approved 2026-10-25 |
+| G4 | User-facing MVP ([sub-milestones](#g4-user-facing-mvp)) | In progress |
+| Feature freeze | Fri Oct 30, 12:00. Bug fixes and content only afterwards. Not a gate number | Upcoming |
+
+## G4: user-facing MVP
+
+G4 is reported to the owner as one gate, but it is planned and verified as five sub-milestones. A and B can run in parallel with C and D; E closes the gate. The homepage (B) and the complete learning loop (D) are core deliverables: if time runs short, cut decorative extras inside B and the Knowledge Map graph view, not the homepage's identity or the loop.
+
+Status uses: **planned** (not started) · **implemented** (code exists, uncommitted or committed) · **verified** (named checks passed, recorded in a story).
+
+| ID | Milestone | Depends on | Acceptance criteria | Status (2026-10-26) |
+| --- | --- | --- | --- | --- |
+| **G4-A** | **Content expansion.** All six Informatics topics ([MVP content](../00-product/mvp-scope.md#mvp-content)) with prerequisites, one lesson, resources, and a 4-question quiz each, in tg/ru/en. Optional checkpoint quiz (MVP-Should) | G3 | `seed:check` passes; record counts in the seed test updated on purpose; every language `needs-review` until a real review; `db:seed:dry-run` shows only creates/updates; no question meaning changed in place | Six topics, 6 lessons, 24 questions, 11 resources implemented and `seed:check` passes. All languages `needs-review`. Checkpoint quiz planned. Tajik/Russian review open |
+| **G4-B** | **Distinctive Nuvora homepage.** The knowledge-core concept from [VISUAL_EXPERIENCE.md](../engineering/VISUAL_EXPERIENCE.md) | G3 (data), D-22 for any new library | All [implementation checklist](../engineering/VISUAL_EXPERIENCE.md#implementation-checklist-g4-b) items; `visual-qa` and `design-review` pass at 375/768/1280 px × tg/ru/en × light/dark; reduced motion and no-WebGL paths verified; Lighthouse mobile measured; no generic card grid | First SVG pass implemented (uncommitted). D-22 approved and `motion` 14.6.0 installed 2026-10-26. Research brief, animation plan, and colour audit drafted ([HOMEPAGE_BRIEF.md](../engineering/HOMEPAGE_BRIEF.md)). Redesign not started; not verified against the contract |
+| **G4-C** | **Subject and lesson experience.** Subject page with ordered topics and status, topic page with lessons/resources/quiz, lesson page (Markdown, mark complete, next step), using the Content API and shared schemas | G3 | FR-CAT-01..03, FR-LES-01..03, FR-RES-01..02; server-rendered content; loading/empty/error states translated; UI checklist in [VERIFICATION.md](../engineering/VERIFICATION.md#ui-checklist) | Implemented (uncommitted). Browser-checked on 2026-10-26 in en/ru, light, 375 px. Full checklist not run |
+| **G4-D** | **Complete learning loop.** Demo profiles and guest sessions, quiz taking and submission, server scoring, saved attempts, explanations after submission, mastery, progress page, recommendations (weak prerequisites first), demo reset | G4-C | FR-QUIZ-01..06, FR-ADAPT-01..03, FR-PROG-01..02, FR-AUTH-01..04; no answers before submission; `/me/*` from the session only; unit tests for scoring/mastery/recommendations; API tests for session, attempts, progress | Implemented (uncommitted) with unit tests and e2e tests (in-memory Prisma). Guest quiz run verified in the browser on 2026-10-26. Not yet: API tests against `nuvora_test` with cross-learner isolation, Knowledge Map (FR-MAP), FR-JOUR-01 trend |
+| **G4-E** | **Verification and demo readiness** | A–D | The [demo storyline](../00-product/mvp-scope.md#demo-storyline-scripted-verified-on-friday) runs end to end in tg/ru/en and both themes; Playwright smoke green; reduced motion, keyboard, loading/error states, 375 px; console clean; Lighthouse targets; `/code-review` and `/security-review` once for the gate; story written | Planned. Playwright smoke passes again (2026-10-26: the test still expected the old G1 status heading; it now reads the homepage headline from the message files) |
+
 ## Implementation sequence (dependency order)
 
 1. Walking skeleton (G1)
@@ -87,7 +112,7 @@ Real accounts, goals and achievements, adaptive question selection, content auth
 A task or PR is **done** when all of the following are true:
 
 1. It meets the acceptance criteria of the requirement IDs it claims ([requirements.md](../00-product/requirements.md)).
-2. Lint, typecheck, test, and build pass ([AGENTS.md](../../AGENTS.md#verification)).
+2. The checks [VERIFICATION.md](../engineering/VERIFICATION.md) selects for the change pass (lint, typecheck, test, and build for any code change).
 3. Business logic it adds (scoring, mastery, recommendations, access checks) has unit tests.
 4. UI it adds works in **light and dark**, in **tg, ru, and en** (no hard-coded strings), from **360 px** wide, and **by keyboard**.
 5. It follows the [quality gates](../06-quality/quality-standards.md#quality-gates). No secrets, no new unjustified dependencies.

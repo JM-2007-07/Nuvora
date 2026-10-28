@@ -20,9 +20,22 @@
   --nv-violet-700: #6d28d9;  /* violet hover/pressed on light */
   --nv-teal-700: #0f766e;    /* teal as text on light backgrounds */
 
+  /* Gradient stops used on their own (the knowledge core, the hero arc) */
+  --nv-symbol-violet: #6d5cf6;   /* middle stop of the logo symbol gradient */
+  --nv-symbol-lavender: #c3b4ff; /* light stop of the logo symbol gradient */
+  --nv-accent-cyan: #22c3f0;     /* end stop of the accent gradient */
+
   /* Symbol gradient (matches the logo SVGs) */
-  --nv-gradient-symbol: linear-gradient(135deg, #6fb0ff 0%, #6d5cf6 55%, #c3b4ff 100%);
-  --nv-gradient-accent: linear-gradient(135deg, #00e5c2 0%, #22c3f0 100%);
+  --nv-gradient-symbol: linear-gradient(135deg, #6fb0ff 0%, var(--nv-symbol-violet) 55%, var(--nv-symbol-lavender) 100%);
+  --nv-gradient-accent: linear-gradient(135deg, var(--nv-teal) 0%, var(--nv-accent-cyan) 100%);
+
+  /* Brand space: the always-navy homepage hero and knowledge core.
+     Fixed in both themes, so they are primitives, not semantic tokens. */
+  --nv-core-glow: #2f5be6;       /* blue in the core's outer halo */
+  --nv-core-depth: #2f3fb0;      /* shaded edge of the core sphere */
+  --nv-space-surface: #121a2b;   /* node label chips on navy */
+  --nv-space-text-lead: #c9d2ff; /* hero lead paragraph on navy: 12.6:1 on --nv-navy */
+  --nv-space-text-subtle: #a3aec2; /* tagline and meta text on navy: 8.4:1 on --nv-navy */
 
   /* ---- Semantic tokens: light theme (default) ---- */
   --nv-bg: #f6f8fc;              /* page background */

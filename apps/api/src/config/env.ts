@@ -8,6 +8,8 @@ const EnvSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   WEB_ORIGIN: z.url().default('http://localhost:3000'),
+  /** Signs the learner session cookie (ADR-0006). Optional locally: a random per-process secret is used when missing. */
+  SESSION_SECRET: z.string().min(32).optional(),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

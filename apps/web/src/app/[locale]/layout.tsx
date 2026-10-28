@@ -3,6 +3,7 @@ import { Inter, Poppins } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { QueryProvider } from '@/components/providers';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from '@/components/theme-provider';
 import { routing } from '@/i18n/routing';
@@ -36,8 +37,10 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
           <ThemeProvider>
-            <SiteHeader />
-            {children}
+            <QueryProvider>
+              <SiteHeader />
+              {children}
+            </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

@@ -18,6 +18,10 @@ This folder holds Nuvora's product, architecture, design, and process documentat
 | Data model and entity relationships | [04-data/data-model.md](04-data/data-model.md) |
 | Schedule to Oct 31, implementation sequence, Definition of Done | [05-planning/roadmap.md](05-planning/roadmap.md) |
 | Testing, accessibility, performance, security, quality gates | [06-quality/quality-standards.md](06-quality/quality-standards.md) |
+| Agent and contributor workflow: task sizing, planning, delegation, review, safety | [engineering/HARNESS.md](engineering/HARNESS.md) |
+| Which checks a change needs, browser checks, how to report results | [engineering/VERIFICATION.md](engineering/VERIFICATION.md) |
+| Homepage and brand-surface visual contract, imagery, motion/3D stack plan | [engineering/VISUAL_EXPERIENCE.md](engineering/VISUAL_EXPERIENCE.md) (G4-B working brief: [HOMEPAGE_BRIEF.md](engineering/HOMEPAGE_BRIEF.md)) |
+| Dated records of significant changes | [stories/](stories/README.md) |
 | Development workflow: git, commands, conventions, approval gates | [../AGENTS.md](../AGENTS.md) |
 | Claude Code–specific instructions | [../CLAUDE.md](../CLAUDE.md) |
 
@@ -34,3 +38,4 @@ Documents and decisions use these labels:
 - A change that alters documented behaviour, scope, or a decision updates the authoritative document in the **same pull request**.
 - New decisions go into [decisions.md](01-architecture/decisions.md) first. Write an ADR when the trade-off needs explaining.
 - Before each phase gate (see [AGENTS.md](../AGENTS.md#approval-gates)), check that `decisions.md` has no stale **Open** items that block the phase.
+- Significant changes get a dated story in [stories/](stories/README.md). A story links to decisions; it never replaces them.

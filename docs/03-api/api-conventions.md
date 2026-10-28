@@ -13,7 +13,7 @@ Status: conventions **Approved** (G0 baseline, owner, 2026-10-25). The resource 
 ## Requests
 
 - Every body, param, and query is validated with the shared Zod schema in a validation pipe. Unknown fields are rejected.
-- Locale: the web app sends `Accept-Language: tg | ru | en`. If the header is missing or unsupported, the API uses `tg` (D-06). The API responds with `Content-Language`. Localized fields are already resolved to strings for that locale, using the [fallback order](../01-architecture/architecture.md#content-fallback-strategy).
+- Locale: the web app sends `Accept-Language: tg | ru | en`. If the header is missing or unsupported, the API uses `ru` (D-06). The API responds with `Content-Language`. Localized fields are already resolved to strings for that locale, using the [fallback order](../01-architecture/architecture.md#content-fallback-strategy).
 - Fields that fell back to another locale are listed in a `fallbackFields` array on the containing object, so the UI can label them (FR-I18N-03). For core demo content this array is always empty.
 - Learner identity: the signed `httpOnly` session cookie set by `POST /session` ([ADR-0006](../01-architecture/adr/0006-demo-profiles-and-guest-mode.md)). Clients never send a learner id.
 
@@ -60,6 +60,35 @@ Principles:
 - State-changing endpoints accept only `application/json` bodies. Together with `SameSite=Lax` and strict CORS, this is the MVP's CSRF protection (adequate for a local demo, and to be revisited with real accounts).
 - State-changing requests are `POST`/`PUT`/`DELETE` only. A `GET` never changes data.
 - Scoring happens only on the server from stored correct answers. Client-sent correctness is ignored.
+
+## Implemented: read-only Content API (G3.2)
+
+The contract is the Zod schemas in [`packages/shared/src/content-api.ts`](../../packages/shared/src/content-api.ts). All responses are localized per `Accept-Language` (default `ru`), set `Content-Language` and `Vary: Accept-Language`, and include `fallbackFields` on every object. Unpublished subjects, and everything under them, answer `404`. A malformed slug answers `400 VALIDATION_FAILED`.
+
+| Method & path | Response | Not found |
+| --- | --- | --- |
+| `GET /subjects` | `SubjectListResponse`: `{ items: SubjectSummary[] }` | — |
+| `GET /subjects/:subjectSlug` | `SubjectDetail`: subject + ordered topics with prerequisite slugs | `SUBJECT_NOT_FOUND` |
+| `GET /topics/:topicSlug` | `TopicDetail`: subject ref, prerequisites, lessons, resources, quiz summary or `null` | `TOPIC_NOT_FOUND` |
+| `GET /lessons/:lessonSlug` | `LessonDetail`: Markdown body + topic ref | `LESSON_NOT_FOUND` |
+| `GET /quizzes/:quizSlug` | `PublicQuiz`: questions and options with key and text only. **No correctness, no explanations** (FR-QUIZ-06) | `QUIZ_NOT_FOUND` |
+
+## Implemented: learning-loop API (G4)
+
+The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../../packages/shared/src/learning-api.ts). The learner always comes from the signed `nv_session` cookie (httpOnly, `SameSite=Lax`, 30 days, [ADR-0006](../01-architecture/adr/0006-demo-profiles-and-guest-mode.md)), never from the request body or URL (FR-AUTH-02). Routes marked 🔒 answer `401 UNAUTHENTICATED` without a valid session. Localized responses follow the same `Accept-Language` rules as the Content API.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /demo-profiles` | `{ items: DemoProfile[] }` | — |
+| `GET /session` | `SessionState`: `{ learner: Learner \| null }`. Always `200`, so pages without a learner log no errors | — |
+| `POST /session` | Body `{ "profile": "<demoSlug>" }` or `{ "guest": true }`. Sets the cookie, returns `Learner` | `404 DEMO_PROFILE_NOT_FOUND`, `400 VALIDATION_FAILED` |
+| `DELETE /session` | `204`, clears the cookie | — |
+| `GET /me` 🔒 | `Learner` | `401` |
+| `POST /quizzes/:quizSlug/attempts` 🔒 | `201 AttemptResult`: score, per-question correctness and explanations, per-topic breakdown with updated mastery, up to 3 recommendations. Scored on the server in one transaction | `404 QUIZ_NOT_FOUND`, `422 QUIZ_INCOMPLETE` / `UNKNOWN_QUESTION` / `DUPLICATE_ANSWER` / `OPTION_NOT_IN_QUESTION` |
+| `GET /me/progress?subject=` 🔒 | `Progress`: mastery and lesson completion per topic, attempt history, current recommendations | `404 SUBJECT_NOT_FOUND` |
+| `PUT /me/lessons/:lessonSlug/completion` 🔒 | `LessonCompletion`, idempotent | `404 LESSON_NOT_FOUND` |
+
+Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`), `GET /me/attempts/:attemptId`, and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
 
 ## Draft resource outline (not a contract)
 

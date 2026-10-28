@@ -7,7 +7,7 @@ const intlProxy = createMiddleware(routing);
 
 /**
  * Next.js 16 Proxy (formerly middleware).
- * "/" goes to the learner's saved language if there is one, otherwise to /tg.
+ * "/" goes to the learner's saved language if there is one, otherwise to the default locale (/ru).
  * Browser language is deliberately ignored (D-06).
  */
 export default function proxy(request: NextRequest) {
@@ -21,6 +21,6 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Skip Next.js internals, static brand assets, and any file with an extension.
-  matcher: ['/((?!_next|_vercel|brand|.*\\..*).*)'],
+  // Skip the /api/v1 rewrite to the API, Next.js internals, static brand assets, and any file with an extension.
+  matcher: ['/((?!api|_next|_vercel|brand|.*\\..*).*)'],
 };

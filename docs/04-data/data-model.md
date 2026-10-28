@@ -110,6 +110,20 @@ What this means:
 - **Changing what the question asks, which option is correct, or what an option means is not.** Give the changed question a **new `key`** instead, so it becomes a new question. Removing the old one is a content deletion and is blocked while it has answers.
 - The same applies to answer-option `key`s: never reuse a key for a different answer.
 
+## Seed loader
+
+`pnpm db:seed` (G3.1) writes the TypeScript seed content to the database. `pnpm db:seed:dry-run` prints the plan without writing. Code: `apps/api/src/seed/load/`.
+
+1. **Validate first.** It runs the same checks as `pnpm seed:check`. Invalid content stops the run before any database query.
+2. **Plan inside one transaction.** It reads the current content tables and compares them with the files by slug (subject, topic, lesson, quiz) or key (resource, question, option). It plans only creates and updates. Unchanged records produce no write, so re-running is a no-op.
+3. **Block instead of guessing.** The run writes nothing if any of these hold:
+   - Database content is missing from the files. **The loader has no delete operation**: restore the content in the files, or remove it deliberately outside the loader (subject to the [deletion policy](#deletion-policy)).
+   - A record would move to a different parent (for example, a lesson slug reused under another topic).
+   - A question with recorded answers would change its type, its options, or its correct option ([published questions keep their meaning](#published-questions-keep-their-meaning)). Text edits on answered questions are applied with a warning.
+4. **Apply in dependency order, in the same transaction:** subjects → topics → prerequisites → lessons → resources → quizzes → questions → options. Any failure rolls back everything.
+
+The loader writes content only. **Demo reset** is a separate command, `pnpm db:seed:demo` (run after `pnpm db:seed`; code: `apps/api/src/seed/demo/`). In one transaction it removes guest learners (their history cascades with the user) and rebuilds each scripted demo learner's lesson progress and attempts. The attempts are replayed through `recordAttempt()`, the same scoring and mastery code as real submissions ([ADR-0006](../01-architecture/adr/0006-demo-profiles-and-guest-mode.md), D-14). Content is never touched.
+
 ## Integrity rules (enforced by the seed check, and DB constraints where possible)
 
 - Slugs are unique per entity type (subject, topic, lesson, quiz). Keys are unique within their parent (question within quiz, option within question, resource within topic).

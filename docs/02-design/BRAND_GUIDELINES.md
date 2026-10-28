@@ -72,7 +72,17 @@ Supporting shades (needed for accessible text and the dark theme):
 | Violet 700 | `#6D28D9` | Hover/pressed state for Violet on light |
 | Teal 700 | `#0F766E` | Teal-coloured **text** on light backgrounds (5.2:1). Brand Teal is only 1.6:1 on white |
 
-**Symbol gradient** (used only inside the logo, and sparingly for hero accents): `#6FB0FF → #6D5CF6 → #C3B4FF` at 135°. Accent gradient: `#00E5C2 → #22C3F0`.
+**Symbol gradient** (used only inside the logo, and sparingly for hero accents): `#6FB0FF → #6D5CF6 → #C3B4FF` at 135°. Accent gradient: `#00E5C2 → #22C3F0`. Three of these stops are also named tokens because the knowledge core uses them on their own: `--nv-symbol-violet` (#6D5CF6), `--nv-symbol-lavender` (#C3B4FF), `--nv-accent-cyan` (#22C3F0).
+
+**Brand space** (added 2026-10-26, values taken unchanged from the homepage): fixed colours for the always-navy homepage hero and knowledge core. They don't change with the theme.
+
+| Token | Hex | Use |
+| --- | --- | --- |
+| `--nv-core-glow` | `#2F5BE6` | Blue in the knowledge core's outer halo |
+| `--nv-core-depth` | `#2F3FB0` | Shaded edge of the core sphere |
+| `--nv-space-surface` | `#121A2B` | Node label chips on navy |
+| `--nv-space-text-lead` | `#C9D2FF` | Hero lead text on navy (12.6:1) |
+| `--nv-space-text-subtle` | `#A3AEC2` | Tagline and meta text on navy (8.4:1) |
 
 ### Contrast rules (WCAG 2.x, measured)
 

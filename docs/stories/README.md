@@ -1,0 +1,59 @@
+# Engineering stories
+
+A story is a short, dated record of a significant change: why it happened, what was decided, what was actually verified, and what is still open. Stories are the project's change log for people and agents. Decisions themselves still go in [decisions.md](../01-architecture/decisions.md) (and an [ADR](../01-architecture/adr/) when the trade-off needs explaining); a story links to them.
+
+## When to write one
+
+Write a story when a change does at least one of these:
+
+- completes or advances a gate or a G4 sub-milestone ([roadmap](../05-planning/roadmap.md));
+- changes behaviour, an API contract, the data model, seed content in bulk, or the build/verification tooling;
+- adds or upgrades a dependency, or proposes/records a decision;
+- fixes a regression that reached a demo-path page.
+
+Don't write one for typos, single translation fixes, formatting, or small refactors. Group related small changes into the next story of the same area ("Content fixes after review" with a list), or into the story of the feature they belong to.
+
+Stories are written **when the work happens**, never backfilled with invented history. Work done before 2026-10-26 is recorded in [decisions.md](../01-architecture/decisions.md), the roadmap, and git history.
+
+## File name
+
+`docs/stories/YYYY-MM-DD-short-description.md`, using the real date the work was done (local date). Kebab-case description, 3–6 words. Two stories on the same day get different descriptions, never a counter. Update an existing story when the same piece of work continues on a later day (add a dated "Update" section) rather than creating a near-duplicate.
+
+## Template
+
+```markdown
+# YYYY-MM-DD: Title
+
+Status: planned | in progress | implemented | verified   (pick one; say what is not verified)
+Gate: G4-x   Requirements: FR-…   Decisions: D-…
+
+## Context
+Why this change, what problem or requirement it addresses.
+
+## Decisions
+What was decided, alternatives considered, links to decisions.md / ADRs.
+
+## Changes
+Files, components, or systems affected. Keep it to what a reviewer needs.
+
+## Verification
+Commands actually run and their real results (pass/fail/not run). Browser checks with viewport, locale, theme.
+
+## Implications
+Security, performance, accessibility, localization, architecture, design: only the ones that apply.
+
+## Known limitations and follow-ups
+Open items with a concrete next step and owner if known. Unresolved questions.
+```
+
+Keep planned, implemented, and verified apart. "Implemented" means the code exists; "verified" means named checks passed. A future feature is never described as done.
+
+The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skills/new-story/SKILL.md)) creates and updates stories from the real diff and real check output.
+
+## Index
+
+| Date | Story | Status |
+| --- | --- | --- |
+| 2026-10-26 | [Harness engineering foundation](2026-10-26-harness-engineering-foundation.md) | verified (docs and tooling) |
+| 2026-10-26 | [G4-B preparation: D-22, Motion, homepage brief](2026-10-26-g4b-motion-and-homepage-brief.md) | implemented and verified; redesign planned |
+| 2026-10-26 | [Russian becomes the default interface language](2026-10-26-default-locale-russian.md) | implemented and verified |

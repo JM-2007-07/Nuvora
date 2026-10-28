@@ -6,7 +6,7 @@ export const LOCALE_COOKIE = 'NEXT_LOCALE';
 
 /**
  * Locale routing (D-05, D-06): every URL starts with /tg, /ru or /en.
- * Browser-language and cookie detection are off, so the default is always Tajik.
+ * Browser-language and cookie detection are off, so the default is always Russian (DEFAULT_LOCALE).
  * The saved-choice redirect for "/" is handled explicitly in src/proxy.ts.
  */
 export const routing = defineRouting({

@@ -1,5 +1,12 @@
 import type { TopicContentInput } from '@nuvora/shared';
 import { type ContentSet, content } from './content/index.js';
+import { variables } from './content/informatics/01-variables.js';
+
+/**
+ * Stable test base: the subject plus the template topic only. Tests and fixtures
+ * build on it so that adding real topics never changes what they exercise.
+ */
+export const TEMPLATE_CONTENT: ContentSet = { subjects: content.subjects, topics: [variables] };
 
 /**
  * Deliberately broken content sets that prove `seed:check` catches each rule.
@@ -7,7 +14,7 @@ import { type ContentSet, content } from './content/index.js';
  * Run: pnpm seed:check --fixture <name>
  */
 function withVariables(mutate: (topic: TopicContentInput, set: ContentSet) => void): ContentSet {
-  const set = structuredClone(content);
+  const set = structuredClone(TEMPLATE_CONTENT);
   const topic = set.topics.find((t) => t.slug === 'variables');
   if (!topic) throw new Error('Fixture base topic "variables" not found');
   mutate(topic, set);

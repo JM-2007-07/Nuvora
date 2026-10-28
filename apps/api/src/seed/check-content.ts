@@ -26,6 +26,8 @@ export interface ContentCheckResult {
   errors: number;
   warnings: number;
   stats: { subjects: number; topics: number; lessons: number; questions: number; resources: number };
+  /** The Zod-parsed content (defaults applied). Only safe to load when `errors === 0`. */
+  parsed: { subjects: SubjectContent[]; topics: TopicContent[] };
 }
 
 function formatPath(path: PropertyKey[]): string {
@@ -155,6 +157,7 @@ export function checkContent(content: ContentSet): ContentCheckResult {
     issues,
     errors,
     warnings: issues.length - errors,
+    parsed: { subjects, topics },
     stats: {
       subjects: subjects.length,
       topics: topics.length,

@@ -34,7 +34,7 @@ Feature modules, each with a controller (HTTP), a service (logic), and Prisma ac
 | --- | --- | --- |
 | `catalog` | Subjects, topics, prerequisites, knowledge-map data | FR-CAT, FR-MAP |
 | `lessons` | Lesson content, mark complete | FR-LES |
-| `resources` | Books and learning resources per topic | FR-RES |
+| `resources` | Books and learning resources per topic. Currently served inside `GET /topics/:topicSlug` by `catalog`; a separate module only if resources get endpoints of their own | FR-RES |
 | `quizzes` | Quiz delivery (without answers), attempt submission, scoring | FR-QUIZ |
 | `progress` | Topic mastery, lesson progress, attempt history | FR-PROG, FR-JOUR |
 | `recommendations` | Weak-topic rules and review suggestions ([ADR-0004](adr/0004-rule-based-mastery-and-recommendations.md)) | FR-ADAPT |
@@ -48,19 +48,21 @@ Pure logic (scoring, mastery classification, recommendation ordering) is written
 ```text
 src/
   app/[locale]/                 Routes (one segment per locale: tg | ru | en)
-    page.tsx                    Home → subjects
-    subjects/[subjectSlug]/     Subject, topic list, knowledge map (map/)
-    topics/[topicSlug]/         Topic, lesson, resources
-    quizzes/[quizId]/           Take quiz; results/[attemptId]
-    progress/                   Learning Journey
-  features/<feature>/           Components, hooks, and API calls per feature (catalog, lesson, quiz, progress, map)
+    page.tsx                    Homepage (hero + knowledge core, VISUAL_EXPERIENCE.md)
+    subjects/[subjectSlug]/     Subject with ordered topics and status (knowledge map: planned)
+    topics/[topicSlug]/         Topic: lessons, resources, quiz
+    lessons/[lessonSlug]/       Lesson, mark complete
+    quizzes/[quizSlug]/         Take quiz; results shown on the same page after submission
+    progress/                   Mastery, attempts, recommendations
+    status/                     API and database status (walking skeleton)
+  features/<feature>/           Components and hooks per feature (home, learning)
   components/ui/                shadcn/ui components (generated, then owned)
   components/brand/             Logo component (switches light/dark asset)
   lib/                          API client, query client, i18n config, utils
 messages/{tg,ru,en}.json        UI strings
 ```
 
-Route segments use slugs, which are stable and readable. The exact URL list is finalized at G1.
+Route segments use slugs, which are stable and readable (list checked 2026-10-26).
 
 ### Data fetching
 
@@ -100,10 +102,10 @@ sequenceDiagram
 
 ## Localization
 
-- **Locales:** `tg` (Tajik, **default**), `ru` (Russian), `en` (English) ([D-06](decisions.md), Approved). The list and default are defined once in `packages/shared`.
+- **Locales:** `ru` (Russian, **default** since 2026-10-26), `tg` (Tajik), `en` (English) ([D-06](decisions.md), Approved). The list, its order (used by the language switcher), and the default are defined once in `packages/shared/src/locales.ts` (`LOCALES`, `DEFAULT_LOCALE`).
 - **UI strings:** message files per locale in the web app, loaded with **next-intl** ([D-05](decisions.md)). A key-parity test fails when any key is missing in any locale, so **UI strings never fall back**.
-- **Routing:** the locale is the first URL segment (`/tg/...`). On a first visit, `/` redirects to the saved locale cookie if there is one, otherwise to `/tg`. Browser-language detection is **off**, so the demo laptop's system language can't change the default.
-- **Language switcher:** in the header on every page. It shows each language by its native name (Тоҷикӣ, Русский, English) with a `lang` attribute, keeps the current page, saves a cookie, and updates `<html lang>`.
+- **Routing:** the locale is the first URL segment (`/tg/...`). On a first visit, `/` redirects to the saved locale cookie if there is one, otherwise to `/ru`. Browser-language detection is **off**, so the demo laptop's system language can't change the default.
+- **Language switcher:** in the header on every page. It shows each language by its native name (Русский, Тоҷикӣ, English) with a `lang` attribute, keeps the current page, saves a cookie, and updates `<html lang>`.
 - **Content:** stored per locale in the database ([ADR-0003](adr/0003-localized-content-as-json.md)). The web app sends the active locale in `Accept-Language`, and the API defaults to `tg` when the header is missing.
 
 ### Content fallback strategy

@@ -6,17 +6,28 @@ Repository conventions are in AGENTS.md and apply in full:
 
 ## Claude Code specifics
 
-- **Read before writing.** Start each task by reading the authoritative doc for the area (map in `docs/README.md`). Treat it as the spec. If code and docs disagree, stop and ask which is right.
-- **Respect the current phase and gates** in AGENTS.md. In Phase 0, only docs and brand assets change. Never move past a gate without explicit approval in the chat.
-- **Plan first** for multi-file or multi-layer work. Keep the plan as a short checklist and ask before large or hard-to-reverse steps (schema changes, new dependencies, deleting files).
-- **Never** commit, push, open PRs, install packages, or touch `.env*` files unless the user asks for that specific action in the current session.
-- **Proposed ≠ approved.** Build on Proposed decisions only where they are cheap to reverse. Flag them in your summary.
-- **Verify, then report.** Run the AGENTS.md verification scripts once they exist. Report what was run, what passed, and what was not verified.
-- **Brand assets** in `assets/brand/` are the source of truth for the logo. Don't redraw or "improve" them unless asked. Follow `docs/02-design/BRAND_GUIDELINES.md`.
+- **Read before writing.** Start each task by reading the authoritative doc for the area (map in `docs/README.md`), not the whole repository. Treat it as the spec. If code and docs disagree, stop and ask which is right.
+- **Stay inside the current gate** (AGENTS.md, roadmap G4-A … G4-E). Never move past a gate without explicit approval in the chat.
+- **Size the task** per `docs/engineering/HARNESS.md`: small tasks just get done and verified; medium tasks get a short checklist; large or hard-to-reverse work gets a plan approved in the chat first.
+- **Never** commit, push, change branches, open PRs, install packages, write to the database, or touch `.env*` files unless the user asks for that specific action in the current session. Project settings (`.claude/settings.json`) back this up with deny/ask rules.
+- **Proposed ≠ approved.** Build on Proposed decisions only where they are cheap to reverse. D-22's 3D libraries are conditional, not approved. Flag them in your summary.
+- **Verify, then report.** Use the `verify` skill (`docs/engineering/VERIFICATION.md`). Report what was run, what passed, and what was not verified.
+- **Visual work** follows `docs/engineering/VISUAL_EXPERIENCE.md`: the luminous knowledge core, never a generic card grid. Brand assets in `assets/brand/` are the source of truth; don't redraw them unless asked (`docs/02-design/BRAND_GUIDELINES.md`).
+- **Record significant changes** as dated stories (`new-story` skill, `docs/stories/README.md`).
 
-## Agents and skills
+## Skills, agents, and reviews
 
-No custom subagents or skills are defined yet. Add one only when a repeated task clearly benefits. Likely candidates after G1:
+Project skills (`.claude/skills/`), invoked as `/<name>`:
 
-- a `verify` skill that runs lint, typecheck, test, and build and summarises the failures;
-- an `add-lesson-content` skill with the checklist for adding localized lessons, quiz questions, and resources to the seed files.
+- `verify`: choose and run the checks a change needs, report honestly.
+- `add-lesson-content`: add or change localized seed content safely.
+- `visual-qa`: check running pages across viewports, locales, themes, motion, keyboard.
+- `design-review`: compare a UI proposal or implementation with the visual contract.
+- `new-story`: create or update a dated story from the real diff and real check output.
+- `ui-ux-pro-max` (third-party, v2.15.0, explicit `/ui-ux-pro-max` only): reference data for UX patterns, accessibility, and stack notes. Nuvora's docs and D-22 win; never its `--design-system`/`--persist` (no second design system or `MASTER.md`), no GSAP. A CLI update regenerates its `SKILL.md` and drops our Nuvora block: re-add it.
+
+Project subagents (`.claude/agents/`): `architect` (opus, read-only planning), `implementer` (sonnet, bounded units), `quality-reviewer` (sonnet, read-only review), `visual-reviewer` (sonnet, read-only UI review). Spawn them only when the user asks or approves a plan that names them; each one costs extra usage. The main agent coordinates, integrates, runs final verification, and writes the report. Rules: `docs/engineering/HARNESS.md#delegation-and-the-agent-team`.
+
+Reviews: built-in `/code-review` and `/security-review` once per gate (or for large changes), not per edit.
+
+Nested instructions: `apps/web/CLAUDE.md` imports the Next.js 16 rules from `apps/web/AGENTS.md`.

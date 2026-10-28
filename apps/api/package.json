@@ -24,6 +24,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "node scripts/prisma-with-env.mjs migrate deploy",
     "db:status": "node scripts/prisma-with-env.mjs migrate status",
+    "db:seed": "nest build && node dist/seed/load/run.js",
+    "db:seed:dry-run": "nest build && node dist/seed/load/run.js --dry-run",
+    "db:seed:demo": "nest build && node dist/seed/demo/run.js",
     "seed:check": "nest build && node dist/seed/check.js"
   },
   "dependencies": {

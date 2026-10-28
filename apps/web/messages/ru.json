@@ -12,7 +12,112 @@
     "theme": "Оформление",
     "themeLight": "Светлая",
     "themeDark": "Тёмная",
-    "themeSystem": "Как в системе"
+    "themeSystem": "Как в системе",
+    "skip": "Перейти к содержанию",
+    "subjects": "Учиться",
+    "progress": "Мой прогресс"
+  },
+  "Learner": {
+    "menu": "Ученик",
+    "demo": "Демо",
+    "guest": "Гость",
+    "notChosen": "Выбрать ученика",
+    "chooseDemo": "Демо-ученики",
+    "continueGuest": "Продолжить как гость",
+    "leave": "Выйти"
+  },
+  "Home": {
+    "eyebrow": "Введение в информатику · Тоҷикӣ · Русский · English",
+    "headline": "Все темы связаны. Узнайте как.",
+    "lead": "Изучите урок, проверьте себя — и Nuvora покажет, какую тему укрепить дальше, включая пропущенную основу.",
+    "ctaStart": "Начать обучение",
+    "ctaProgress": "Мой прогресс",
+    "coreLabel": "Ядро знаний: {count} связанных тем по предмету «{subject}»",
+    "loopTitle": "Цикл обучения",
+    "loopLead": "Один цикл — и так, пока не засветится каждая тема.",
+    "step1": "Выберите тему",
+    "step2": "Изучите урок",
+    "step3": "Пройдите тест",
+    "step4": "Увидьте слабые темы",
+    "step5": "Повторите рекомендованное",
+    "step6": "Следите за ростом",
+    "mapTitle": "{subject}: шесть связанных тем",
+    "mapLead": "Каждая стрелка — это необходимая основа. Начните слева; Nuvora подскажет, когда вернуться назад."
+  },
+  "Subject": {
+    "mapTitle": "Карта знаний",
+    "listTitle": "Темы по порядку",
+    "requires": "Нужно знать: {topics}",
+    "startHere": "Начните отсюда",
+    "topicCount": "{count, plural, one {# тема} few {# темы} many {# тем} other {# темы}}",
+    "legend": "Статус"
+  },
+  "Mastery": {
+    "NOT_STARTED": "Не начато",
+    "WEAK": "Слабо",
+    "DEVELOPING": "В процессе",
+    "MASTERED": "Освоено"
+  },
+  "Topic": {
+    "lesson": "Урок",
+    "resources": "Рекомендуемые книги и материалы",
+    "quiz": "Проверьте себя",
+    "takeQuiz": "Пройти тест",
+    "questions": "{count, plural, one {# вопрос} few {# вопроса} many {# вопросов} other {# вопроса}}",
+    "minutes": "{count} мин чтения",
+    "prerequisites": "Перед этой темой",
+    "availableIn": "Доступно на: {languages}",
+    "open": "Открыть",
+    "noQuiz": "Для этой темы пока нет теста.",
+    "subject": "Предмет"
+  },
+  "Lesson": {
+    "markComplete": "Отметить как пройденный",
+    "completed": "Пройдено",
+    "takeQuiz": "Пройти тест",
+    "backToTopic": "Назад к теме",
+    "next": "Когда будете готовы",
+    "notTranslated": "Ещё не переведено"
+  },
+  "Quiz": {
+    "progress": "Вопрос {current} из {total}",
+    "previous": "Назад",
+    "next": "Далее",
+    "submit": "Отправить ответы",
+    "submitting": "Проверяем…",
+    "chooseAnswer": "Выберите один ответ",
+    "resultsTitle": "Ваши результаты",
+    "score": "Верно: {correct} из {total}",
+    "percent": "{value}%",
+    "yourAnswer": "Ваш ответ",
+    "correctAnswer": "Правильный ответ",
+    "correct": "Верно",
+    "incorrect": "Неверно",
+    "explanation": "Почему",
+    "topics": "По темам",
+    "recommendations": "Что повторить дальше",
+    "noRecommendations": "Сейчас повторять нечего. Отлично!",
+    "retake": "Пройти тест ещё раз",
+    "viewProgress": "Мой прогресс",
+    "error": "Что-то пошло не так. Попробуйте ещё раз."
+  },
+  "Reason": {
+    "PREREQUISITE": "Основа для темы «{topic}»",
+    "WEAK_TOPIC": "Ваш результат по теме «{topic}»: {score}%",
+    "NEXT_TOPIC": "Следующая тема для изучения",
+    "lesson": "Урок",
+    "book": "Книга",
+    "material": "Материал"
+  },
+  "Progress": {
+    "title": "Мой путь обучения",
+    "topics": "Темы",
+    "attempts": "Попытки тестов",
+    "noAttempts": "Пока нет попыток.",
+    "recommendations": "Рекомендуем дальше",
+    "lessonDone": "Урок пройден",
+    "noLearner": "Выберите демо-ученика или продолжите как гость, чтобы видеть прогресс.",
+    "learner": "Ученик"
   },
   "Status": {
     "heading": "Состояние системы",
@@ -23,5 +128,9 @@
     "down": "Недоступно",
     "version": "PostgreSQL {version}",
     "apiUnreachable": "API недоступен."
+  },
+  "Errors": {
+    "notFound": "Такой страницы нет.",
+    "backHome": "Вернуться в начало"
   }
 }

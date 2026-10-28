@@ -1,6 +1,6 @@
 # Quality standards
 
-Status: **Approved** (G0 baseline, owner, 2026-10-25). This is the authoritative document for testing, accessibility, performance, security, and quality gates. Workflow commands are in [AGENTS.md](../../AGENTS.md).
+Status: **Approved** (G0 baseline, owner, 2026-10-25). This is the authoritative document for testing, accessibility, performance, security, and quality gates. Workflow commands are in [AGENTS.md](../../AGENTS.md). Which checks a given change needs, and how to report them, is in [VERIFICATION.md](../engineering/VERIFICATION.md).
 
 ## Test strategy
 
@@ -27,7 +27,7 @@ Target: **WCAG 2.2 level AA** for everything in the demo path.
 - **Language:** `<html lang>` matches the active locale. Content blocks that fell back to another language get their own `lang` attribute.
 - **Motion:** honour `prefers-reduced-motion` (Motion's `useReducedMotion`). Nothing flashes, and no animation is required to understand content.
 - **Images:** logos and meaningful images have alt text. Decorative ones have `alt=""`.
-- Check: keyboard-only pass + browser accessibility audit (Lighthouse/axe in DevTools) on each MVP page before G3.
+- Check: keyboard-only pass + browser accessibility audit (Lighthouse/axe in DevTools) on each MVP page before the feature freeze.
 
 ## Performance
 
@@ -51,7 +51,7 @@ The demo runs on a laptop, but learners use phones, so the targets are modest an
 - **Content rendering:** Markdown is rendered without raw HTML (D-12). External links use `rel="noopener noreferrer"`.
 - **Database:** only through Prisma (parameterized). No string-built SQL.
 - **Errors:** no stack traces or internal messages in responses ([api-conventions.md](../03-api/api-conventions.md#errors)).
-- **Dependencies:** install only from the official npm registry. Review new packages (maintenance, downloads, licence) before adding them. Run `pnpm audit` (or `npm audit`) before G3.
+- **Dependencies:** install only from the official npm registry. Review new packages (maintenance, downloads, licence) before adding them. Run `pnpm audit` (or `npm audit`) before the feature freeze.
 - **Privacy:** collect only what the feature needs. Demo profiles contain no real personal data.
 
 ## Quality gates

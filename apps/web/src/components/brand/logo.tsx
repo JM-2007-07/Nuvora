@@ -9,7 +9,7 @@ export function Logo({ width = 140, priority = false }: { width?: number; priori
   const height = Math.round((width * 109) / 364);
   return (
     <>
-      <Image src="/brand/logo-full.svg" alt="Nuvora" width={width} height={height} className="dark:hidden" priority={priority} />
+      <Image src="/brand/logo-full.svg" alt="Nuvora" width={width} height={height} className="dark:hidden" priority={priority} loading={priority ? undefined : 'eager'} />
       <Image
         src="/brand/logo-full-dark.svg"
         alt="Nuvora"
@@ -17,6 +17,7 @@ export function Logo({ width = 140, priority = false }: { width?: number; priori
         height={height}
         className="hidden dark:block"
         priority={priority}
+        loading={priority ? undefined : 'eager'}
       />
     </>
   );

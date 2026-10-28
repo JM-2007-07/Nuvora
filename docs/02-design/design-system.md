@@ -2,7 +2,7 @@
 
 Status: **Approved** (G0 baseline, owner, 2026-10-25). This document is authoritative for UI-level design rules: semantic theme tokens, UI typography, layout, components, motion, and feature-specific visuals. Brand-level rules (logo, brand colours, brand type) are in [BRAND_GUIDELINES.md](BRAND_GUIDELINES.md). Don't repeat them here.
 
-No UI is implemented in Phase 0. This document tells the scaffold (G1) what to set up.
+The homepage and other brand surfaces follow the visual contract in [VISUAL_EXPERIENCE.md](../engineering/VISUAL_EXPERIENCE.md) (Proposed), which builds on these rules.
 
 ## Theme tokens
 
@@ -28,6 +28,7 @@ The semantic tokens are defined in [`assets/brand/tokens.css`](../../assets/bran
 Rules:
 
 - Components use Tailwind theme classes (`bg-background`, `text-primary`, …) or `--nv-*` tokens, **never raw hex values**.
+- **Brand space exception:** the homepage hero and knowledge core are deep navy in **both** themes, so they use fixed brand primitives (`--nv-navy`, `--nv-violet`, `--nv-teal`, the symbol stops, and the `--nv-core-*` / `--nv-space-*` tokens in [BRAND_GUIDELINES](BRAND_GUIDELINES.md#colour-palette)), never semantic tokens such as `--nv-bg` or `--nv-surface`, which turn light in the light theme. In Tailwind write them as `bg-(--nv-navy)`, `text-(--nv-space-text-lead)`, `border-(--nv-symbol-violet)/60`. In SVG, set colours with the `style` property (`style={{ stopColor: 'var(--nv-teal)' }}`); `var()` in presentation attributes such as `stopColor="…"` isn't reliable.
 - A new colour need means a new semantic token here, checked for contrast in both themes.
 
 ### Status colours
@@ -65,7 +66,7 @@ Generate only what the MVP pages use: `button`, `card`, `badge`, `progress`, `ra
 
 ## Motion
 
-Uses Motion for React (D-01). Motion should explain what changed, never decorate.
+Uses Motion for React (D-01; not installed yet, checked 2026-10-26). In the learning UI, motion should explain what changed, never decorate. The homepage hero and knowledge visualization may use atmospheric motion as described in [VISUAL_EXPERIENCE.md](../engineering/VISUAL_EXPERIENCE.md#motion-and-3d-stack-evaluation), with the same reduced-motion rule.
 
 - Allowed: quiz question transitions (slide/fade ≤ 200 ms), results reveal (score count-up, staggered breakdown ≤ 400 ms total), map node focus/hover, page-level fade (≤ 150 ms).
 - Easing: ease-out for entering, ease-in for leaving. No bounces or springs on content.

@@ -36,7 +36,9 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-11 gap-2 px-3" aria-label={t('language')} disabled={isPending}>
           <LanguagesIcon aria-hidden="true" />
-          <span lang={locale}>{LOCALE_NATIVE_NAMES[locale]}</span>
+          <span lang={locale} className="hidden sm:inline">
+            {LOCALE_NATIVE_NAMES[locale]}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

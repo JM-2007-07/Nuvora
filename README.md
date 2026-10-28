@@ -12,9 +12,9 @@ Nuvora is a multilingual educational platform (Tajik, Russian, English). It help
 
 ## Project status
 
-**G0 and G1 approved (2026-10-25). Next: Gate G2, the Prisma schema and seed content format.** The apps contain infrastructure only, with no product features yet (see [Approval gates](AGENTS.md#approval-gates)).
+**Gate G4 (user-facing MVP) in progress** (2026-10-26). G0, G1, and G3 are approved; G2's Tajik copy review is still open. The catalog, lesson, quiz, progress, and recommendation flow and a first homepage exist; their status per sub-milestone is in the [roadmap](docs/05-planning/roadmap.md#g4-user-facing-mvp). See [Approval gates](AGENTS.md#approval-gates).
 
-- Presentation date: **Saturday, October 31, 2026**, run locally on the team's laptop with a recorded backup video. The target is a presentation-ready MVP with one complete learning loop on **introductory Informatics** (six topics), in Tajik (default), Russian, and English. Learners use demo profiles or guest mode. See [MVP scope](docs/00-product/mvp-scope.md).
+- Presentation date: **Saturday, October 31, 2026**, run locally on the team's laptop with a recorded backup video. The target is a presentation-ready MVP with one complete learning loop on **introductory Informatics** (six topics), in Russian (default), Tajik, and English. Learners use demo profiles or guest mode. See [MVP scope](docs/00-product/mvp-scope.md).
 - Approved stack: Next.js, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, Motion, NestJS, PostgreSQL, Prisma, Zod. Interface font: Inter. See [decisions](docs/01-architecture/decisions.md).
 
 ## Repository layout
@@ -24,11 +24,13 @@ Nuvora is a multilingual educational platform (Tajik, Russian, English). It help
 ├── AGENTS.md            Development conventions (authoritative for workflow)
 ├── CLAUDE.md            Instructions for Claude Code
 ├── apps/
-│   ├── web/             Next.js 16 app (i18n, theme, brand shell)
+│   ├── web/             Next.js 16 app (pages, i18n, theme, brand)
 │   └── api/             NestJS 12 API + Prisma 7 (prisma/)
 ├── packages/shared/     Zod schemas, types, locales shared by web and api
 ├── assets/brand/        Logo SVGs and brand colour tokens (source of truth)
-├── docs/                Product, architecture, design, API, data, planning, quality
+├── docs/                Product, architecture, design, API, data, planning, quality,
+│                        engineering (workflow, verification, visual contract), stories
+├── .claude/             Claude Code skills, subagents, settings, launch config
 └── .github/             Pull request template
 ```
 
@@ -67,21 +69,33 @@ CREATE DATABASE nuvora_shadow OWNER nuvora;
 
 Then copy `apps/api/.env.example` to `apps/api/.env` and replace `CHANGE_ME` with that password. Never commit `.env`.
 
-### 3. Apply migrations and run
+### 3. Apply migrations, load content, and run
 
 ```bash
 pnpm db:migrate
 ```
 
 ```bash
+pnpm db:seed
+```
+
+`pnpm db:seed` is safe to re-run. It never deletes content, and `pnpm db:seed:dry-run` previews the changes ([seed loader](docs/04-data/data-model.md#seed-loader)).
+
+```bash
+pnpm db:seed:demo
+```
+
+`pnpm db:seed:demo` creates the demo learners with their scripted history and removes guest learners. Run it again before each demo to reset them.
+
+```bash
 pnpm dev
 ```
 
-The web app runs on http://localhost:3000 (it opens `/tg`) and the API on http://localhost:4000/api/v1 (`/health` shows the database status).
+The web app runs on http://localhost:3000 (it opens `/ru`) and the API on http://localhost:4000/api/v1 (`/health` shows the database status).
 
 ### Checks
 
-`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and `pnpm seed:check` must pass before a change is done. They need no database. The browser smoke test runs separately and needs Microsoft Edge: `pnpm --filter @nuvora/web test:e2e`. Tools differ per app: see [AGENTS.md](AGENTS.md#per-app-tooling).
+`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`, and `pnpm seed:check` need no database. Which of them a change needs, plus browser checks, is in [VERIFICATION.md](docs/engineering/VERIFICATION.md). The browser smoke test runs separately and needs Microsoft Edge: `pnpm --filter @nuvora/web test:e2e`. Tools differ per app: see [AGENTS.md](AGENTS.md#per-app-tooling).
 
 Documentation index: [docs/README.md](docs/README.md).
 
