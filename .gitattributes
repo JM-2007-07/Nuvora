@@ -1,0 +1,4 @@
+# Prisma checksums migration files byte for byte. Keep them LF on every OS so a
+# CRLF checkout (core.autocrlf=true on Windows) can never look like an edited migration.
+*.sql text eol=lf
+apps/api/prisma/migrations/migration_lock.toml text eol=lf

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="10 -1 100 109" color="#0B1220" fill="currentColor" role="img" aria-labelledby="nv-mono-title">
+  <title id="nv-mono-title">Nuvora</title>
+  <!-- Single colour. Defaults to Deep Navy. When inlined, set CSS color on this <svg> to recolour. -->
+  <path d="M12 38 Q12 34.15 14.2 37.33 L40 74.6 V96 Q40 106 30 106 H22 Q12 106 12 96 Z"/>
+  <path d="M80 37 A14 14 0 0 1 108 37 V99.8 L80 59.4 Z"/>
+  <path d="M30 28 H38 Q54 28 63.1 41.15 L97.76 91.2 Q108 106 90 106 H72 Q66 106 62.6 101.1 L22.24 42.8 Q12 28 30 28 Z"/>
+  <path d="M67 1 Q69 10 78 12 Q69 14 67 23 Q65 14 56 12 Q65 10 67 1 Z"/>
+</svg>

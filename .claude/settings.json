@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "skillOverrides": {
+    "ui-ux-pro-max": "user-invocable-only"
+  },
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Read(**/.env.test)",
+      "Edit(**/.env)",
+      "Edit(**/.env.local)",
+      "Edit(**/.env.*.local)",
+      "Edit(**/.env.development)",
+      "Edit(**/.env.production)",
+      "Edit(**/.env.test)",
+      "Bash(npx prisma migrate reset *)",
+      "Bash(pnpm exec prisma migrate reset *)",
+      "Bash(prisma migrate reset *)",
+      "Bash(npx prisma db push *)",
+      "Bash(pnpm exec prisma db push *)",
+      "Bash(prisma db push *)",
+      "Bash(dropdb *)"
+    ],
+    "ask": [
+      "Bash(pnpm db:migrate *)",
+      "Bash(pnpm db:seed)",
+      "Bash(pnpm db:seed:demo *)",
+      "Bash(pnpm --filter @nuvora/api run db:migrate *)",
+      "Bash(pnpm --filter @nuvora/api run db:seed)",
+      "Bash(pnpm --filter @nuvora/api run db:seed:demo *)",
+      "Bash(npx prisma *)",
+      "Bash(pnpm exec prisma *)",
+      "Bash(psql *)",
+      "Bash(pnpm add *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm update *)",
+      "Bash(pnpm approve-builds *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)"
+    ]
+  }
+}

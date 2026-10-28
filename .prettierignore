@@ -1,0 +1,12 @@
+pnpm-lock.yaml
+node_modules/
+dist/
+.next/
+coverage/
+apps/api/src/generated/
+apps/api/prisma/migrations/
+assets/brand/
+apps/web/public/brand/
+apps/web/src/app/icon.svg
+nuvora-logo-concept.png.png
+*.md

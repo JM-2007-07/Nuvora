@@ -1,0 +1,199 @@
+/*
+ * Faroz website tokens and shared classes.
+ * Values are taken unchanged from the Home artboard's theme table (faroz-handoff Main.dc.html, `tok()`),
+ * for the page-level effects that design/data/tokens.css does not cover. Components use these variables,
+ * never raw colours. Dark is the default, like tokens.css.
+ */
+:root,
+[data-theme='dark'] {
+  --bar-bg: rgba(10, 11, 20, 0.82);
+  --band: #0d0f1c;
+  --grid-dot: rgba(143, 149, 194, 0.1);
+  --hero-glow: radial-gradient(
+    closest-side,
+    rgba(61, 123, 255, 0.3),
+    rgba(124, 92, 255, 0.12) 50%,
+    rgba(10, 11, 20, 0) 75%
+  );
+  --ring-line: rgba(143, 149, 194, 0.28);
+  --core-bg: radial-gradient(circle at 40% 35%, #26306e, #111433 70%);
+  --core-glow:
+    0 0 80px -10px rgba(61, 123, 255, 0.8),
+    inset 0 0 0 1px rgba(141, 176, 255, 0.4);
+  --dot-glow: 0 0 14px rgba(46, 242, 181, 0.9);
+  --tile-shadow: 0 16px 30px -18px rgba(0, 0, 0, 0.8);
+  --photo-bg: #14162a;
+  --photo-stripe: rgba(143, 149, 194, 0.08);
+  --cta-glow: radial-gradient(
+    50% 80% at 50% 100%,
+    rgba(61, 123, 255, 0.3),
+    rgba(10, 11, 20, 0) 70%
+  );
+  --accent-word: #2ef2b5;
+  --xp-on: #3d7bff;
+}
+
+[data-theme='light'] {
+  --bar-bg: rgba(244, 245, 248, 0.86);
+  --band: #eceef4;
+  --grid-dot: rgba(90, 95, 122, 0.14);
+  --hero-glow: radial-gradient(
+    closest-side,
+    rgba(47, 91, 234, 0.1),
+    rgba(244, 245, 248, 0) 75%
+  );
+  --ring-line: rgba(90, 95, 122, 0.3);
+  --core-bg: #12142a;
+  --core-glow: 0 30px 60px -24px rgba(18, 20, 42, 0.5);
+  --dot-glow: none;
+  --tile-shadow: 0 14px 28px -20px rgba(18, 20, 42, 0.45);
+  --photo-bg: #e6e8f0;
+  --photo-stripe: rgba(90, 95, 122, 0.1);
+  --cta-glow: radial-gradient(
+    50% 80% at 50% 100%,
+    rgba(47, 91, 234, 0.1),
+    rgba(244, 245, 248, 0) 70%
+  );
+  --accent-word: #2f5bea;
+  --xp-on: #2ef2b5;
+}
+
+/* Same in both themes (the artboard uses them as fixed colours). */
+:root {
+  --xp-off: rgba(255, 255, 255, 0.14);
+  --xp-chip: #ffc83d;
+  --xp-chip-ink: #12142a;
+  --cover-spine: inset 6px 0 0 rgba(0, 0, 0, 0.25);
+  --cover-1: linear-gradient(160deg, #3d7bff, #14162a);
+  --cover-1-ink: #2ef2b5;
+  --cover-2: linear-gradient(160deg, #0b9e74, #0e1b2a);
+  --cover-2-ink: #ffc83d;
+  --cover-3: linear-gradient(160deg, #7c5cff, #1a1440);
+  --cover-3-ink: #ff8fe6;
+  --cover-4: linear-gradient(160deg, #1d3f7a, #0a0b14);
+  --cover-4-ink: #8db0ff;
+  --cover-5: linear-gradient(160deg, #d61f8f, #2a0e2a);
+  --cover-5-ink: #ffc83d;
+  --cover-6: linear-gradient(160deg, #2a2f55, #0a0b14);
+  --cover-6-ink: #2ef2b5;
+  --cover-title: #ffffff;
+}
+
+/* Always-visible focus ring (handoff §3): mint on dark, ink on light, both ≥ 3:1. */
+a:focus-visible,
+button:focus-visible,
+[role='tab']:focus-visible {
+  outline: 3px solid var(--sel);
+  outline-offset: 3px;
+}
+
+@layer components {
+  .fz-wrap {
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 32px;
+  }
+  @media (max-width: 640px) {
+    .fz-wrap {
+      padding-inline: 18px;
+    }
+  }
+
+  /* Buttons (handoff §3 / canvas .btn). */
+  .fz-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 22px;
+    border-radius: 14px;
+    font: 700 14px/1.2 var(--font-heading);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    text-align: center;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+  }
+  .fz-btn:active {
+    transform: scale(0.97);
+  }
+  .fz-btn-lg {
+    min-height: 56px;
+    padding: 0 26px;
+    font-size: 15px;
+  }
+  .fz-btn-primary {
+    background: var(--btn);
+    color: var(--btn-ink);
+    box-shadow: var(--glow);
+  }
+  .fz-btn-ghost {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--line2);
+  }
+
+  .fz-kicker {
+    font: 700 12px/1 var(--font-sans);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .fz-dots {
+    background-image: radial-gradient(var(--grid-dot) 1.2px, transparent 1.2px);
+    background-size: 26px 26px;
+  }
+  .fz-photo {
+    background-color: var(--photo-bg);
+    background-image: repeating-linear-gradient(
+      135deg,
+      var(--photo-stripe) 0 1px,
+      transparent 1px 14px
+    );
+  }
+}
+
+/* Orbit hero motion: transform/opacity only; paused on hover; off for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .fz-rot {
+    animation: fz-rot 46s linear infinite;
+  }
+  .fz-rot2 {
+    animation: fz-rot 22s linear infinite reverse;
+  }
+  .fz-tin {
+    animation: fz-rot 46s linear infinite reverse;
+  }
+  .fz-pulse {
+    animation: fz-pulse 3.2s ease-in-out infinite;
+  }
+  .fz-orb:hover .fz-rot,
+  .fz-orb:hover .fz-rot2,
+  .fz-orb:hover .fz-tin {
+    animation-play-state: paused;
+  }
+  .fz-lift {
+    transition: transform 0.2s ease;
+  }
+  .fz-lift:hover {
+    transform: translateY(-6px) rotate(-1deg);
+  }
+}
+@keyframes fz-rot {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes fz-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}

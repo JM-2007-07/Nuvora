@@ -1,0 +1,22 @@
+packages:
+  - apps/*
+  - packages/*
+
+# TypeScript is pinned to 6.0.3 across the workspace (decision recorded at G1):
+# typescript-eslint and ts-jest don't support TypeScript 7 yet.
+overrides:
+  typescript: 6.0.3
+
+# Dependency lifecycle (install/build) scripts. pnpm 12 blocks all of them by
+# default; only entries set to true may run. Every `true` entry needs the
+# owner's approval (AGENTS.md). Reviewed 2026-10-25 at Gate G1.
+allowBuilds:
+  # Approved: downloads Prisma's migration engine binary.
+  '@prisma/engines@7.10.1': true
+  # Denied: not needed (prebuilt binaries, version checks, or another OS).
+  '@parcel/watcher': false
+  '@swc/core': false
+  fsevents: false
+  prisma: false
+  sharp: false
+  unrs-resolver: false

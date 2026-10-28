@@ -1,0 +1,153 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* Faroz tokens: copied from assets/brand/faroz/tokens.css (the source of truth). Dark is the default. */
+@import "../styles/faroz-tokens.css";
+/* Website tokens and shared classes (buttons, wrap, orbit motion), from the Home artboard. */
+@import "../styles/faroz-site.css";
+/* Legacy Nuvora primitives, still read by the old homepage until it is rebuilt for Faroz. */
+@import "../styles/brand-tokens.css";
+
+/* The theme lives in data-theme on <html> (Faroz handoff §3); `dark:` utilities follow it. */
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+/*
+ * shadcn/ui variable names → Faroz tokens. No colour values live here.
+ * `--muted` is deliberately not redefined: in Faroz it is the secondary TEXT colour,
+ * so shadcn's muted background is mapped straight to --panel2 in @theme below.
+ */
+:root {
+  /* next/font exposes hashed font families as variables. */
+  --nv-font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --nv-font-brand: var(--font-unbounded), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--panel);
+  --card-foreground: var(--text);
+  --popover: var(--panel);
+  --popover-foreground: var(--text);
+  --primary: var(--btn);
+  --primary-foreground: var(--btn-ink);
+  --secondary: var(--panel2);
+  --secondary-foreground: var(--text);
+  --accent: var(--mint);
+  --accent-foreground: var(--bg);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line2);
+  --ring: var(--mint);
+  /* Faroz cards 20–26 px, buttons 14 px, inputs 12 px (handoff §3). */
+  --radius: 1.25rem;
+}
+
+@theme inline {
+  --font-sans: var(--nv-font-sans);
+  --font-heading: var(--nv-font-brand);
+  --font-brand: var(--nv-font-brand);
+  --font-mono: ui-monospace, Consolas, "Cascadia Mono", Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--panel2);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Status colours (Faroz): always paired with an icon and a text label. */
+  --color-status-weak: var(--mag-ink);
+  --color-status-developing: var(--gold-ink);
+  --color-status-mastered: var(--mint-ink);
+  --color-status-not-started: var(--faint);
+  --color-accent-text: var(--mint-ink);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.7);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.2);
+  --radius-2xl: calc(var(--radius) * 1.4);
+  --radius-3xl: calc(var(--radius) * 1.8);
+  --radius-4xl: calc(var(--radius) * 2.2);
+}
+
+/* Homepage motion (design-system.md#motion): transform/opacity only, calm, off for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .nv-orbit {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: nv-spin 90s linear infinite;
+  }
+  .nv-breathe {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: nv-breathe 7s ease-in-out infinite;
+  }
+  .nv-shimmer {
+    animation: nv-shimmer 4.5s ease-in-out infinite;
+  }
+  .nv-rise {
+    animation: nv-rise 0.6s ease-out both;
+  }
+}
+@keyframes nv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes nv-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+@keyframes nv-shimmer {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+@keyframes nv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Unbounded for headings and the wordmark (handoff §3). */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}

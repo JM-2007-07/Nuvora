@@ -1,0 +1,88 @@
+/*
+ * Nuvora brand tokens (v0.1, proposed).
+ * Authoritative documentation: docs/02-design/BRAND_GUIDELINES.md
+ *
+ * Layer 1, brand primitives: fixed colours, never themed.
+ * Layer 2, semantic theme tokens: what UI code should use. Light is the default;
+ * dark applies with the `.dark` class (the class strategy used by shadcn/ui).
+ * Contrast ratios (WCAG 2.x) are noted where a pairing is meant for text.
+ */
+
+:root {
+  /* ---- Brand primitives ---- */
+  --nv-navy: #0b1220;        /* Deep Navy: primary dark, wordmark on light */
+  --nv-violet: #7c3aed;      /* Violet: primary action colour */
+  --nv-teal: #00e5c2;        /* Teal: accent, spark, highlights (not text on light) */
+  --nv-gray: #94a3b8;        /* Cool Gray: neutral, secondary text on dark only */
+
+  /* Supporting shades for text-safe and dark-mode use */
+  --nv-violet-300: #a78bfa;  /* violet on dark backgrounds */
+  --nv-violet-700: #6d28d9;  /* violet hover/pressed on light */
+  --nv-teal-700: #0f766e;    /* teal as text on light backgrounds */
+
+  /* Gradient stops used on their own (the knowledge core, the hero arc) */
+  --nv-symbol-violet: #6d5cf6;   /* middle stop of the logo symbol gradient */
+  --nv-symbol-lavender: #c3b4ff; /* light stop of the logo symbol gradient */
+  --nv-accent-cyan: #22c3f0;     /* end stop of the accent gradient */
+
+  /* Symbol gradient (matches the logo SVGs) */
+  --nv-gradient-symbol: linear-gradient(135deg, #6fb0ff 0%, var(--nv-symbol-violet) 55%, var(--nv-symbol-lavender) 100%);
+  --nv-gradient-accent: linear-gradient(135deg, var(--nv-teal) 0%, var(--nv-accent-cyan) 100%);
+
+  /* Brand space: the always-navy homepage hero and knowledge core.
+     Fixed in both themes, so they are primitives, not semantic tokens. */
+  --nv-core-glow: #2f5be6;       /* blue in the core's outer halo */
+  --nv-core-depth: #2f3fb0;      /* shaded edge of the core sphere */
+  --nv-space-surface: #121a2b;   /* node label chips on navy */
+  --nv-space-text-lead: #c9d2ff; /* hero lead paragraph on navy: 12.6:1 on --nv-navy */
+  --nv-space-text-subtle: #a3aec2; /* tagline and meta text on navy: 8.4:1 on --nv-navy */
+
+  /* ---- Semantic tokens: light theme (default) ---- */
+  --nv-bg: #f6f8fc;              /* page background */
+  --nv-surface: #ffffff;         /* cards, panels */
+  --nv-surface-muted: #eef2f8;   /* subtle fills, table stripes */
+  --nv-border: #e2e8f0;
+  --nv-text: #0b1220;            /* 17.6:1 on --nv-bg */
+  --nv-text-muted: #475569;      /* 7.1:1 on --nv-bg */
+  --nv-primary: #7c3aed;         /* buttons, links: 5.4:1 on --nv-bg */
+  --nv-primary-hover: #6d28d9;
+  --nv-on-primary: #ffffff;      /* 5.7:1 on --nv-primary */
+  --nv-accent: #00e5c2;          /* fills only; pair with --nv-on-accent */
+  --nv-on-accent: #0b1220;       /* 11.6:1 on --nv-accent */
+  --nv-accent-text: #0f766e;     /* teal-coloured text: 5.2:1 on --nv-bg */
+  --nv-focus-ring: #7c3aed;
+
+  /* ---- Status tokens (UI-level, see docs/02-design/design-system.md#status-colours).
+     Always pair with an icon and a text label. All meet 4.5:1 on both theme backgrounds. ---- */
+  --nv-status-weak: #be123c;
+  --nv-status-developing: #b45309;
+  --nv-status-mastered: #0f766e;
+  --nv-status-not-started: #475569;
+
+  /* ---- Typography ---- */
+  /* Brand/Latin display face. Poppins has no Cyrillic, so UI text uses --nv-font-sans. */
+  --nv-font-brand: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  /* UI face: Inter (D-07), loaded with subsets latin, cyrillic, cyrillic-ext (Tajik letters). */
+  --nv-font-sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+.dark {
+  /* ---- Semantic tokens: dark theme ---- */
+  --nv-bg: #0b1220;
+  --nv-surface: #121a2b;
+  --nv-surface-muted: #1a2438;
+  --nv-border: #26324a;
+  --nv-text: #e6eaf2;            /* 15.5:1 on --nv-bg */
+  --nv-text-muted: #a3aec2;      /* 8.4:1 on --nv-bg */
+  --nv-primary: #a78bfa;         /* 6.9:1 on --nv-bg */
+  --nv-primary-hover: #c4b5fd;
+  --nv-on-primary: #0b1220;      /* 6.9:1 on --nv-primary */
+  --nv-accent: #00e5c2;
+  --nv-on-accent: #0b1220;
+  --nv-accent-text: #00e5c2;     /* 11.6:1 on --nv-bg */
+  --nv-focus-ring: #00e5c2;
+  --nv-status-weak: #fb7185;
+  --nv-status-developing: #fbbf24;
+  --nv-status-mastered: #00e5c2;
+  --nv-status-not-started: #a3aec2;
+}

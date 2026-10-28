@@ -1,0 +1,31 @@
+{
+  "name": "nuvora",
+  "private": true,
+  "description": "Nuvora: multilingual learning platform (monorepo root)",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "prep": "pnpm --filter @nuvora/shared run build && pnpm --filter @nuvora/api run db:generate",
+    "dev": "pnpm run prep && pnpm --parallel --filter @nuvora/api --filter @nuvora/web run dev",
+    "lint": "pnpm run prep && pnpm -r --if-present run lint",
+    "typecheck": "pnpm run prep && pnpm -r --if-present run typecheck",
+    "test": "pnpm run prep && pnpm -r --if-present run test",
+    "build": "pnpm run prep && pnpm -r --if-present run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:validate": "pnpm --filter @nuvora/api run db:validate",
+    "db:generate": "pnpm --filter @nuvora/api run db:generate",
+    "db:migrate": "pnpm --filter @nuvora/api run db:migrate",
+    "db:status": "pnpm --filter @nuvora/api run db:status",
+    "db:seed": "pnpm run prep && pnpm --filter @nuvora/api run db:seed",
+    "db:seed:dry-run": "pnpm run prep && pnpm --filter @nuvora/api run db:seed:dry-run",
+    "db:seed:demo": "pnpm run prep && pnpm --filter @nuvora/api run db:seed:demo",
+    "seed:check": "pnpm run prep && pnpm --filter @nuvora/api run seed:check"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "typescript": "6.0.3"
+  }
+}
