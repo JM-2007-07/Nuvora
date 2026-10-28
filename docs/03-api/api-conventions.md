@@ -89,6 +89,18 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `GET /me/attempts/:attemptId` 🔒 | `AttemptResult` of one of the current learner's own attempts, rebuilt from the stored answers (the same builder as `POST …/attempts`). Another learner's id answers `404` like an unknown id | `400 VALIDATION_FAILED` (not a cuid), `404 ATTEMPT_NOT_FOUND` |
 | `PUT /me/lessons/:lessonSlug/completion` 🔒 | `LessonCompletion`, idempotent | `404 LESSON_NOT_FOUND` |
 
+**Staff (teacher) endpoints** (Faroz, 2026-10-28). Demo staff are defined in code (`apps/api/src/staff/demo-org.ts`, no migration). The role comes only from the signed httpOnly cookie `fz_staff` (`staff:<slug>` signed with the session key; a learner cookie never passes). `StaffGuard` + `@Roles` enforce access on the server: no or invalid cookie → `401 UNAUTHENTICATED`, wrong role → `403 FORBIDDEN`. Contracts: `packages/shared/src/staff-api.ts`.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /staff-profiles` | `{ items: Staff[] }` (demo staff for the chooser) | — |
+| `GET /staff/session` | `{ staff: Staff \| null }`, always `200` | — |
+| `POST /staff/session` | Body `{ "staff": "<slug>" }`; sets `fz_staff`, returns `Staff` | `404 STAFF_NOT_FOUND`, `400 VALIDATION_FAILED` |
+| `DELETE /staff/session` | `204`, clears the cookie | — |
+| `GET /teach/overview` 🧑‍🏫 | `TeacherOverview`: the teacher's own groups; `recorded: false` marks handoff reference figures (no stored attempts) | `401`, `403` |
+| `GET /teach/groups/:code` 🧑‍🏫 | `GroupAnalytics` from stored attempts: topic totals, per-question correctness and option counts, students × topics, retest before/after | `403` (not your group), `404 GROUP_NOT_FOUND`, `404 GROUP_HAS_NO_RECORDS`, `400` |
+| `GET /teach/groups/:code/students/:slug` 🧑‍🏫 | `StudentAnswers`: the student's attempts answer by answer (option texts) | `403`, `404 STUDENT_NOT_FOUND` |
+
 Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`) and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
 
 ## Draft resource outline (not a contract)

@@ -1,0 +1,43 @@
+import { Body, Controller, Delete, Get, HttpCode, Inject, NotFoundException, Post, Req, Res } from '@nestjs/common';
+import { type Staff, type StaffSessionState, StaffSessionRequestSchema } from '@nuvora/shared';
+import type { Request, Response } from 'express';
+import { IdentityService } from '../identity/identity.service.js';
+import { readCookie, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
+import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
+import { DEMO_STAFF, type DemoStaff, findStaff } from './demo-org.js';
+import { signStaff, STAFF_COOKIE, staffFromCookie } from './staff.guard.js';
+
+const cookieOptions = { httpOnly: true, sameSite: 'lax', path: '/' } as const;
+export const toStaff = (s: DemoStaff): Staff => ({ slug: s.slug, name: s.name, role: s.role, title: s.title });
+
+/** Demo staff sessions (teacher, coordinator, admin). Like demo learners: no passwords, never for public deployment. */
+@Controller()
+export class StaffController {
+  constructor(@Inject(IdentityService) private readonly identity: IdentityService) {}
+
+  @Get('staff-profiles')
+  profiles(): { items: Staff[] } {
+    return { items: DEMO_STAFF.map(toStaff) };
+  }
+
+  @Get('staff/session')
+  session(@Req() req: Request): StaffSessionState {
+    const staff = staffFromCookie(this.identity, readCookie(req.headers.cookie, STAFF_COOKIE));
+    return { staff: staff ? toStaff(staff) : null };
+  }
+
+  @Post('staff/session')
+  @HttpCode(200)
+  start(@Body(new ZodValidationPipe(StaffSessionRequestSchema)) body: { staff: string }, @Res({ passthrough: true }) res: Response): Staff {
+    const staff = findStaff(body.staff);
+    if (!staff) throw new NotFoundException({ code: 'STAFF_NOT_FOUND', message: `Staff "${body.staff}" not found` });
+    res.cookie(STAFF_COOKIE, signStaff(this.identity, staff.slug), { ...cookieOptions, maxAge: SESSION_MAX_AGE_SECONDS * 1000 });
+    return toStaff(staff);
+  }
+
+  @Delete('staff/session')
+  @HttpCode(204)
+  end(@Res({ passthrough: true }) res: Response): void {
+    res.clearCookie(STAFF_COOKIE, cookieOptions);
+  }
+}

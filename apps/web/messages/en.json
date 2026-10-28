@@ -438,5 +438,99 @@
       "retest": "Retest",
       "review": "Review"
     }
+  },
+  "Teach": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "insights": "Gap insights",
+      "chip": "Teacher workspace · demo",
+      "switch": "Switch staff member"
+    },
+    "role": {
+      "TEACHER": "Teacher",
+      "COORDINATOR": "Coordinator",
+      "ADMIN": "Center admin"
+    },
+    "states": {
+      "loading": "Loading…"
+    },
+    "choose": {
+      "kicker": "Demo staff",
+      "title": "Who is signing in?",
+      "body": "Pick a demo staff member. No passwords: this is a local demo. The server decides what each role may open.",
+      "note": "Teachers see their own groups answer by answer. Center staff see group totals only."
+    },
+    "denied": {
+      "title": "You don’t have access to this page",
+      "signedOut": "Sign in as staff to continue",
+      "body": "This page is for: {roles}.",
+      "server": "Checked on the server: the API refused the request.",
+      "switch": "Switch staff member"
+    },
+    "dashboard": {
+      "hello": "Hello, {name}",
+      "subtitle": "{count, plural, one {# active class} other {# active classes}} · numbers from recorded answers",
+      "nextKicker": "Next step in your loop · {group}",
+      "gapTitle": "{topic} is the biggest gap",
+      "retestTitle": "{topic} retest is in.",
+      "retestBody": "{takers} students took the {topic} retest on new questions.",
+      "stillMissed": "The hardest question was missed by {missed} of {takers}:",
+      "scanOn": "Scan · {date}",
+      "retestOn": "Retest · {date}",
+      "takers": "Took the retest",
+      "ofSubmitted": "of {count} who took the scan",
+      "reviewGap": "Review the gap",
+      "caveat": "Recorded answers of the students who took the retest. It shows change for these students, not its cause.",
+      "classes": "Classes",
+      "groupMeta": "{students} students · {schedule}",
+      "upcoming": "Starts soon · {schedule} · no students yet",
+      "diagnosticAvg": "diagnostic {percent}%",
+      "reference": "Reference figures from the design; not recorded in this demo",
+      "attention": "Needs your attention",
+      "attentionCount": "{group} · {count} students",
+      "noDiagnostic": "No diagnostic yet",
+      "retestNote": "Retest {retest} · scan {scan}",
+      "scanNote": "Scan {score}, no retest yet",
+      "missingWork": "Missing work",
+      "needsPractice": "Needs practice",
+      "topicMap": "Topic map · diagnostic",
+      "insights": "Gap insights",
+      "group": "Group",
+      "mapNote": "% of answers correct per topic. {group}: {submitted} of {students} submitted.",
+      "mapReference": "{groups}: no recorded answers in this demo, so they are not on the map."
+    },
+    "insights": {
+      "title": "Gap insights",
+      "subtitle": "{group} · {quiz} · {submitted} of {students} submitted",
+      "pickTopic": "Pick a topic",
+      "answers": "{correct} of {total} answers",
+      "questions": "{topic} questions",
+      "questionsSub": "Correct out of {count} · weakest first · pick one to see the answers",
+      "howAnswered": "Q{number} · how the class answered",
+      "correct": "correct answer",
+      "explanationNote": "Counts of recorded answers per option.",
+      "who": "Who",
+      "whoSub": "Students to look at for this topic; open one to see answers to Q{number} and the rest.",
+      "under60": "Under 60% on this topic · {count}",
+      "mapTitle": "Student × topic map",
+      "mapSub": "Diagnostic scores, weakest first on the picked topic; the last column is the retest where taken.",
+      "student": "Student",
+      "retestCol": "{topic} retest",
+      "footer": "A gap is a pattern in one set of answers: a reason to look closer, not a judgement of a student."
+    },
+    "student": {
+      "breadcrumb": "Breadcrumb",
+      "back": "Dashboard",
+      "subtitle": "{group} · {name} · answer by answer",
+      "notFound": "Student not found in your group",
+      "noAttempts": "No attempts yet.",
+      "question": "Question",
+      "topic": "Topic",
+      "chosen": "Answer",
+      "result": "Result",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "privacy": "Only teachers of this group see this page. Centers see group totals only."
+    }
   }
 }

@@ -59,7 +59,7 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
 /** Card surface used across the learner app (handoff: radius 20–26 px, --panel, 1 px --line). */
 export function Card({ children, className = '', as: Tag = 'section', ...rest }: { children: React.ReactNode; className?: string; as?: 'section' | 'div' | 'article' } & React.HTMLAttributes<HTMLElement>) {
   return (
-    <Tag className={`rounded-[22px] border border-(--line) bg-(--panel) p-5 sm:p-6 ${className}`} {...rest}>
+    <Tag className={`min-w-0 rounded-[22px] border border-(--line) bg-(--panel) p-5 sm:p-6 ${className}`} {...rest}>
       {children}
     </Tag>
   );
