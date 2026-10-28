@@ -98,7 +98,7 @@ The owner switched to the Faroz handoff (D-23) for the defense on **Mon 2 Nov 20
 | F1–F2 | Tokens, theme, logo, homepage, header/footer | Implemented and verified, pushed |
 | F3 Learner | CHECKPOINT seed format; JavaScript subject + 20-question diagnostic; B-12 cohort replayed from the handoff; `GET /me/attempts/:id`; before/after in `/me/progress`; `/app` dashboard, quest, results, progress | Implemented and verified (not committed). `db:seed` and `db:seed:demo` applied with approval |
 | F4 Teacher | Code-defined staff/roster (no migration, owner decision 2026-10-28), signed staff session, analytics from real B-12 attempts, teacher screens | Core implemented and verified ([story](../stories/2026-10-28-teacher-workspace.md)): `/teach` dashboard, gap insights, student answers. Assessments/builder, materials, assign practice not built |
-| F5 Center | Aggregate-only endpoints, role-aware nav, denied state, server-enforced permissions, 401/403 tests | Planned |
+| F5 Center | Aggregate-only endpoints, role-aware nav, denied state, server-enforced permissions, 401/403 tests | Core implemented and verified ([story](../stories/2026-10-28-center-workspace.md)). Group wizard, invitations, permission editing not built |
 | F6 Polish + PWA | Manifest/icons, states, 390/768/1440, themes, locales, reduced motion | Planned |
 | F7 Release QA | All checks, Playwright journeys, `visual-qa`, defense checklist (real vs prototype) | Planned |
 

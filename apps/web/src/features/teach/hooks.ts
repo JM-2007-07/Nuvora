@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { ApiRequestError, clientFetch } from '@/lib/client-api';
 
 /** 4xx answers are final (no session, wrong role, not your group): don't retry them. */
-const retry = (count: number, error: unknown) => !(error instanceof ApiRequestError && error.status < 500) && count < 2;
+export const retry = (count: number, error: unknown) => !(error instanceof ApiRequestError && error.status < 500) && count < 2;
 
 export function useStaff() {
   const locale = useLocale();

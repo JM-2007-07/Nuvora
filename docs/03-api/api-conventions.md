@@ -100,6 +100,10 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `GET /teach/overview` 🧑‍🏫 | `TeacherOverview`: the teacher's own groups; `recorded: false` marks handoff reference figures (no stored attempts) | `401`, `403` |
 | `GET /teach/groups/:code` 🧑‍🏫 | `GroupAnalytics` from stored attempts: topic totals, per-question correctness and option counts, students × topics, retest before/after | `403` (not your group), `404 GROUP_NOT_FOUND`, `404 GROUP_HAS_NO_RECORDS`, `400` |
 | `GET /teach/groups/:code/students/:slug` 🧑‍🏫 | `StudentAnswers`: the student's attempts answer by answer (option texts) | `403`, `404 STUDENT_NOT_FOUND` |
+| `GET /center/overview` 🏢 | `CenterOverview`: org totals and every group as aggregates (`CenterGroup`: totals, participation, topic %, flags, `recorded`/`synthetic`) | `401`, `403` (teacher) |
+| `GET /center/groups/:code` 🏢 | `CenterGroupDetail`: group totals + participation (name, took the diagnostic yes/no). Never scores, answers, retest or practice membership | `403`, `404 GROUP_NOT_FOUND`, `400` |
+| `GET /center/staff` 🏢 | `CenterStaff`: directory incl. pending/expired invitations (coordinator needs `coordStaff`) | `401`, `403` |
+| `GET /center/settings` 🏢 admin | `CenterSettings`: permission defaults, `editable: false` | `403` for coordinator and teacher |
 
 Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`) and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
 

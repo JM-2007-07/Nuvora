@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { ApiErrorSchema, StaffSchema, StaffSessionStateSchema } from '@nuvora/shared';
+import { ApiErrorSchema, CenterSettingsSchema, CenterStaffSchema, StaffSchema, StaffSessionStateSchema } from '@nuvora/shared';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
@@ -87,5 +87,30 @@ describe('Staff sessions and teacher access (e2e)', () => {
 
   it('a staff cookie does not open learner endpoints', async () => {
     expect(code(await get('/api/v1/me', `nv_session=${encodeURIComponent(signer.sign('staff:dilshod-karimov'))}`).expect(401))).toBe('UNAUTHENTICATED');
+  });
+
+  describe('center workspace', () => {
+    it('no session → 401; a teacher → 403 on every center endpoint', async () => {
+      expect(code(await get('/api/v1/center/overview').expect(401))).toBe('UNAUTHENTICATED');
+      for (const path of ['/api/v1/center/overview', '/api/v1/center/groups/B-12', '/api/v1/center/staff', '/api/v1/center/settings']) {
+        expect(code(await get(path, staffCookie('dilshod-karimov')).expect(403))).toBe('FORBIDDEN');
+      }
+    });
+
+    it('settings are admin-only: coordinator → 403, admin → 200 (read-only)', async () => {
+      expect(code(await get('/api/v1/center/settings', staffCookie('komila-rasulova')).expect(403))).toBe('FORBIDDEN');
+      const res = await get('/api/v1/center/settings', staffCookie('farhod-jalilov')).expect(200);
+      expect(CenterSettingsSchema.parse(res.body)).toMatchObject({ editable: false, permissions: { coordGroups: true, coordStaff: true, teachShare: false } });
+    });
+
+    it('the coordinator may see staff (permission on by default)', async () => {
+      const res = await get('/api/v1/center/staff', staffCookie('komila-rasulova')).expect(200);
+      expect(CenterStaffSchema.parse(res.body).items.map((s) => s.status)).toEqual(['active', 'active', 'active', 'active', 'pending', 'expired']);
+    });
+
+    it('unknown group → 404, bad code → 400', async () => {
+      expect(code(await get('/api/v1/center/groups/Z-99', staffCookie('farhod-jalilov')).expect(404))).toBe('GROUP_NOT_FOUND');
+      expect(code(await get('/api/v1/center/groups/b12', staffCookie('farhod-jalilov')).expect(400))).toBe('VALIDATION_FAILED');
+    });
   });
 });

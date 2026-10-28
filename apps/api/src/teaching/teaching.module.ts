@@ -8,5 +8,6 @@ import { TeachingService } from './teaching.service.js';
   imports: [PrismaModule],
   controllers: [TeachingController],
   providers: [TeachingService, StaffGuard],
+  exports: [TeachingService],
 })
 export class TeachingModule {}

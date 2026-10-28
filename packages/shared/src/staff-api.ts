@@ -124,3 +124,73 @@ export const StudentAnswersSchema = z.strictObject({
   ),
 });
 export type StudentAnswers = z.infer<typeof StudentAnswersSchema>;
+
+// ---------- Center (aggregates only) ----------
+// Privacy rule (handoff §7): centers see group totals and participation only. These
+// schemas are strict and have no field for an individual score, answer, or who took
+// targeted practice or a retest.
+
+export const CENTER_FLAGS = ['TOPIC_UNDER_60', 'PARTICIPATION_UNDER_95', 'SETUP_INCOMPLETE'] as const;
+
+export const CenterGroupSchema = z.strictObject({
+  code: z.string(),
+  name: z.string(),
+  teacher: z.string(),
+  status: z.enum(['active', 'upcoming', 'archived']),
+  schedule: z.string(),
+  capacity: z.number().int().min(0),
+  students: z.number().int().min(0),
+  submitted: z.number().int().min(0),
+  participationPercent: z.number().int().min(0).max(100).nullable(),
+  /** % of diagnostic answers correct in the group. */
+  diagnosticPercent: z.number().int().min(0).max(100).nullable(),
+  topics: z.array(z.strictObject({ title: z.string(), percent: z.number().int().min(0).max(100) })).nullable(),
+  flags: z.array(z.enum(CENTER_FLAGS)),
+  recorded: z.boolean(),
+  synthetic: z.boolean(),
+});
+export type CenterGroup = z.infer<typeof CenterGroupSchema>;
+
+export const CenterOverviewSchema = z.strictObject({
+  viewer: StaffSchema,
+  organization: z.string(),
+  totals: z.strictObject({
+    /** Enrollments in active groups (a student in two groups counts twice). */
+    enrollments: z.number().int(),
+    activeGroups: z.number().int(),
+    upcomingGroups: z.number().int(),
+    archivedGroups: z.number().int(),
+    activeTeachers: z.number().int(),
+    pendingInvitations: z.number().int(),
+  }),
+  groups: z.array(CenterGroupSchema),
+});
+export type CenterOverview = z.infer<typeof CenterOverviewSchema>;
+
+/** Group detail for the center: totals plus who participated (yes/no), never how they scored. */
+export const CenterGroupDetailSchema = z.strictObject({
+  group: CenterGroupSchema,
+  participation: z.array(z.strictObject({ name: z.string(), tookDiagnostic: z.boolean() })).nullable(),
+});
+export type CenterGroupDetail = z.infer<typeof CenterGroupDetailSchema>;
+
+export const CenterStaffSchema = z.strictObject({
+  items: z.array(
+    z.strictObject({
+      name: z.string(),
+      role: z.enum(STAFF_ROLES),
+      subject: z.string(),
+      status: z.enum(['active', 'pending', 'expired']),
+      note: z.string(),
+      synthetic: z.boolean(),
+    }),
+  ),
+});
+export type CenterStaff = z.infer<typeof CenterStaffSchema>;
+
+export const CenterSettingsSchema = z.strictObject({
+  organization: z.string(),
+  permissions: z.strictObject({ coordGroups: z.boolean(), coordStaff: z.boolean(), teachCreate: z.boolean(), teachShare: z.boolean() }),
+  editable: z.literal(false),
+});
+export type CenterSettings = z.infer<typeof CenterSettingsSchema>;

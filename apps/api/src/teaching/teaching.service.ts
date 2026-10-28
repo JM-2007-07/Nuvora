@@ -94,7 +94,8 @@ export class TeachingService {
     return group;
   }
 
-  private async analyse(group: DemoGroup, locale: Locale): Promise<GroupAnalytics> {
+  /** Full analytics of a group with a stored roster. Also used by the center, which keeps only aggregates. */
+  async analyse(group: DemoGroup, locale: Locale): Promise<GroupAnalytics> {
     const quiz = await this.prisma.quiz.findUnique({
       where: { slug: group.diagnosticQuiz! },
       select: {

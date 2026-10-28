@@ -532,5 +532,97 @@
       "incorrect": "Incorrect",
       "privacy": "Only teachers of this group see this page. Centers see group totals only."
     }
+  },
+  "Center": {
+    "privacy": "Group totals and participation only. Individual answers and scores stay with each group’s teacher, and the center never sees who got targeted practice or a retest.",
+    "recorded": "recorded",
+    "reference": "reference figures",
+    "synthetic": "synthetic",
+    "notFound": "Group not found",
+    "backToGroups": "All groups",
+    "nav": {
+      "dashboard": "Dashboard",
+      "groups": "Groups",
+      "staff": "Staff",
+      "settings": "Settings",
+      "chip": "Center workspace · demo"
+    },
+    "status": {
+      "active": "Active",
+      "upcoming": "Upcoming",
+      "archived": "Archived"
+    },
+    "flags": {
+      "TOPIC_UNDER_60": "Topic < 60%",
+      "PARTICIPATION_UNDER_95": "Participation < 95%",
+      "SETUP_INCOMPLETE": "Setup incomplete"
+    },
+    "dashboard": {
+      "subtitle": "Signed in as {name}",
+      "enrollments": "Enrollments",
+      "enrollmentsSub": "in active groups",
+      "teachers": "Teachers",
+      "invitations": "{count, plural, one {# invitation pending} other {# invitations pending}}",
+      "groups": "Active groups",
+      "groupsSub": "{upcoming} upcoming · {archived} archived",
+      "recordedGroups": "Groups with recorded answers",
+      "recordedSub": "the others show reference figures from the design",
+      "kicker": "Learning overview · JavaScript diagnostic",
+      "compareTitle": "Same diagnostic, group totals by topic",
+      "group": "Group",
+      "compareNote": "% of answers correct per topic. Recorded = computed from answers stored here; reference and synthetic figures come from the design data.",
+      "attention": "Groups needing attention",
+      "attentionSub": "Each flag names the rule that raised it.",
+      "participation": "{submitted} of {students} took the diagnostic ({percent}%)",
+      "seats": "{students} of {capacity} seats filled"
+    },
+    "groups": {
+      "title": "Groups",
+      "subtitle": "Every group in the center: who teaches and how many took part. Teachers manage lessons and assessments.",
+      "group": "Group",
+      "teacher": "Teacher",
+      "students": "Students",
+      "diagnostic": "Diagnostic",
+      "flags": "Flags",
+      "status": "Status",
+      "seats": "{students} of {capacity}",
+      "legend": "Diagnostic = % of answers correct on the group’s diagnostic. Flags: topic under 60%, participation under 95%, setup incomplete."
+    },
+    "groupDetail": {
+      "back": "All groups",
+      "students": "Students",
+      "capacity": "of {capacity} seats",
+      "submitted": "Took the diagnostic",
+      "participation": "{percent}% participation",
+      "diagnostic": "Diagnostic %",
+      "diagnosticSub": "answers correct, group total",
+      "noDiagnostic": "no diagnostic yet",
+      "topics": "Group total by topic",
+      "participationTitle": "Participation",
+      "took": "took the diagnostic",
+      "notYet": "not yet",
+      "noRoster": "No student records for this group in this demo."
+    },
+    "staff": {
+      "title": "Staff",
+      "subtitle": "Teachers, coordinators and invitations.",
+      "active": "Active",
+      "pending": "Invitation pending",
+      "expired": "Invitation expired",
+      "synthetic": "synthetic",
+      "note": "Inviting and removing staff is not available in this demo: there is no storage for it yet."
+    },
+    "settings": {
+      "title": "Organization settings",
+      "permissions": "Roles and permissions",
+      "coordGroups": "Coordinators can manage groups",
+      "coordStaff": "Coordinators can see staff",
+      "teachCreate": "Teachers can create assessments",
+      "teachShare": "Teachers can share topic labels for one student",
+      "on": "On",
+      "off": "Off",
+      "readOnly": "Read-only in this demo. The server applies these rules: a coordinator is refused anything switched off, and only the admin can open this page.",
+      "back": "Dashboard"
+    }
   }
 }
