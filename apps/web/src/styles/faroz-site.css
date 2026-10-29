@@ -412,10 +412,7 @@ button:focus-visible,
   .fz-card-hover:hover {
     transform: translateY(-2px);
   }
-  /* Route / section entrance. --fz-delay staggers siblings: style={{ '--fz-delay': '80ms' }}. */
-  .fz-page-in {
-    animation: fz-rise 0.22s ease-out backwards;
-  }
+  /* Section entrance. --fz-delay staggers siblings: style={{ '--fz-delay': '80ms' }}. */
   .fz-rise {
     animation: fz-rise 0.32s ease-out backwards;
     animation-delay: var(--fz-delay, 0ms);
@@ -586,5 +583,74 @@ button:focus-visible,
   50% {
     opacity: 1;
     transform: scale(1.05);
+  }
+}
+
+/*
+ * Page transitions (components/page-transition.tsx, React <ViewTransition>). The old page leaves
+ * fast, the new one waits for it and rises in with a soft blur. Headers and the sidebar are
+ * anchored, and the rest of the page (root) swaps without a crossfade, so only content moves.
+ */
+::view-transition {
+  pointer-events: none; /* clicks during the animation reach the new page */
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-group(fz-site-header),
+::view-transition-group(fz-sidebar),
+::view-transition-group(fz-app-bar) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(fz-site-header),
+::view-transition-old(fz-sidebar),
+::view-transition-old(fz-app-bar) {
+  display: none;
+}
+::view-transition-new(fz-site-header),
+::view-transition-new(fz-sidebar),
+::view-transition-new(fz-app-bar) {
+  animation: none;
+}
+::view-transition-old(.fz-page-exit) {
+  animation: fz-page-out 140ms ease-in both;
+}
+::view-transition-new(.fz-page-enter) {
+  animation:
+    fz-page-fade 240ms ease-out 110ms both,
+    fz-page-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+@keyframes fz-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    filter: blur(2px);
+  }
+}
+@keyframes fz-page-fade {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+@keyframes fz-page-rise {
+  from {
+    transform: translateY(12px);
+  }
+}
+/* Reduced motion: no movement or blur, only a short crossfade. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.fz-page-exit) {
+    animation: fz-page-dim 120ms linear both;
+  }
+  ::view-transition-new(.fz-page-enter) {
+    animation: fz-page-dim 160ms linear reverse both;
+  }
+}
+@keyframes fz-page-dim {
+  to {
+    opacity: 0;
   }
 }

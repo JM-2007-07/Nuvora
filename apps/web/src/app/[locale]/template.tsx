@@ -1,7 +1,7 @@
 /**
- * Route transition: a template re-mounts on every navigation, so this wrapper replays a short
- * CSS fade and rise (disabled under prefers-reduced-motion in faroz-site.css). Server component.
+ * Route wrapper: keeps the flex column the layouts rely on. Page changes are animated by
+ * PageTransition (components/page-transition.tsx) inside the site and workspace layouts.
  */
 export default function LocaleTemplate({ children }: { children: React.ReactNode }) {
-  return <div className="fz-page-in flex flex-1 flex-col">{children}</div>;
+  return <div className="flex flex-1 flex-col">{children}</div>;
 }

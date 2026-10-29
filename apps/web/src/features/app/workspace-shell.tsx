@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Logo } from '@/components/brand/logo';
 import { LocaleButtons } from '@/components/locale-buttons';
+import { PageTransition } from '@/components/page-transition';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link, usePathname } from '@/i18n/navigation';
 
@@ -52,7 +53,8 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-(--btn) focus:px-4 focus:py-2 focus:text-(--btn-ink)">
         {t('skip')}
       </a>
-      <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col gap-6 border-r border-(--line) bg-(--side-bg) p-4 min-[900px]:flex">
+      {/* Named for page transitions: the sidebar and the mobile bar stay put while the content changes. */}
+      <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col gap-6 border-r border-(--line) bg-(--side-bg) p-4 [view-transition-name:fz-sidebar] min-[900px]:flex">
         <div className="grid gap-2 px-2 pt-2">
           <Link href="/" aria-label={t('website')} className="rounded-md">
             <Logo name={tBrand('name')} size={30} />
@@ -71,7 +73,7 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-(--line) bg-(--bar-bg) px-[18px] py-3 backdrop-blur-[10px] min-[900px]:hidden">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-(--line) bg-(--bar-bg) px-[18px] py-3 backdrop-blur-[10px] [view-transition-name:fz-app-bar] min-[900px]:hidden">
           <Link href="/" aria-label={t('website')} className="shrink-0 rounded-md">
             <Logo name={tBrand('name')} size={28} textClass="text-base" />
           </Link>
@@ -99,7 +101,7 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
           </div>
         ) : null}
         <main id="main" className="mx-auto w-full max-w-[1240px] flex-1 px-[18px] py-6 sm:px-8 sm:py-7">
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
     </div>

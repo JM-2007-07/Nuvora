@@ -34,7 +34,34 @@ Not run:
 - A screen-reader pass.
 - Native review of the ru/tg label.
 
+## Follow-up the same day: page transitions
+
+The owner approved smooth page changes.
+
+**Changes**
+
+- `apps/web/src/components/page-transition.tsx` (new): React 19.3 `<ViewTransition>` keyed by the path. The old page fades up and out in 140 ms; the new one waits, then rises 12 px with a soft blur. No package was added.
+- Where it runs: the site layout (around the page, between header and footer) and `WorkspaceShell` `<main>` (learner, teacher, center).
+- Anchoring: the site header, the workspace sidebar and the mobile bar have view-transition names, so they stay put. The root swaps without a crossfade, so only the content moves.
+- Clicks pass through during the animation.
+- Reduced motion: only a short opacity crossfade, with no movement or blur.
+- Browsers without the View Transitions API just swap the page.
+- Removed: the old CSS fade in `[locale]/template.tsx` (`fz-page-in`), so the two animations do not stack.
+
+**Verification**
+
+- `lint`, `typecheck`, web `test` (3/3) and web `build` pass.
+- Production build, headless Edge (scratchpad script; demo learner sign-in, which only reads):
+  - home → library, dashboard → skills and skills → progress: one view transition each, running `fz-page-out` and `fz-page-fade` + `fz-page-rise`.
+  - Reduced motion: `fz-page-dim` only.
+  - Console clean.
+  - Mid-transition frame: the sidebar is sharp and still, and the content fades in.
+- Not run:
+  - The Playwright e2e specs. They use the dev server on :3000 that the owner was running, and running them against it was not permitted in this session.
+  - Safari and Firefox.
+
 ## Known limitations
 
 - Pages that fetch on the client still show their own `LoadingState` skeleton after the route loader, so a slow API means two loading steps in a row.
-- Smooth crossfades between pages (React `<ViewTransition>`) are not part of this change.
+- Browser back/forward also animates (same fade). There is no direction-aware slide.
+- `PageTransition` remounts the page subtree on every path change, as a navigation does anyway. State inside a page does not survive a path change.
