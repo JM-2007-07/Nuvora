@@ -1,5 +1,6 @@
 'use client';
 
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Field } from './field';
@@ -36,10 +37,11 @@ export function PasswordField({
         <button
           type="button"
           onClick={() => setShown(!shown)}
-          aria-pressed={shown}
-          className="h-10 cursor-pointer rounded-lg border-0 bg-transparent px-2 text-xs font-bold text-(--muted) hover:text-(--text)"
+          aria-label={shown ? t('hidePassword') : t('showPassword')}
+          title={shown ? t('hidePassword') : t('showPassword')}
+          className="grid size-10 cursor-pointer place-items-center rounded-lg border-0 bg-transparent text-(--muted) transition-colors duration-150 hover:bg-(--panel2) hover:text-(--text) focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] focus-visible:outline-(--sel) motion-reduce:transition-none"
         >
-          {shown ? t('hidePassword') : t('showPassword')}
+          {shown ? <EyeOffIcon aria-hidden="true" className="size-[18px]" /> : <EyeIcon aria-hidden="true" className="size-[18px]" />}
         </button>
       }
     />
