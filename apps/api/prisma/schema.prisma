@@ -361,7 +361,8 @@ model Account {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  teaching StudyGroup[]
+  teaching            StudyGroup[]
+  acceptedInvitations StaffInvitation[]
 
   @@index([organizationId])
   @@map("accounts")
@@ -512,4 +513,55 @@ model AssessmentQuestion {
 
   @@unique([assessmentId, order])
   @@map("assessment_questions")
+}
+
+// ---------- Center staff invitations and permissions (Faroz, 2026-10-29, owner-approved migration) ----------
+// A center is referenced by key: "demo-center" for the code-defined Faroz Demo Center,
+// "org:<organizationId>" for a center admin account. No email is sent: the admin copies
+// the link. Only the SHA-256 of the link token is stored. Status is derived:
+// revoked → accepted → declined → expired (expiresAt passed) → pending.
+
+model StaffInvitation {
+  id                String      @id @default(cuid())
+  orgKey            String
+  /// Shown on the invitation page
+  orgName           String
+  /// SHA-256 (hex) of the token in the link; the token itself is never stored
+  tokenHash         String      @unique
+  name              String
+  /// Lower-case; the accepting account must have this email
+  email             String
+  /// TEACHER only for now (no coordinator accounts yet)
+  role              AccountRole
+  subject           String
+  /// Language the invitation page opens in
+  locale            Locale
+  /// Staff slug or "acct:<accountId>" of the inviter
+  invitedByKey      String
+  invitedByName     String
+  expiresAt         DateTime
+  acceptedAt        DateTime?
+  acceptedAccountId String?
+  acceptedAccount   Account?    @relation(fields: [acceptedAccountId], references: [id], onDelete: SetNull)
+  declinedAt        DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([orgKey])
+  @@index([acceptedAccountId])
+  @@map("staff_invitations")
+}
+
+/// Coordinator and teacher permissions set by the center admin (handoff §7). No row = handoff defaults.
+model CenterPermissions {
+  orgKey       String   @id
+  coordGroups  Boolean  @default(true)
+  coordStaff   Boolean  @default(true)
+  teachCreate  Boolean  @default(true)
+  teachShare   Boolean  @default(false)
+  updatedByKey String
+  updatedAt    DateTime @updatedAt
+
+  @@map("center_permissions")
 }

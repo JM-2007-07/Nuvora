@@ -110,8 +110,15 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `GET /teach/bank?group=&topic=` 🧑‍🏫 | `{ items: BankQuestion[] }`: seeded diagnostic and topic-quiz questions as builder questions (code split out), with how the group answered them | `403`, `400` |
 | `GET /center/overview` 🏢 | `CenterOverview`: org totals and every group as aggregates (`CenterGroup`: totals, participation, topic %, flags, `recorded`/`synthetic`) | `401`, `403` (teacher) |
 | `GET /center/groups/:code` 🏢 | `CenterGroupDetail`: group totals + participation (name, took the diagnostic yes/no). Never scores, answers, retest or practice membership | `403`, `404 GROUP_NOT_FOUND`, `400` |
-| `GET /center/staff` 🏢 | `CenterStaff`: directory incl. pending/expired invitations (coordinator needs `coordStaff`) | `401`, `403` |
-| `GET /center/settings` 🏢 admin | `CenterSettings`: permission defaults, `editable: false` | `403` for coordinator and teacher |
+| `GET /center/staff` 🏢 | `CenterStaff`: the demo directory, the center's stored `invitations` (status derived: pending, accepted, declined, expired, revoked) and `canInvite` (admin only). Coordinator needs `coordStaff` | `401`, `403` |
+| `POST /center/invitations` 🏢 admin | Body `InviteRequest` (name, email, subject, locale; teacher role only); `201 InvitationLink`: the invitation and the link token, shown once (only its SHA-256 is stored). Expires in 7 days. No email is sent | `403`, `400`, `409 INVITATION_EXISTS` (open invitation for that email) |
+| `POST /center/invitations/:id/resend` 🏢 admin | New token (the old link stops working), new 7-day expiry; `200 InvitationLink` | `404 INVITATION_NOT_FOUND` (missing or another center's), `409 INVITATION_ACCEPTED` / `INVITATION_REVOKED` |
+| `POST /center/invitations/:id/revoke` 🏢 admin | Pending or expired only; `200 Invitation` | `404`, `409` |
+| `GET /invitations/:token` | Public: `PublicInvitation` (center, invitee name, role, subject, inviter, expiry, status). Never the email | `404 INVITATION_NOT_FOUND`, `400` |
+| `POST /invitations/:token/decline` | Public, pending only; `200 PublicInvitation` | `404`, `409 INVITATION_<STATUS>` |
+| `POST /invitations/:token/accept` 🧑‍🏫 account | A signed-in **teacher account** whose email matches; conditional update (no double accept); `200 PublicInvitation` | `401`, `403 ACCOUNT_REQUIRED` / `EMAIL_MISMATCH`, `409 INVITATION_<STATUS>` / `INVITATION_CHANGED` |
+| `GET /center/settings` 🏢 admin | `CenterSettings`: permissions from `center_permissions` (handoff defaults when no row), `editable`, `updatedAt` | `403` for coordinator and teacher |
+| `PUT /center/settings/permissions` 🏢 admin | Body `CenterPermissions`; read by every center handler on the next request | `403`, `400` |
 
 Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`) and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
 

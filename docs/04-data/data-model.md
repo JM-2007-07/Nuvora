@@ -72,6 +72,15 @@ Recommendations are **computed on request** from the tables above. They are not 
 
 These tables are separate from `quizzes` on purpose: the seed loader treats any quiz missing from the seed files as a blocking error. Learners cannot take teacher assessments yet (no attempt table for them). `pnpm db:seed:demo` removes demo teacher Dilshod's assessments and recreates the design's draft "Functions — return vs console.log".
 
+### Center staff invitations and permissions (migration `20261029180000_staff_invitations_permissions`, owner-approved 2026-10-29)
+
+| Entity | Key fields | Notes |
+| --- | --- | --- |
+| **StaffInvitation** | `orgKey` (`demo-center` or `org:<organizationId>`), `orgName`, `tokenHash` (unique), `name`, `email` (lower-case), `role` (TEACHER only for now), `subject`, `locale`, `invitedByKey`/`invitedByName`, `expiresAt`, `acceptedAt?`, `acceptedAccountId?` (→ Account, set null), `declinedAt?`, `revokedAt?` | Only the SHA-256 of the link token is stored. Status is derived: revoked → accepted → declined → expired → pending. Accepting records the account; the teacher keeps their own organization and groups |
+| **CenterPermissions** | `orgKey` (PK), `coordGroups`, `coordStaff`, `teachCreate`, `teachShare`, `updatedByKey` | No row = handoff defaults. `coordGroups` and `coordStaff` are enforced by the center endpoints; the two teacher flags are stored only for now |
+
+`pnpm db:seed:demo` deletes the demo center's invitations and its permissions row (back to the defaults). Teacher accounts created while accepting are not removed.
+
 Theme preference is stored client-side (next-themes). Locale preference is stored in a cookie and optionally in `User.preferredLocale`.
 
 The learner session is a signed cookie holding the `User.id`. There is no session table in the MVP.

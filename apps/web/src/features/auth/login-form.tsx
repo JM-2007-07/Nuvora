@@ -10,11 +10,11 @@ import { PasswordField } from './password-field';
 
 const EMAIL = /^\S+@\S+\.\S+$/;
 
-export function LoginForm() {
+export function LoginForm({ initialEmail = '', next = null }: { initialEmail?: string; next?: string | null }) {
   const t = useTranslations('Auth');
   const router = useRouter();
   const login = useLogin();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -23,16 +23,16 @@ export function LoginForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (busy) return;
-    const next = {
+    const found = {
       email: EMAIL.test(email.trim()) ? undefined : t('errEmail'),
       password: password ? undefined : t('errRequired'),
     };
-    setErrors(next);
+    setErrors(found);
     setFormError(null);
-    if (next.email || next.password) return;
+    if (found.email || found.password) return;
     try {
       const account = await login.mutateAsync({ email: email.trim(), password });
-      router.push(homeFor(account.role));
+      router.push(next ?? homeFor(account.role));
     } catch (error) {
       setFormError(t(authErrorKey(error)));
     }
@@ -59,7 +59,7 @@ export function LoginForm() {
       <div className="flex flex-col gap-2 border-t border-(--line) pt-5 text-sm text-(--muted)">
         <span>
           {t('noAccount')}{' '}
-          <Link href="/signup" className="font-semibold text-(--text) underline">
+          <Link href={next ? `/signup?role=teacher&next=${encodeURIComponent(next)}&email=${encodeURIComponent(email)}` : '/signup'} className="font-semibold text-(--text) underline">
             {t('createLink')}
           </Link>
         </span>

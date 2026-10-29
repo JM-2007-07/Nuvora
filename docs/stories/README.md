@@ -65,4 +65,5 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-28 | [Defense readiness: PWA, QA, real vs prototype](2026-10-28-defense-readiness.md) | PWA implemented and verified; release QA partly run |
 | 2026-10-29 | [Full site pass: accounts, every page wired, motion and hover](2026-10-29-full-site-pass.md) | implemented and verified |
 | 2026-10-29 | [Teacher assessments list and builder](2026-10-29-teacher-assessments.md) | implemented and verified; learners taking them not built |
+| 2026-10-29 | [Center teacher invitations and editable permissions](2026-10-29-center-invitations.md) | implemented and verified; group wizard not built |
 | 2026-10-29 | [Handover for the next session](2026-10-29-handover.md) | handover (read first) |

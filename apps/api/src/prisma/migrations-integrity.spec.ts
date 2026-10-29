@@ -14,6 +14,8 @@ const APPLIED_MIGRATIONS: Record<string, string> = {
   '20261028200000_accounts_plans_groups': '5c3e36cd52b5b9c56d2d622bc575f45882d83c993be2563dc95c436ad39b767e',
   // Teacher assessments, applied with the owner's approval on 2026-10-29.
   '20261029120000_teacher_assessments': '1a85c8dccb8ae196c8c44f0339b7c9c6b752cfd9d67cbc9d1dcd913f2e8480d3',
+  // Staff invitations and center permissions, applied with the owner's approval on 2026-10-29.
+  '20261029180000_staff_invitations_permissions': '71d94295584bc33e5b723f04de04d1ac46c2d124cadc48be5fa92f8dea365aea',
 };
 
 const migrationsDir = fileURLToPath(new URL('../../prisma/migrations/', import.meta.url));

@@ -8,12 +8,11 @@ import { useState } from 'react';
 import { Reveal } from '@/components/motion/reveal';
 import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
 import { isAccountStaff, useMyGroups } from '@/features/teach/hooks';
-import { AccountPanels } from '@/features/teach/settings';
 import { DeniedState, isDenied, StaffGate } from '@/features/teach/staff-gate';
 import { CopyButton, CreateGroupButton, PageHead, PercentBar, SearchBox, StatusPill, Tabs, useSchedule, type GroupStatus } from '@/features/teach/work-ui';
 import { Link } from '@/i18n/navigation';
 import { ApiRequestError } from '@/lib/client-api';
-import { useCenterGroup, useCenterOverview, useCenterSettings, useCenterStaff } from './hooks';
+import { useCenterGroup, useCenterOverview } from './hooks';
 
 const CENTER_ROLES: StaffRole[] = ['ADMIN', 'COORDINATOR'];
 
@@ -331,82 +330,3 @@ function GroupDetailBody({ code }: { code: string }) {
   );
 }
 
-// ---------- Staff and settings ----------
-
-export function CenterStaffView() {
-  return <StaffGate>{() => <StaffBody />}</StaffGate>;
-}
-
-function StaffBody() {
-  const t = useTranslations('Center.staff');
-  const tRole = useTranslations('Teach.role');
-  const staff = useCenterStaff();
-  // Dates come as YYYY-MM-DD from the API; dd.mm.yyyy reads the same in ru, tg and en (D-19).
-  const day = (iso: string | null) => (iso ? iso.split('-').reverse().join('.') : '');
-  const activityText = (a: { kind: string; date: string | null; until: string | null }) =>
-    a.kind === 'LAST_ACTIVE' ? t('lastActive', { date: day(a.date) }) : a.kind === 'INVITED' ? t('invited', { date: day(a.date), until: day(a.until) }) : a.kind === 'EXPIRED' ? t('expiredOn', { date: day(a.date), until: day(a.until) }) : '';
-  return (
-    <Loaded query={staff}>
-      {(s) => (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-          <div>
-            <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
-            <p className="mt-1.5 text-(--muted)">{t('subtitle')}</p>
-          </div>
-          <Card className="p-0 sm:p-0">
-            <ul className="divide-y divide-(--line)">
-              {s.items.map((p) => (
-                <li key={p.name} className="flex flex-wrap items-center gap-3 px-5 py-3.5 sm:px-6">
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{p.name}</span>
-                    <span className="block text-sm text-(--faint)">
-                      {[tRole(p.role), p.subject, activityText(p.activity)].filter(Boolean).join(' · ')}
-                    </span>
-                  </span>
-                  {p.synthetic ? <span className="rounded-full bg-(--panel2) px-2 py-0.5 text-xs text-(--faint)">{t('synthetic')}</span> : null}
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${p.status === 'active' ? 'bg-(--mint-tint) text-(--mint-ink)' : p.status === 'pending' ? 'bg-(--gold-tint) text-(--gold-ink)' : 'bg-(--mag-tint) text-(--mag-ink)'}`}>{t(p.status)}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <p className="text-xs text-(--faint)">{t('note')}</p>
-        </div>
-      )}
-    </Loaded>
-  );
-}
-
-export function CenterSettingsView() {
-  return <StaffGate>{(staff) => <SettingsBody staff={staff} />}</StaffGate>;
-}
-
-function SettingsBody({ staff }: { staff: Staff }) {
-  const t = useTranslations('Center.settings');
-  const settings = useCenterSettings();
-  return (
-    <Loaded query={settings} need={['ADMIN']}>
-      {(s) => (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-          <div>
-            <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
-            <p className="mt-1.5 text-(--muted)">{s.organization}</p>
-          </div>
-          <Card>
-            <h2 className="text-lg font-bold">{t('permissions')}</h2>
-            <ul className="mt-3 grid gap-2">
-              {(['coordGroups', 'coordStaff', 'teachCreate', 'teachShare'] as const).map((key) => (
-                <li key={key} className="flex min-h-11 items-center justify-between gap-3 rounded-[12px] border border-(--line) px-4 text-sm">
-                  <span>{t(key)}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${s.permissions[key] ? 'bg-(--mint-tint) text-(--mint-ink)' : 'bg-(--panel2) text-(--faint)'}`}>{s.permissions[key] ? t('on') : t('off')}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs text-(--faint)">{t('readOnly')}</p>
-          </Card>
-          <AccountPanels staff={staff} />
-          <Link href="/center" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-(--blue-ink) no-underline">{t('back')} <ArrowRightIcon aria-hidden="true" className="size-4" /></Link>
-        </div>
-      )}
-    </Loaded>
-  );
-}

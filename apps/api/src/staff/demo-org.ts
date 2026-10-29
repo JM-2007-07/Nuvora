@@ -145,5 +145,3 @@ export const TEACHER_NAMES: Record<string, string> = {
   'nodira-alieva': 'Nodira Alieva',
 };
 
-/** Coordinator permissions set by the admin (handoff permissionDefaults). Not editable in this demo (no storage). */
-export const PERMISSION_DEFAULTS = { coordGroups: true, coordStaff: true, teachCreate: true, teachShare: false } as const;

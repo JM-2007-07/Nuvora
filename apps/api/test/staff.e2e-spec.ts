@@ -16,8 +16,8 @@ const staffCookie = (slug: string) => `${STAFF_COOKIE}=${encodeURIComponent(sign
 
 /**
  * Staff access checks (no PostgreSQL). Every teacher case here is decided before any
- * database query, so the fake Prisma serves nothing but an empty user lookup (for the
- * learner guard): any other query would fail the test.
+ * database query, so the fake Prisma serves nothing but empty lookups (the learner guard,
+ * center permissions and invitations): any other query would fail the test.
  */
 describe('Staff sessions and teacher access (e2e)', () => {
   let app: INestApplication<App>;
@@ -25,7 +25,7 @@ describe('Staff sessions and teacher access (e2e)', () => {
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
       .overrideProvider(PrismaService)
-      .useValue({ user: { findUnique: async () => null }, $queryRaw: async () => [{ server_version: '18.6' }], $disconnect: async () => {} })
+      .useValue({ user: { findUnique: async () => null }, centerPermissions: { findUnique: async () => null }, staffInvitation: { findMany: async () => [] }, $queryRaw: async () => [{ server_version: '18.6' }], $disconnect: async () => {} })
       .compile();
     app = moduleRef.createNestApplication<INestApplication<App>>();
     configureApp(app, env);
@@ -97,10 +97,10 @@ describe('Staff sessions and teacher access (e2e)', () => {
       }
     });
 
-    it('settings are admin-only: coordinator → 403, admin → 200 (read-only)', async () => {
+    it('settings are admin-only: coordinator → 403, admin → 200 (editable, handoff defaults)', async () => {
       expect(code(await get('/api/v1/center/settings', staffCookie('komila-rasulova')).expect(403))).toBe('FORBIDDEN');
       const res = await get('/api/v1/center/settings', staffCookie('farhod-jalilov')).expect(200);
-      expect(CenterSettingsSchema.parse(res.body)).toMatchObject({ editable: false, permissions: { coordGroups: true, coordStaff: true, teachShare: false } });
+      expect(CenterSettingsSchema.parse(res.body)).toMatchObject({ editable: true, updatedAt: null, permissions: { coordGroups: true, coordStaff: true, teachShare: false } });
     });
 
     it('the coordinator may see staff (permission on by default)', async () => {

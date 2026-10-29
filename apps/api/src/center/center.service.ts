@@ -1,8 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { CenterGroup, CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, GroupAnalytics, Locale } from '@nuvora/shared';
 import { GroupsService } from '../groups/groups.service.js';
+import { orgKeyOf } from '../invitations/invitation-rules.js';
+import { InvitationsService } from '../invitations/invitations.service.js';
+import { PermissionsService } from '../invitations/permissions.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DEMO_GROUPS, type DemoStaff, findGroup, PERMISSION_DEFAULTS, STAFF_DIRECTORY } from '../staff/demo-org.js';
+import { DEMO_GROUPS, type DemoStaff, findGroup, STAFF_DIRECTORY } from '../staff/demo-org.js';
 import { toStaff } from '../staff/staff.controller.js';
 import { TeachingService } from '../teaching/teaching.service.js';
 import { type GroupAggregate, toCenterGroup } from './center-view.js';
@@ -26,11 +29,14 @@ export class CenterService {
     @Inject(TeachingService) private readonly teaching: TeachingService,
     @Inject(GroupsService) private readonly groups: GroupsService,
     @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(InvitationsService) private readonly invitations: InvitationsService,
+    @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
   async overview(staff: DemoStaff, locale: Locale): Promise<CenterOverview> {
     if (staff.accountId) return this.accountOverview(staff, locale);
     const groups = await this.views(locale);
+    const stored = await this.invitations.list(staff);
     const active = groups.filter((g) => g.status === 'active');
     return {
       viewer: toStaff(staff),
@@ -40,8 +46,8 @@ export class CenterService {
         activeGroups: active.length,
         upcomingGroups: groups.filter((g) => g.status === 'upcoming').length,
         archivedGroups: groups.filter((g) => g.status === 'archived').length,
-        activeTeachers: STAFF_DIRECTORY.filter((s) => s.role === 'TEACHER' && s.status === 'active').length,
-        pendingInvitations: STAFF_DIRECTORY.filter((s) => s.status === 'pending').length,
+        activeTeachers: STAFF_DIRECTORY.filter((s) => s.role === 'TEACHER' && s.status === 'active').length + stored.filter((i) => i.status === 'accepted').length,
+        pendingInvitations: STAFF_DIRECTORY.filter((s) => s.status === 'pending').length + stored.filter((i) => i.status === 'pending').length,
       },
       groups,
     };
@@ -63,7 +69,9 @@ export class CenterService {
   }
 
   async staff(staff: DemoStaff): Promise<CenterStaff> {
-    if (!staff.organizationId) return { items: STAFF_DIRECTORY.map((s) => ({ ...s })) };
+    const invitations = await this.invitations.list(staff);
+    const canInvite = staff.role === 'ADMIN' && orgKeyOf(staff) !== null;
+    if (!staff.organizationId) return { items: STAFF_DIRECTORY.map((s) => ({ ...s })), invitations, canInvite };
     const accounts = await this.prisma.account.findMany({ where: { organizationId: staff.organizationId }, orderBy: { createdAt: 'asc' }, select: { name: true, role: true } });
     return {
       items: accounts.map((a) => ({
@@ -74,6 +82,8 @@ export class CenterService {
         activity: { kind: 'NONE' as const, date: null, until: null },
         synthetic: false,
       })),
+      invitations,
+      canInvite,
     };
   }
 
@@ -106,13 +116,15 @@ export class CenterService {
     return {
       viewer: toStaff(staff),
       organization: staff.title || ORGANIZATION,
-      totals: { enrollments: groups.reduce((n, g) => n + g.students, 0), activeGroups: groups.length, upcomingGroups: 0, archivedGroups: 0, activeTeachers: teachers, pendingInvitations: 0 },
+      totals: { enrollments: groups.reduce((n, g) => n + g.students, 0), activeGroups: groups.length, upcomingGroups: 0, archivedGroups: 0, activeTeachers: teachers, pendingInvitations: (await this.invitations.list(staff)).filter((i) => i.status === 'pending').length },
       groups,
     };
   }
 
-  settings(staff: DemoStaff): CenterSettings {
-    return { organization: staff.accountId ? staff.title : ORGANIZATION, permissions: { ...PERMISSION_DEFAULTS }, editable: false };
+  async settings(staff: DemoStaff): Promise<CenterSettings> {
+    const orgKey = orgKeyOf(staff);
+    const { permissions, updatedAt } = await this.permissions.get(orgKey);
+    return { organization: staff.accountId ? staff.title : ORGANIZATION, permissions, editable: staff.role === 'ADMIN' && orgKey !== null, updatedAt: updatedAt?.toISOString() ?? null };
   }
 
   /** Recorded groups first; their localized topic titles also name the reference figures of the others. */

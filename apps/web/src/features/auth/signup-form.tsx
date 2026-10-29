@@ -13,7 +13,7 @@ import { SITE_ROLES, type SiteRole } from './roles';
 const EMAIL = /^\S+@\S+\.\S+$/;
 type Errors = { name?: string; email?: string; password?: string; organization?: string };
 
-export function SignupForm({ initialRole }: { initialRole: SiteRole }) {
+export function SignupForm({ initialRole, initialEmail = '', next = null }: { initialRole: SiteRole; initialEmail?: string; next?: string | null }) {
   const t = useTranslations('Auth');
   const locale = useLocale();
   const router = useRouter();
@@ -23,7 +23,7 @@ export function SignupForm({ initialRole }: { initialRole: SiteRole }) {
   const [step, setStep] = useState<'details' | 'plan'>('details');
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function SignupForm({ initialRole }: { initialRole: SiteRole }) {
     setFormError(null);
     try {
       const account = await register.mutateAsync(build());
-      router.push(homeFor(account.role));
+      router.push(next ?? homeFor(account.role));
     } catch (error) {
       const key = authErrorKey(error);
       if (key === 'errEmailTaken') {
@@ -64,9 +64,9 @@ export function SignupForm({ initialRole }: { initialRole: SiteRole }) {
     event.preventDefault();
     if (busy) return;
     if (step === 'details') {
-      const next = validate();
-      setErrors(next);
-      if (Object.values(next).some(Boolean)) return;
+      const found = validate();
+      setErrors(found);
+      if (Object.values(found).some(Boolean)) return;
       if (paid) {
         setFormError(null);
         setStep('plan');
@@ -146,7 +146,7 @@ export function SignupForm({ initialRole }: { initialRole: SiteRole }) {
       <div className="flex flex-col gap-2 border-t border-(--line) pt-5 text-sm text-(--muted)">
         <span>
           {t('haveAccount')}{' '}
-          <Link href="/login" className="font-semibold text-(--text) underline">
+          <Link href={next ? `/login?next=${encodeURIComponent(next)}&email=${encodeURIComponent(email)}` : '/login'} className="font-semibold text-(--text) underline">
             {t('signInLink')}
           </Link>
         </span>

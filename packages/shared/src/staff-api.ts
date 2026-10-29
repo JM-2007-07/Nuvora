@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ContentRefSchema, SlugSchema } from './content-api.js';
+import { CenterPermissionsSchema, InvitationSchema } from './invitation-api.js';
 
 /**
  * Staff API contract (Faroz teacher and center workspaces). Demo staff only: no
@@ -186,12 +187,18 @@ export const CenterStaffSchema = z.strictObject({
       synthetic: z.boolean(),
     }),
   ),
+  /** Invitations stored in the database for this center (newest first). */
+  invitations: z.array(InvitationSchema),
+  /** Only the center admin can invite, revoke and resend; coordinators view. */
+  canInvite: z.boolean(),
 });
 export type CenterStaff = z.infer<typeof CenterStaffSchema>;
 
 export const CenterSettingsSchema = z.strictObject({
   organization: z.string(),
-  permissions: z.strictObject({ coordGroups: z.boolean(), coordStaff: z.boolean(), teachCreate: z.boolean(), teachShare: z.boolean() }),
-  editable: z.literal(false),
+  permissions: CenterPermissionsSchema,
+  /** The center admin can change them (PUT /center/settings/permissions). */
+  editable: z.boolean(),
+  updatedAt: z.string().nullable(),
 });
 export type CenterSettings = z.infer<typeof CenterSettingsSchema>;

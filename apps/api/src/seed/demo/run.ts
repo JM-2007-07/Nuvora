@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { bankDraft, defaultSchedule, questionData } from '../../assessments/assessment-rules.js';
 import { loadDotEnvFile, loadEnv } from '../../config/env.js';
+import { DEMO_CENTER_KEY } from '../../invitations/invitation-rules.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { recordAttempt } from '../../quizzes/record-attempt.js';
 import { answersFromChoices, B12_DIAGNOSTIC_QUIZ, B12_GROUP, B12_RETEST_QUIZ, B12_STUDENTS } from './b12-cohort.js';
@@ -17,6 +18,7 @@ import { DEMO_LEARNERS } from './demo-learners.js';
  *   3. resets group B-12 (Faroz handoff) and replays its JavaScript diagnostic and
  *      Arrays retest answers through the same recordAttempt().
  *   4. removes teacher Dilshod's assessments and recreates the design's Functions draft.
+ *   5. removes the demo center's invitations and resets its permissions (no row = handoff defaults).
  * Content is never touched. Learner rows other than guests and demo learners are untouched.
  */
 async function main(): Promise<number> {
@@ -129,6 +131,11 @@ async function main(): Promise<number> {
           },
         });
         lines.push(`teacher ${DEMO_TEACHER}: removed ${removed.count} assessment(s), recreated draft "${FUNCTIONS_CHECK.title}" (5 questions)`);
+
+        // Faroz Demo Center: invitations made in the demo are removed; permissions back to the handoff defaults.
+        const invitations = await tx.staffInvitation.deleteMany({ where: { orgKey: DEMO_CENTER_KEY } });
+        await tx.centerPermissions.deleteMany({ where: { orgKey: DEMO_CENTER_KEY } });
+        lines.push(`demo center: removed ${invitations.count} invitation(s), permissions reset to the handoff defaults`);
         return lines;
       },
       { maxWait: 10_000, timeout: 120_000 },

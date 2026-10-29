@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { CenterSettingsView } from '@/features/center/center-views';
+import { CenterSettingsView } from '@/features/center/staff-settings';
 import { routing } from '@/i18n/routing';
 
 export default async function CenterSettingsPage({ params }: PageProps<'/[locale]/center/settings'>) {

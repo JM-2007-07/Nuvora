@@ -34,7 +34,8 @@ The rebrand is decision **D-23** ([decisions](docs/01-architecture/decisions.md)
 | Public site | `/`, `/start`, `/login`, `/signup`, `/library`, `/privacy`, `/terms` | Everyone |
 | Learner app | `/app` (dashboard), `/app/quests`, `/app/quest/[quiz]`, `/app/results`, `/app/skills`, `/app/progress`, lessons and topics | Learners, demo learners, guests |
 | Teacher workspace | `/teach`, classes, students (answer by answer), assessments and the 5-step builder, gap insights, analytics, settings | Teachers |
-| Center workspace | `/center`, groups, staff, students (participation only), analytics, settings | Center admins, coordinators |
+| Center workspace | `/center`, groups, staff with teacher invitations, students (participation only), analytics, settings with editable coordinator permissions | Center admins, coordinators |
+| Invitation page | `/invite/[token]`: an invited teacher accepts with a teacher account | Invited teachers |
 
 Every route is prefixed with the locale: `/ru` (default), `/tg`, `/en`. Dark "Game Mode" is the default theme, with a sun/moon toggle that remembers the choice.
 
@@ -122,7 +123,7 @@ pnpm db:seed
 pnpm db:seed:demo
 ```
 
-`db:seed:demo` resets the demo learners and group B-12, removes guests, and recreates teacher Dilshod's draft assessment. Run it before each demo. It does not remove registered accounts.
+`db:seed:demo` resets the demo learners and group B-12, removes guests, recreates teacher Dilshod's draft assessment, and clears the demo center's invitations and permission changes. Run it before each demo. It does not remove registered accounts.
 
 ```bash
 pnpm dev
