@@ -31,6 +31,18 @@
   );
   --accent-word: #2ef2b5;
   --xp-on: #3d7bff;
+  /* Faroz Orbit (hero atom): cyan and violet are the logo gradient's ends; the rest alias the brand tokens. */
+  --orbit-cyan: #16e4fa;
+  --orbit-violet: #b27dff;
+  --orbit-blue: var(--blue);
+  --orbit-mag: var(--mag);
+  --orbit-mint: var(--mint);
+  --orbit-halo-opacity: 0.16;
+  --orbit-card-bg: var(--panel);
+  --orbit-core-rim: rgba(61, 123, 255, 0.55);
+  --orbit-core-aura: radial-gradient(circle, rgba(61, 123, 255, 0.34), rgba(124, 92, 255, 0.12) 45%, transparent 68%);
+  --orbit-logo-glow: rgba(46, 140, 255, 0.55);
+  --orbit-star: rgba(180, 185, 222, 0.55);
 }
 
 [data-theme='light'] {
@@ -56,6 +68,17 @@
   );
   --accent-word: #2f5bea;
   --xp-on: #2ef2b5;
+  --orbit-cyan: #0cb4d6;
+  --orbit-violet: #9a62f2;
+  --orbit-blue: var(--blue);
+  --orbit-mag: var(--mag);
+  --orbit-mint: var(--mint);
+  --orbit-halo-opacity: 0.09;
+  --orbit-card-bg: var(--panel);
+  --orbit-core-rim: rgba(47, 91, 234, 0.45);
+  --orbit-core-aura: radial-gradient(circle, rgba(47, 91, 234, 0.16), transparent 66%);
+  --orbit-logo-glow: rgba(46, 140, 255, 0.35);
+  --orbit-star: rgba(90, 95, 122, 0.3);
 }
 
 /* Same in both themes (the artboard uses them as fixed colours). */
@@ -161,35 +184,16 @@ button:focus-visible,
   }
 }
 
-/* Orbit hero motion: transform/opacity only; paused on hover; off for reduced motion. */
+/* Hero motion: transform/opacity only; off for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .fz-rot {
-    animation: fz-rot 46s linear infinite;
-  }
-  .fz-rot2 {
-    animation: fz-rot 22s linear infinite reverse;
-  }
-  .fz-tin {
-    animation: fz-rot 46s linear infinite reverse;
-  }
   .fz-pulse {
     animation: fz-pulse 3.2s ease-in-out infinite;
-  }
-  .fz-orb:hover .fz-rot,
-  .fz-orb:hover .fz-rot2,
-  .fz-orb:hover .fz-tin {
-    animation-play-state: paused;
   }
   .fz-lift {
     transition: transform 0.2s ease;
   }
   .fz-lift:hover {
     transform: translateY(-6px) rotate(-1deg);
-  }
-}
-@keyframes fz-rot {
-  to {
-    transform: rotate(360deg);
   }
 }
 @keyframes fz-pulse {
@@ -407,5 +411,81 @@ button:focus-visible,
   }
   .fz-delayed {
     animation: none;
+  }
+}
+
+/* Faroz Orbit (features/home/faroz-orbit.tsx): positions come from the component's animation loop;
+   these classes only paint. No blur filters: glows are wide low-opacity strokes and shadows. */
+@layer components {
+  .fz-orbit-halo {
+    opacity: var(--orbit-halo-opacity);
+  }
+  .fz-orbit-electron {
+    fill: var(--gold);
+    stroke: var(--gold);
+    stroke-opacity: 0.28;
+    stroke-width: 12px;
+  }
+  .fz-orbit-star {
+    background: var(--orbit-star);
+  }
+  .fz-orbit-core {
+    background: var(--core-bg);
+    box-shadow:
+      var(--core-glow),
+      inset 0 0 0 1.5px var(--orbit-core-rim),
+      inset 0 -22px 44px -16px rgba(0, 0, 0, 0.55),
+      inset 0 18px 34px -18px rgba(255, 255, 255, 0.22);
+  }
+  .fz-orbit-aura {
+    border-radius: 9999px;
+    background: var(--orbit-core-aura);
+  }
+  .fz-orbit-card {
+    background: var(--orbit-card-bg);
+    border: 1px solid color-mix(in srgb, var(--tone) 70%, transparent);
+    box-shadow:
+      0 0 24px -9px var(--tone),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    transition:
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .fz-orbit-card:hover {
+    border-color: var(--tone);
+    box-shadow:
+      0 0 32px -6px var(--tone),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .fz-orbit-icon {
+    color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  }
+  .fz-orbit-quest {
+    background: var(--orbit-card-bg);
+    border: 1px solid color-mix(in srgb, var(--blue) 55%, transparent);
+    box-shadow: 0 0 34px -16px var(--blue);
+  }
+  .fz-orbit:focus-visible {
+    outline: 2.4px solid var(--blue);
+    outline-offset: 4px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-orbit-aura {
+    animation: fz-orbit-breathe 7s ease-in-out infinite;
+  }
+}
+@keyframes fz-orbit-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
   }
 }

@@ -6,6 +6,7 @@ import { Fragment, type ReactNode } from 'react';
 import { Reveal } from '@/components/motion/reveal';
 import { GrowBar, XpSegments } from '@/features/home/bars';
 import { Faq } from '@/features/home/faq';
+import { FarozOrbit, type OrbitTone } from '@/features/home/faroz-orbit';
 import { Icon, ICONS } from '@/features/home/icon';
 import { LearningLoop } from '@/features/home/learning-loop';
 import { Link } from '@/i18n/navigation';
@@ -27,7 +28,7 @@ const band = (percent: number): Tone => (percent >= 80 ? 'mint' : percent >= 60 
 const HUD = { background: 'var(--hud)' } as const;
 
 /**
- * Faroz homepage (handoff §4 "Main", screens/Main.jpg) with the flat "Orbit" hero.
+ * Faroz homepage (handoff §4 "Main", screens/Main.jpg) with the interactive Faroz Orbit hero.
  * Numbers are the canvas demo data (group B-12, learner Amina); sections the product doesn't have yet
  * link to the closest working page.
  */
@@ -41,14 +42,15 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   // Public entry points: the role chooser, a learner start, and sign-up per role (concept pricing, demo checkout).
   const startHref = '/start';
 
-  const subjects = [
-    { key: 'math', tone: 'blue' },
-    { key: 'code', tone: 'mint' },
-    { key: 'physics', tone: 'mag' },
-    { key: 'chemistry', tone: 'gold' },
-    { key: 'languages', tone: 'blue' },
-    { key: 'history', tone: 'mint' },
-  ] as const;
+  // Order matches FarozOrbit's card paths (upper-left, upper-right, right, left, lower-left, lower-right), tones as in the reference.
+  const orbitSubjects: { key: 'chemistry' | 'physics' | 'math' | 'code' | 'languages' | 'history'; tone: OrbitTone }[] = [
+    { key: 'chemistry', tone: 'cyan' },
+    { key: 'physics', tone: 'blue' },
+    { key: 'math', tone: 'mint' },
+    { key: 'code', tone: 'violet' },
+    { key: 'languages', tone: 'mag' },
+    { key: 'history', tone: 'violet' },
+  ];
 
   const scan = [
     { key: 'variables', score: '4/4', tone: 'mint', label: t('strong') },
@@ -212,58 +214,12 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             </div>
           </div>
 
-          {/* Flat "Orbit" hero: the Faroz symbol at the centre, subjects on a slowly turning ring. */}
-          <div className="relative h-[580px] max-[960px]:h-[420px] max-[640px]:h-auto">
-            <div role="img" aria-label={t('orbitLabel')} className="fz-orb relative mx-auto aspect-square w-full max-w-[560px] max-[960px]:max-w-[420px] max-[640px]:max-w-[340px]">
-              <div aria-hidden="true" className="absolute inset-[8%] rounded-full border border-dashed border-(--ring-line)" />
-              <div aria-hidden="true" className="absolute inset-[22%] rounded-full border border-(--ring-line)" />
-              <div aria-hidden="true" className="fz-rot2 absolute inset-[16%]">
-                <span className="absolute top-[-5px] left-1/2 size-2.5 rounded-full bg-(--mint)" style={{ boxShadow: 'var(--dot-glow)' }} />
-                <span className="absolute top-[60%] left-[-5px] size-2 rounded-full bg-(--mag)" />
-                <span className="absolute right-[8%] bottom-[6%] size-2 rounded-full bg-(--gold)" />
-              </div>
-              <div aria-hidden="true" className="absolute inset-[31%] flex items-center justify-center rounded-full" style={{ background: 'var(--core-bg)', boxShadow: 'var(--core-glow)' }}>
-                <Image src="/brand/faroz-mark-dark.svg" alt="" width={140} height={140} className="h-auto w-[62%]" />
-              </div>
-              <div aria-hidden="true" className="fz-rot absolute inset-0">
-                {subjects.map((s, i) => {
-                  const a = -Math.PI / 2 + (i * Math.PI) / 3;
-                  return (
-                    <div
-                      key={s.key}
-                      className="absolute -translate-x-1/2 -translate-y-1/2"
-                      style={{ left: `${(50 + 44 * Math.cos(a)).toFixed(2)}%`, top: `${(50 + 44 * Math.sin(a)).toFixed(2)}%` }}
-                    >
-                      <div className="fz-tin">
-                        <div
-                          className="flex w-[104px] flex-col items-center gap-1.5 rounded-[18px] border border-(--line) bg-(--panel) px-2 py-3 transition-[transform,border-color] duration-200 hover:scale-[1.08] hover:border-(--blue) motion-reduce:transition-none motion-reduce:hover:scale-100 max-[640px]:w-[84px] max-[640px]:py-2"
-                          style={{ boxShadow: 'var(--tile-shadow)' }}
-                        >
-                          <span className={`flex size-10 items-center justify-center rounded-xl max-[640px]:size-8 ${TONES[s.tone]}`}>
-                            <Icon d={ICONS[s.key]} size={20} stroke={1.9} />
-                          </span>
-                          <span className="text-center text-xs font-bold max-[640px]:text-[11px]">{t(`subjects.${s.key}`)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div
-              className="absolute bottom-6 left-0 flex items-center gap-2.5 rounded-[14px] border border-(--line) bg-(--panel) px-3.5 py-3 max-[640px]:relative max-[640px]:bottom-auto max-[640px]:mt-6 max-[640px]:w-fit"
-              style={{ boxShadow: 'var(--tile-shadow)' }}
-            >
-              <span className="flex size-[34px] items-center justify-center rounded-[10px] border-[1.5px] border-(--mag) bg-(--mag-tint) font-brand text-[11px] font-bold text-(--mag-ink)">
-                1/4
-              </span>
-              <span className="flex flex-col gap-0.5">
-                <strong className="text-[13px]">{t('questReady')}</strong>
-                <span className="text-xs text-(--faint)">{t('questFrom')}</span>
-              </span>
-              <span className="rounded-md bg-(--xp-chip) px-2 py-1 text-[11px] font-bold text-(--xp-chip-ink)">+120 XP</span>
-            </div>
-          </div>
+          {/* Faroz Orbit: the logo nucleus with subjects on 3D orbits (client component; the rest of the page stays server-rendered). */}
+          <FarozOrbit
+            subjects={orbitSubjects.map((s) => ({ key: s.key, label: t(`subjects.${s.key}`), icon: ICONS[s.key], tone: s.tone }))}
+            labels={{ figure: t('orbitLabel'), hint: t('orbitHint') }}
+            quest={{ progress: '1/4', title: t('questReady'), from: t('questFrom'), xp: '+120 XP', demo: t('orbitDemo') }}
+          />
         </div>
       </section>
 

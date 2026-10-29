@@ -172,7 +172,9 @@
     "faq5a": "You and the teachers of your groups. Centers see group totals, not individual answers.",
     "endTitle": "Start with one scan. Leave with a plan.",
     "endSub": "Twenty questions, your topic map and your first quest — free.",
-    "appIcon": "Faroz app icon"
+    "appIcon": "Faroz app icon",
+    "orbitHint": "Hover to tilt the orbits, drag to spin the subjects, or focus and use the arrow keys",
+    "orbitDemo": "demo"
   },
   "Status": {
     "heading": "System status",
