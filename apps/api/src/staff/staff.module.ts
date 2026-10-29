@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '../prisma/prisma.module.js';
 import { StaffController } from './staff.controller.js';
 
-/** Demo staff sessions (teacher, coordinator, admin). IdentityService (global) provides the signing key. */
-@Module({ controllers: [StaffController] })
+/** Staff sessions (demo staff and staff accounts). IdentityService (global) provides the signing key. */
+@Module({ imports: [PrismaModule], controllers: [StaffController] })
 export class StaffModule {}

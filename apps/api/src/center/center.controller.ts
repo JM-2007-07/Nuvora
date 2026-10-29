@@ -32,15 +32,15 @@ export class CenterController {
   }
 
   @Get('staff')
-  staff(@CurrentStaff() staff: DemoStaff): CenterStaff {
+  staff(@CurrentStaff() staff: DemoStaff): Promise<CenterStaff> {
     requirePermission(staff, 'coordStaff');
-    return this.center.staff();
+    return this.center.staff(staff);
   }
 
   @Get('settings')
   @Roles('ADMIN')
-  settings(): CenterSettings {
-    return this.center.settings();
+  settings(@CurrentStaff() staff: DemoStaff): CenterSettings {
+    return this.center.settings(staff);
   }
 }
 

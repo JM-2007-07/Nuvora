@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, UseInterceptors } from '@nestjs/common';
-import { type Locale, SlugSchema, type SubjectDetail, type SubjectListResponse, type TopicDetail } from '@nuvora/shared';
+import { type LibraryItem, type Locale, SlugSchema, type SubjectDetail, type SubjectListResponse, type TopicDetail } from '@nuvora/shared';
 import { ContentLanguageInterceptor, ContentLocale } from '../common/i18n/content-locale.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import { CatalogService } from './catalog.service.js';
@@ -17,6 +17,12 @@ export class CatalogController {
   @Get('subjects/:subjectSlug')
   getSubject(@Param('subjectSlug', new ZodValidationPipe(SlugSchema)) slug: string, @ContentLocale() locale: Locale): Promise<SubjectDetail> {
     return this.catalog.getSubject(slug, locale);
+  }
+
+  /** All recommended resources of published subjects (Faroz Library). */
+  @Get('library')
+  async library(@ContentLocale() locale: Locale): Promise<{ items: LibraryItem[] }> {
+    return { items: await this.catalog.library(locale) };
   }
 
   @Get('topics/:topicSlug')

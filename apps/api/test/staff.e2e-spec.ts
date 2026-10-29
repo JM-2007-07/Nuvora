@@ -113,4 +113,40 @@ describe('Staff sessions and teacher access (e2e)', () => {
       expect(code(await get('/api/v1/center/groups/b12', staffCookie('farhod-jalilov')).expect(400))).toBe('VALIDATION_FAILED');
     });
   });
+
+  describe('accounts and groups (no database needed for these cases)', () => {
+    const post = (path: string, body: object, cookie?: string) => {
+      const req = request(app.getHttpServer()).post(path).send(body);
+      return cookie ? req.set('Cookie', cookie) : req;
+    };
+
+    it.each([
+      [{ role: 'LEARNER', name: 'A', email: 'a@b.c', password: 'longenough' }],
+      [{ role: 'LEARNER', name: 'Amina', email: 'not-an-email', password: 'longenough' }],
+      [{ role: 'LEARNER', name: 'Amina', email: 'a@b.tj', password: 'short' }],
+      [{ role: 'TEACHER', name: 'Dilshod', email: 'd@b.tj', password: 'longenough' }],
+      [{ role: 'CENTER_ADMIN', name: 'Farhod', email: 'f@b.tj', password: 'longenough', plan: 'CENTER' }],
+      [{ role: 'ADMIN', name: 'X', email: 'x@b.tj', password: 'longenough' }],
+    ])('register rejects %j with 400', async (body) => {
+      expect(code(await post('/api/v1/auth/register', body).expect(400))).toBe('VALIDATION_FAILED');
+    });
+
+    it('login rejects a malformed body with 400; plans are public', async () => {
+      expect(code(await post('/api/v1/auth/login', { email: 'x' }).expect(400))).toBe('VALIDATION_FAILED');
+      const plans = await get('/api/v1/plans').expect(200);
+      expect(plans.body.items.map((p: { code: string }) => p.code)).toEqual(['FREE', 'TEACHER', 'CENTER']);
+    });
+
+    it('joining a group needs a learner session (401) and a valid code (400)', async () => {
+      expect(code(await post('/api/v1/me/groups/join', { code: 'JS-ABCD' }).expect(401))).toBe('UNAUTHENTICATED');
+    });
+
+    it('demo staff cannot create DB groups (403 ACCOUNT_REQUIRED); roles are enforced', async () => {
+      expect(code(await post('/api/v1/teach/my-groups', { name: 'Evening JS', capacity: 20 }, staffCookie('dilshod-karimov')).expect(403))).toBe('ACCOUNT_REQUIRED');
+      expect(code(await post('/api/v1/teach/my-groups', { name: 'Evening JS', capacity: 0 }, staffCookie('dilshod-karimov')).expect(400))).toBe('VALIDATION_FAILED');
+      expect(code(await post('/api/v1/center/my-groups', { name: 'Evening JS', capacity: 20 }, staffCookie('dilshod-karimov')).expect(403))).toBe('FORBIDDEN');
+      expect(code(await get('/api/v1/teach/my-groups', staffCookie('farhod-jalilov')).expect(403))).toBe('FORBIDDEN');
+      expect((await get('/api/v1/teach/my-groups', staffCookie('dilshod-karimov')).expect(200)).body).toEqual({ items: [] });
+    });
+  });
 });

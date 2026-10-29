@@ -32,6 +32,22 @@ enum Locale {
 enum UserKind {
   DEMO
   GUEST
+  /// A learner who registered with email and password (Account.role LEARNER)
+  ACCOUNT
+}
+
+/// Faroz accounts (2026-10-28, owner-approved migration): who signs in with a password.
+enum AccountRole {
+  LEARNER
+  TEACHER
+  CENTER_ADMIN
+}
+
+/// Faroz plans (handoff pricing). Payments are a demo: nothing is charged.
+enum PlanCode {
+  FREE
+  TEACHER
+  CENTER
 }
 
 enum QuizKind {
@@ -237,6 +253,8 @@ model User {
   attempts       QuizAttempt[]
   masteries      TopicMastery[]
   lessonProgress LessonProgress[]
+  account        Account?
+  memberships    GroupMember[]
 
   @@map("users")
 }
@@ -320,4 +338,94 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+
+// ---------- Accounts, organizations, plans, groups (Faroz, 2026-10-28) ----------
+// Password accounts sit next to the demo profiles (which stay for the defense demo).
+// A learner account owns a User row, so attempts, mastery and progress work unchanged.
+
+model Account {
+  id             String        @id @default(cuid())
+  /// Stored lower-case; unique sign-in name
+  email          String        @unique
+  /// scrypt: "<salt hex>:<key hex>" (node:crypto, no extra package)
+  passwordHash   String
+  name           String
+  role           AccountRole
+  /// Learner accounts only: their learning history
+  userId         String?       @unique
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Teacher (own workspace) or center admin: the organization that holds the plan
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  teaching StudyGroup[]
+
+  @@index([organizationId])
+  @@map("accounts")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      Account[]
+  subscriptions Subscription[]
+  groups        StudyGroup[]
+
+  @@map("organizations")
+}
+
+/// A demo checkout: records the chosen plan; no money moves (isDemo is always true here).
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan           PlanCode
+  priceCents     Int
+  currency       String
+  isDemo         Boolean      @default(true)
+  startedAt      DateTime     @default(now())
+  renewsAt       DateTime
+
+  @@index([organizationId])
+  @@map("subscriptions")
+}
+
+/// A group created by a teacher or center; learners join with its code.
+model StudyGroup {
+  id               String       @id @default(cuid())
+  /// Short join code shown to the teacher, e.g. "JS-4K7Q"
+  joinCode         String       @unique
+  name             String
+  subjectSlug      String
+  capacity         Int
+  schedule         String?
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teacherAccountId String?
+  teacher          Account?     @relation(fields: [teacherAccountId], references: [id], onDelete: SetNull)
+  createdAt        DateTime     @default(now())
+
+  members GroupMember[]
+
+  @@index([organizationId])
+  @@index([teacherAccountId])
+  @@map("study_groups")
+}
+
+model GroupMember {
+  groupId  String
+  group    StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime   @default(now())
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("group_members")
 }

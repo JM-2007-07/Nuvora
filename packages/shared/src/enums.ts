@@ -3,7 +3,7 @@
  * They must match the Prisma enums in apps/api/prisma/schema.prisma
  * (a test in apps/api checks this).
  */
-export const USER_KINDS = ['DEMO', 'GUEST'] as const;
+export const USER_KINDS = ['DEMO', 'GUEST', 'ACCOUNT'] as const;
 export type UserKind = (typeof USER_KINDS)[number];
 
 export const QUIZ_KINDS = ['TOPIC', 'CHECKPOINT'] as const;

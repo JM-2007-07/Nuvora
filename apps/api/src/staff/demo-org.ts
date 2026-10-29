@@ -19,6 +19,9 @@ export interface DemoStaff {
   title: string;
   /** Group codes this teacher teaches (teachers only). */
   groups: string[];
+  /** Set for staff who signed in with a password account (their data lives in the DB). */
+  accountId?: string;
+  organizationId?: string | null;
 }
 
 export interface DemoGroup {

@@ -6,7 +6,7 @@ import { SessionSigner } from './session-cookie.js';
 
 export interface LearnerRecord {
   id: string;
-  kind: 'DEMO' | 'GUEST';
+  kind: 'DEMO' | 'GUEST' | 'ACCOUNT';
   displayName: string;
   demoSlug: string | null;
 }

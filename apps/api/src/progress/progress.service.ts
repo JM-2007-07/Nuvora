@@ -1,11 +1,12 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { LessonCompletion, Locale, Progress } from '@nuvora/shared';
+import type { LearnerStats, LessonCompletion, Locale, Progress } from '@nuvora/shared';
 import { localizeFields } from '../common/i18n/locale.js';
 import { type LearnerRecord, toLearner } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { recommend } from '../recommendations/recommend.js';
 import { compareTopics, type TopicAttemptScore } from './comparison.js';
 import { loadLearningState, toRecommendationDtos } from './learning-state.js';
+import { computeStats } from './stats.js';
 
 /** Learning Journey (FR-PROG-01..02, FR-JOUR-01) and lesson completion (FR-LES-02). */
 @Injectable()
@@ -107,6 +108,32 @@ export class ProgressService {
         recommendations: toRecommendationDtos(recommend(state.topics, weak), state, locale),
       };
     });
+  }
+
+  /** XP, level, streak and badges for one subject, from stored attempts and lessons (rules in stats.ts). */
+  async stats(learner: LearnerRecord, subjectSlug: string): Promise<LearnerStats> {
+    const subject = await this.prisma.subject.findUnique({ where: { slug: subjectSlug }, select: { id: true, isPublished: true } });
+    if (!subject || !subject.isPublished) throw new NotFoundException({ code: 'SUBJECT_NOT_FOUND', message: `Subject "${subjectSlug}" not found` });
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: { userId: learner.id, quiz: { subjectId: subject.id } },
+      select: { submittedAt: true, correctCount: true, quiz: { select: { kind: true } } },
+    });
+    const lessons = await this.prisma.lessonProgress.findMany({ where: { userId: learner.id, lesson: { topic: { subjectId: subject.id } } }, select: { completedAt: true } });
+    const answers = await this.prisma.attemptAnswer.findMany({
+      where: { attempt: { userId: learner.id, quiz: { subjectId: subject.id } } },
+      select: { isCorrect: true, question: { select: { topic: { select: { slug: true } } } }, attempt: { select: { id: true, submittedAt: true, quiz: { select: { slug: true, kind: true } } } } },
+    });
+    const comparison = compareTopics(
+      answers.map((a) => ({ attemptId: a.attempt.id, submittedAt: a.attempt.submittedAt, quizSlug: a.attempt.quiz.slug, quizKind: a.attempt.quiz.kind, topicSlug: a.question.topic.slug, isCorrect: a.isCorrect })),
+    );
+    return computeStats(
+      {
+        attempts: attempts.map((a) => ({ submittedAt: a.submittedAt, correctCount: a.correctCount, kind: a.quiz.kind })),
+        lessons,
+        comparisons: [...comparison.values()].map((c) => ({ beforePercent: c.before?.scorePercent ?? null, afterPercent: c.after?.scorePercent ?? null, afterAt: c.after?.submittedAt ?? null })),
+      },
+      new Date(),
+    );
   }
 
   /** Idempotent: completing a lesson twice keeps one record. */

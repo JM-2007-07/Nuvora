@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Locale, SubjectDetail, SubjectListResponse, TopicDetail } from '@nuvora/shared';
+import type { LibraryItem, Locale, SubjectDetail, SubjectListResponse, TopicDetail } from '@nuvora/shared';
 import { localizeFields } from '../common/i18n/locale.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -83,6 +83,23 @@ export class CatalogService {
         prerequisites: topic.prerequisites.map((p) => p.prerequisite.slug),
       })),
     };
+  }
+
+  /** Library: every resource of the published subjects, in subject and topic order. */
+  async library(locale: Locale): Promise<LibraryItem[]> {
+    const rows = await this.prisma.resource.findMany({
+      where: { topic: { subject: { isPublished: true } } },
+      orderBy: [{ topic: { subject: { order: 'asc' } } }, { topic: { order: 'asc' } }, { order: 'asc' }],
+      select: {
+        key: true, type: true, title: true, author: true, url: true, languages: true, whyUseful: true,
+        topic: { select: { slug: true, title: true, subject: { select: { slug: true, title: true } } } },
+      },
+    });
+    return rows.map((r) => ({
+      resource: { key: r.key, type: r.type, author: r.author, url: r.url, languages: r.languages, ...localizeFields(locale, { title: r.title, whyUseful: r.whyUseful }) },
+      topic: { slug: r.topic.slug, ...localizeFields(locale, { title: r.topic.title }) },
+      subject: { slug: r.topic.subject.slug, ...localizeFields(locale, { title: r.topic.subject.title }) },
+    }));
   }
 
   async getTopic(slug: string, locale: Locale): Promise<TopicDetail> {

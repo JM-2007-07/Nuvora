@@ -1,8 +1,10 @@
 import { type DynamicModule, Module } from '@nestjs/common';
+import { AccountsModule } from './accounts/accounts.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CenterModule } from './center/center.module.js';
 import { ConfigModule } from './config/config.module.js';
 import type { AppEnv } from './config/env.js';
+import { GroupsModule } from './groups/groups.module.js';
 import { HealthModule } from './health/health.module.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { LessonsModule } from './lessons/lessons.module.js';
@@ -17,7 +19,7 @@ export class AppModule {
   static forRoot(env: AppEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [ConfigModule.forRoot(env), HealthModule, IdentityModule, CatalogModule, LessonsModule, QuizzesModule, ProgressModule, StaffModule, TeachingModule, CenterModule],
+      imports: [ConfigModule.forRoot(env), HealthModule, IdentityModule, CatalogModule, LessonsModule, QuizzesModule, ProgressModule, StaffModule, TeachingModule, CenterModule, AccountsModule, GroupsModule],
     };
   }
 }

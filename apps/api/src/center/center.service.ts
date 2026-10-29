@@ -1,5 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, GroupAnalytics, Locale } from '@nuvora/shared';
+import type { CenterGroup, CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, GroupAnalytics, Locale } from '@nuvora/shared';
+import { GroupsService } from '../groups/groups.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { DEMO_GROUPS, type DemoGroup, type DemoStaff, findGroup, PERMISSION_DEFAULTS, STAFF_DIRECTORY } from '../staff/demo-org.js';
 import { toStaff } from '../staff/staff.controller.js';
 import { TeachingService } from '../teaching/teaching.service.js';
@@ -20,9 +22,14 @@ function aggregate(full: GroupAnalytics): GroupAggregate {
 /** Center workspace (handoff CDashboard, CGroups, CStaff, CSettings): group totals and participation only. */
 @Injectable()
 export class CenterService {
-  constructor(@Inject(TeachingService) private readonly teaching: TeachingService) {}
+  constructor(
+    @Inject(TeachingService) private readonly teaching: TeachingService,
+    @Inject(GroupsService) private readonly groups: GroupsService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+  ) {}
 
   async overview(staff: DemoStaff, locale: Locale): Promise<CenterOverview> {
+    if (staff.accountId) return this.accountOverview(staff, locale);
     const groups = await Promise.all(DEMO_GROUPS.map((g) => this.view(g, locale)));
     const active = groups.filter((g) => g.status === 'active');
     return {
@@ -52,12 +59,50 @@ export class CenterService {
     };
   }
 
-  staff(): CenterStaff {
-    return { items: STAFF_DIRECTORY.map((s) => ({ ...s })) };
+  async staff(staff: DemoStaff): Promise<CenterStaff> {
+    if (!staff.organizationId) return { items: STAFF_DIRECTORY.map((s) => ({ ...s })) };
+    const accounts = await this.prisma.account.findMany({ where: { organizationId: staff.organizationId }, orderBy: { createdAt: 'asc' }, select: { name: true, role: true } });
+    return {
+      items: accounts.map((a) => ({ name: a.name, role: a.role === 'CENTER_ADMIN' ? ('ADMIN' as const) : ('TEACHER' as const), subject: '', status: 'active' as const, note: '', synthetic: false })),
+    };
   }
 
-  settings(): CenterSettings {
-    return { organization: ORGANIZATION, permissions: { ...PERMISSION_DEFAULTS }, editable: false };
+  /** A center admin account: its own organization and groups from the database (totals only). */
+  private async accountOverview(staff: DemoStaff, locale: Locale): Promise<CenterOverview> {
+    const own = await this.groups.centerGroups(staff, locale);
+    const groups = own.map((g): CenterGroup => {
+      const participationPercent = g.memberCount ? Math.round((g.submitted / g.memberCount) * 100) : null;
+      const flags: CenterGroup['flags'] = [];
+      if (g.memberCount === 0) flags.push('SETUP_INCOMPLETE');
+      else if (participationPercent !== null && participationPercent < 95) flags.push('PARTICIPATION_UNDER_95');
+      return {
+        code: g.joinCode,
+        name: g.name,
+        teacher: g.teacher ?? '—',
+        status: 'active',
+        schedule: g.schedule ?? '',
+        capacity: g.capacity,
+        students: g.memberCount,
+        submitted: g.submitted,
+        participationPercent,
+        diagnosticPercent: g.diagnosticPercent,
+        topics: null,
+        flags,
+        recorded: true,
+        synthetic: false,
+      };
+    });
+    const teachers = staff.organizationId ? await this.prisma.account.count({ where: { organizationId: staff.organizationId, role: 'TEACHER' } }) : 0;
+    return {
+      viewer: toStaff(staff),
+      organization: staff.title || ORGANIZATION,
+      totals: { enrollments: groups.reduce((n, g) => n + g.students, 0), activeGroups: groups.length, upcomingGroups: 0, archivedGroups: 0, activeTeachers: teachers, pendingInvitations: 0 },
+      groups,
+    };
+  }
+
+  settings(staff: DemoStaff): CenterSettings {
+    return { organization: staff.accountId ? staff.title : ORGANIZATION, permissions: { ...PERMISSION_DEFAULTS }, editable: false };
   }
 
   private async view(group: DemoGroup, locale: Locale) {

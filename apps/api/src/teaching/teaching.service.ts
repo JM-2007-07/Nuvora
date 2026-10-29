@@ -4,6 +4,7 @@ import { localizeFields } from '../common/i18n/locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { percent } from '../quizzes/scoring.js';
 import { type DemoGroup, type DemoStaff, DEMO_GROUPS, findGroup, REFERENCE_TOPIC_TITLES } from '../staff/demo-org.js';
+import { GroupsService } from '../groups/groups.service.js';
 import { toStaff } from '../staff/staff.controller.js';
 import { groupAnalytics, type GroupAnalyticsResult } from './group-analytics.js';
 
@@ -15,9 +16,31 @@ import { groupAnalytics, type GroupAnalyticsResult } from './group-analytics.js'
  */
 @Injectable()
 export class TeachingService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(GroupsService) private readonly groups: GroupsService,
+  ) {}
 
   async overview(staff: DemoStaff, locale: Locale): Promise<TeacherOverview> {
+    if (staff.accountId) {
+      // A teacher account: their own groups from the database.
+      const own = await this.groups.teacherGroups(staff, locale);
+      return {
+        staff: toStaff(staff),
+        groups: own.map((g) => ({
+          code: g.joinCode,
+          name: g.name,
+          status: 'active' as const,
+          schedule: g.schedule ?? '',
+          studentCount: g.memberCount,
+          submitted: g.submitted,
+          averagePercent: g.diagnosticPercent,
+          weakestTopic: null,
+          recorded: true,
+          synthetic: false,
+        })),
+      };
+    }
     const groups = DEMO_GROUPS.filter((g) => staff.groups.includes(g.code));
     const summaries = await Promise.all(groups.map(async (g) => (g.roster && g.diagnosticQuiz ? (await this.analyse(g, locale)).group : referenceGroup(g))));
     return { staff: toStaff(staff), groups: summaries };

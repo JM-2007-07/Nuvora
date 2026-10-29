@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Inject, NotFoundException, Pos
 import { type Staff, type StaffSessionState, StaffSessionRequestSchema } from '@nuvora/shared';
 import type { Request, Response } from 'express';
 import { IdentityService } from '../identity/identity.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { readCookie, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import { DEMO_STAFF, type DemoStaff, findStaff } from './demo-org.js';
@@ -13,7 +14,10 @@ export const toStaff = (s: DemoStaff): Staff => ({ slug: s.slug, name: s.name, r
 /** Demo staff sessions (teacher, coordinator, admin). Like demo learners: no passwords, never for public deployment. */
 @Controller()
 export class StaffController {
-  constructor(@Inject(IdentityService) private readonly identity: IdentityService) {}
+  constructor(
+    @Inject(IdentityService) private readonly identity: IdentityService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+  ) {}
 
   @Get('staff-profiles')
   profiles(): { items: Staff[] } {
@@ -21,8 +25,8 @@ export class StaffController {
   }
 
   @Get('staff/session')
-  session(@Req() req: Request): StaffSessionState {
-    const staff = staffFromCookie(this.identity, readCookie(req.headers.cookie, STAFF_COOKIE));
+  async session(@Req() req: Request): Promise<StaffSessionState> {
+    const staff = await staffFromCookie(this.identity, this.prisma, readCookie(req.headers.cookie, STAFF_COOKIE));
     return { staff: staff ? toStaff(staff) : null };
   }
 
