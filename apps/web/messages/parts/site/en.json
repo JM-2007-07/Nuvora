@@ -80,7 +80,43 @@
     "errCredentials": "Wrong email or password.",
     "errValidation": "Some details were not accepted. Check the form and try again.",
     "errGeneric": "Something went wrong. Please try again.",
-    "errOffline": "Faroz can’t reach its server. Try again in a moment."
+    "errOffline": "Faroz can’t reach its server. Try again in a moment.",
+    "stage": {
+      "kicker": "Faroz",
+      "login": {
+        "title": "Your quests are waiting",
+        "body": "Your skill tree, streaks and progress are saved. Sign in and carry on.",
+        "p1": "Quests built around your gaps",
+        "p2": "A skill tree for every topic",
+        "p3": "Before-and-after results"
+      },
+      "learner": {
+        "title": "Find your gaps, close them with quests",
+        "body": "One diagnostic shows every topic; quests take you from a lesson to a retest.",
+        "p1": "Free for learners",
+        "p2": "Quests: lesson, practice, retest",
+        "p3": "XP, streaks and a skill tree"
+      },
+      "teacher": {
+        "title": "See your class answer by answer",
+        "body": "Build a test in your language, assign it to a group and see where they stumbled.",
+        "p1": "Test builder and question bank",
+        "p2": "Every student’s answers, question by question",
+        "p3": "The group’s common mistakes"
+      },
+      "center": {
+        "title": "Every group on one map",
+        "body": "Group totals and participation, never individual scores.",
+        "p1": "Teachers, groups and roles",
+        "p2": "Group totals and participation",
+        "p3": "Center-wide analytics"
+      },
+      "hint": {
+        "learner": "I learn",
+        "teacher": "I teach groups",
+        "center": "I run a center"
+      }
+    }
   },
   "Library": {
     "metaTitle": "Library",

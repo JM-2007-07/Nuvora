@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { AuthShowcase } from './auth-showcase';
 import { authErrorKey } from './errors';
 import { AuthCard, Field } from './field';
 import { homeFor, useLogin } from './hooks';
@@ -39,7 +40,7 @@ export function LoginForm({ initialEmail = '', next = null }: { initialEmail?: s
   }
 
   return (
-    <AuthCard>
+    <AuthCard showcase={<AuthShowcase variant="login" />}>
       <div className="flex flex-col gap-2">
         <h1 className="m-0 text-[30px] leading-tight font-bold">{t('loginTitle')}</h1>
         <p className="m-0 text-[15px] text-(--muted)">{t('loginSub')}</p>

@@ -4,6 +4,8 @@ import type { RegisterRequest } from '@nuvora/shared';
 import { useLocale, useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { Building2Icon, GraduationCapIcon, type LucideIcon, PresentationIcon } from 'lucide-react';
+import { AuthShowcase } from './auth-showcase';
 import { authErrorKey } from './errors';
 import { AuthCard, Field } from './field';
 import { homeFor, usePlans, useRegister } from './hooks';
@@ -11,6 +13,7 @@ import { PasswordField } from './password-field';
 import { SITE_ROLES, type SiteRole } from './roles';
 
 const EMAIL = /^\S+@\S+\.\S+$/;
+const ROLE_ICONS: Record<SiteRole, LucideIcon> = { learner: GraduationCapIcon, teacher: PresentationIcon, center: Building2Icon };
 type Errors = { name?: string; email?: string; password?: string; organization?: string };
 
 export function SignupForm({ initialRole, initialEmail = '', next = null }: { initialRole: SiteRole; initialEmail?: string; next?: string | null }) {
@@ -83,7 +86,7 @@ export function SignupForm({ initialRole, initialEmail = '', next = null }: { in
       : t('planPriceTbd');
 
   return (
-    <AuthCard wide>
+    <AuthCard showcase={<AuthShowcase variant={role} />}>
       <div className="flex flex-col gap-2">
         <h1 className="m-0 text-[30px] leading-tight font-bold">{t('signupTitle')}</h1>
         <p className="m-0 text-[15px] text-(--muted)">{t('signupSub')}</p>
@@ -95,15 +98,23 @@ export function SignupForm({ initialRole, initialEmail = '', next = null }: { in
             <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
               <legend className="mb-2 p-0 text-[13px] font-semibold text-(--muted)">{t('roleLabel')}</legend>
               <div className="grid grid-cols-3 gap-2">
-                {SITE_ROLES.map((r) => (
-                  <label
-                    key={r}
-                    className={`fz-card-hover flex min-h-11 cursor-pointer items-center justify-center rounded-xl border px-2 py-2.5 text-center text-sm font-bold has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--sel) ${role === r ? 'border-(--sel) bg-(--panel2) text-(--text)' : 'border-(--line2) text-(--muted)'}`}
-                  >
-                    <input type="radio" name="role" value={r} checked={role === r} onChange={() => setRole(r)} className="sr-only" />
-                    {t(`role.${r}`)}
-                  </label>
-                ))}
+                {SITE_ROLES.map((r) => {
+                  const Icon = ROLE_ICONS[r];
+                  const on = role === r;
+                  return (
+                    <label
+                      key={r}
+                      className={`fz-card-hover flex min-h-11 cursor-pointer flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--sel) ${on ? 'fz-card-tint border-(--sel) bg-(--mint-tint) text-(--text)' : 'border-(--line2) text-(--muted)'}`}
+                    >
+                      <input type="radio" name="role" value={r} checked={on} onChange={() => setRole(r)} className="sr-only" />
+                      <span aria-hidden="true" className={`grid size-9 place-items-center rounded-xl transition-colors duration-150 ${on ? 'bg-(--mint) text-(--btn-ink)' : 'bg-(--panel2) text-(--muted)'}`}>
+                        <Icon className="size-[18px]" />
+                      </span>
+                      <span className="text-sm font-bold">{t(`role.${r}`)}</span>
+                      <span className="text-[11px] leading-tight text-(--faint) max-[480px]:hidden">{t(`stage.hint.${r}`)}</span>
+                    </label>
+                  );
+                })}
               </div>
             </fieldset>
             <Field id="signup-name" label={t('name')} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} />
