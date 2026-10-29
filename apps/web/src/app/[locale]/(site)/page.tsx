@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Fragment, type ReactNode } from 'react';
-import { Reveal } from '@/components/motion/reveal';
+import { RevealGroup, RevealItem } from '@/components/motion/reveal-group';
 import { GrowBar, XpSegments } from '@/features/home/bars';
 import { Faq } from '@/features/home/faq';
 import { FarozOrbit, type OrbitTone } from '@/features/home/faroz-orbit';
@@ -181,22 +181,29 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   );
 
   return (
-    <main id="main" className="flex-1">
+    // overflow-x-clip: items that slide in from the side never widen the page before they arrive.
+    <main id="main" className="flex-1 overflow-x-clip">
       {/* HERO */}
       <section className="relative overflow-hidden pt-14 pb-[72px]">
         <div aria-hidden="true" className="fz-dots absolute inset-0" />
         <div aria-hidden="true" className="absolute top-[-20%] right-[-10%] h-[120%] w-[70%]" style={{ background: 'var(--hero-glow)' }} />
         <div className="fz-wrap relative grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] items-center gap-8 max-[960px]:grid-cols-1">
-          <div className="fz-rise flex flex-col gap-6">
+          <RevealGroup className="flex flex-col gap-6" stagger={0.1}>
+            <RevealItem className="self-start">
             <span className="inline-flex items-center gap-2 self-start rounded-full border border-(--line) bg-(--panel) px-3.5 py-2 text-[13px] font-semibold text-(--muted)">
               <span className="fz-pulse size-2 rounded-full bg-(--mint)" />
               {t('eyebrow')}
             </span>
+            </RevealItem>
+            <RevealItem>
             <h1 className="m-0 text-[60px] leading-[1.04] font-bold max-[640px]:text-[38px]">
               {t('h1a')} <span className="text-(--accent-word)">{t('h1b')}</span>
             </h1>
+            </RevealItem>
+            <RevealItem>
             <p className="m-0 max-w-[520px] text-lg leading-relaxed text-(--muted)">{t('sub')}</p>
-            <div className="flex flex-wrap gap-3">
+            </RevealItem>
+            <RevealItem className="flex flex-wrap gap-3">
               <Link href="/start?role=learner" className="fz-btn fz-btn-primary fz-btn-lg">
                 {t('cta1')}
                 <Icon d={ICONS.arrow} size={18} stroke={2.4} />
@@ -204,15 +211,15 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               <Link href="/#how" className="fz-btn fz-btn-ghost fz-btn-lg">
                 {t('cta2')}
               </Link>
-            </div>
-            <div className="flex flex-wrap gap-2">
+            </RevealItem>
+            <RevealItem className="flex flex-wrap gap-2">
               {[t('m1'), t('m2'), t('m3')].map((m) => (
                 <span key={m} className="rounded-[10px] border border-(--line) bg-(--panel) px-3 py-2 text-[13px] font-semibold text-(--muted)">
                   {m}
                 </span>
               ))}
-            </div>
-          </div>
+            </RevealItem>
+          </RevealGroup>
 
           {/* Faroz Orbit: the logo nucleus with subjects on 3D orbits (client component; the rest of the page stays server-rendered). */}
           <FarozOrbit
@@ -225,11 +232,16 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
       {/* HOW IT WORKS */}
       <section id="how" className="scroll-mt-20 border-t border-(--line) py-24">
-        <Reveal className="fz-wrap flex flex-col gap-10">
+        <RevealGroup className="fz-wrap flex flex-col gap-10">
           <div className="flex max-w-[760px] flex-col gap-3.5">
-            <span className="fz-kicker text-(--mint-ink)">{t('howKicker')}</span>
-            <h2 className="m-0 text-[40px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('howTitle')}</h2>
+            <RevealItem>
+              <span className="fz-kicker text-(--mint-ink)">{t('howKicker')}</span>
+            </RevealItem>
+            <RevealItem>
+              <h2 className="m-0 text-[40px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('howTitle')}</h2>
+            </RevealItem>
           </div>
+          <RevealItem from="zoom">
           <LearningLoop
             label={t('loopLabel')}
             steps={[
@@ -240,38 +252,52 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             ]}
             panels={panels}
           />
-        </Reveal>
+          </RevealItem>
+        </RevealGroup>
       </section>
 
       {/* LEARNERS */}
       <section id="learners" className="scroll-mt-20 border-t border-(--line) py-24">
-        <Reveal className="fz-wrap flex flex-col gap-9">
+        <RevealGroup className="fz-wrap flex flex-col gap-9">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div className="flex max-w-[700px] flex-col gap-3.5">
-              <span className="fz-kicker text-(--blue-ink)">{t('learnersKicker')}</span>
-              <h2 className="m-0 text-[40px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('learnersTitle')}</h2>
+              <RevealItem>
+                <span className="fz-kicker text-(--blue-ink)">{t('learnersKicker')}</span>
+              </RevealItem>
+              <RevealItem>
+                <h2 className="m-0 text-[40px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('learnersTitle')}</h2>
+              </RevealItem>
             </div>
-            <Link href="/app" className="fz-btn fz-btn-ghost">
-              {t('openApp')}
-            </Link>
+            <RevealItem from="right">
+              <Link href="/app" className="fz-btn fz-btn-ghost">
+                {t('openApp')}
+              </Link>
+            </RevealItem>
           </div>
           <div className="grid grid-cols-4 gap-4 max-[1080px]:grid-cols-2 max-[640px]:grid-cols-1">
-            {photo('learners', null, 'col-span-2 row-span-2 min-h-[420px] max-[640px]:col-auto max-[640px]:row-auto')}
-            <div className="fz-card-hover flex flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
+            <RevealItem from="zoom" className="col-span-2 row-span-2 max-[640px]:col-auto max-[640px]:row-auto">
+              {photo('learners', null, 'h-full min-h-[420px]')}
+            </RevealItem>
+            <RevealItem from="up" className="flex">
+            <div className="fz-card-hover flex flex-1 flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
               <span className={`flex size-11 items-center justify-center rounded-[14px] ${TONES.mint}`}>
                 <Icon d={ICONS.clock} size={22} />
               </span>
               <strong className="font-brand text-base tracking-[-0.02em]">{t('scanTitle')}</strong>
               <span className="text-sm leading-normal text-(--muted)">{t('scanBody')}</span>
             </div>
-            <div className="fz-card-hover flex flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
+            </RevealItem>
+            <RevealItem from="up" className="flex">
+            <div className="fz-card-hover flex flex-1 flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
               <span className={`flex size-11 items-center justify-center rounded-[14px] ${TONES.blue}`}>
                 <Icon d={ICONS.tree} size={22} />
               </span>
               <strong className="font-brand text-base tracking-[-0.02em]">{t('treeTitle')}</strong>
               <span className="text-sm leading-normal text-(--muted)">{t('treeBody')}</span>
             </div>
-            <div className="fz-card-hover col-span-2 flex flex-col gap-3 rounded-[22px] border border-(--line) bg-(--panel) p-[22px] max-[640px]:col-auto">
+            </RevealItem>
+            <RevealItem from="up" className="col-span-2 flex max-[640px]:col-auto">
+            <div className="fz-card-hover flex flex-1 flex-col gap-3 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
               <div className="flex justify-between text-xs font-bold text-(--muted)">
                 <span>{t('xpLabel')}</span>
                 <span className="text-(--text)">340 / 500</span>
@@ -279,20 +305,30 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               <XpSegments on={7} total={10} onClass="bg-(--xp-on)" offClass="bg-(--line2)" />
               <span className="text-sm text-(--muted)">{t('xpNote')}</span>
             </div>
+            </RevealItem>
           </div>
-        </Reveal>
+        </RevealGroup>
       </section>
 
       {/* TEACHERS */}
       <section id="teachers" className="scroll-mt-20 border-t border-(--line) bg-(--band) py-24">
-        <Reveal className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
+        <RevealGroup className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
           <div className="flex flex-col gap-[18px]">
-            <span className="fz-kicker text-(--mag-ink)">{t('teachersKicker')}</span>
-            <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('teachersTitle')}</h2>
-            <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t('teachersBody')}</p>
-            <Link href="/start?role=teacher" className="fz-btn fz-btn-primary w-fit max-[640px]:w-full">
-              {t('openTeacher')}
-            </Link>
+            <RevealItem from="left">
+              <span className="fz-kicker text-(--mag-ink)">{t('teachersKicker')}</span>
+            </RevealItem>
+            <RevealItem from="left">
+              <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('teachersTitle')}</h2>
+            </RevealItem>
+            <RevealItem from="left">
+              <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t('teachersBody')}</p>
+            </RevealItem>
+            <RevealItem from="left">
+              <Link href="/start?role=teacher" className="fz-btn fz-btn-primary w-fit max-[640px]:w-full">
+                {t('openTeacher')}
+              </Link>
+            </RevealItem>
+            <RevealItem from="up">
             <div className="overflow-hidden rounded-[20px] border border-(--line) bg-(--panel)">
               <div className="flex justify-between border-b border-(--line) px-[18px] py-3.5 text-[13px] font-bold">
                 <span>{t('teachersTable')}</span>
@@ -310,26 +346,40 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                 </div>
               ))}
             </div>
+            </RevealItem>
           </div>
-          {photo(
-            'teachers',
-            <span className="absolute top-[18px] right-[18px] rounded-[14px] border border-(--line) bg-(--panel) px-3 py-2.5 text-[13px] font-bold">{t('teachersBadge')}</span>,
-            'min-h-[460px]',
-          )}
-        </Reveal>
+          <RevealItem from="right">
+            {photo(
+              'teachers',
+              <span className="absolute top-[18px] right-[18px] rounded-[14px] border border-(--line) bg-(--panel) px-3 py-2.5 text-[13px] font-bold">{t('teachersBadge')}</span>,
+              'min-h-[460px]',
+            )}
+          </RevealItem>
+        </RevealGroup>
       </section>
 
       {/* CENTERS */}
       <section id="centers" className="scroll-mt-20 border-t border-(--line) py-24">
-        <Reveal className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
-          {photo('centers', null, 'min-h-[440px] max-[960px]:order-2')}
+        <RevealGroup className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
+          <RevealItem from="left" className="max-[960px]:order-2">
+            {photo('centers', null, 'min-h-[440px]')}
+          </RevealItem>
           <div className="flex flex-col gap-[18px]">
-            <span className="fz-kicker text-(--gold-ink)">{t('centersKicker')}</span>
-            <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('centersTitle')}</h2>
-            <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t('centersBody')}</p>
-            <Link href="/start?role=center" className="fz-btn fz-btn-primary w-fit max-[640px]:w-full">
-              {t('openCenter')}
-            </Link>
+            <RevealItem from="right">
+              <span className="fz-kicker text-(--gold-ink)">{t('centersKicker')}</span>
+            </RevealItem>
+            <RevealItem from="right">
+              <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('centersTitle')}</h2>
+            </RevealItem>
+            <RevealItem from="right">
+              <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t('centersBody')}</p>
+            </RevealItem>
+            <RevealItem from="right">
+              <Link href="/start?role=center" className="fz-btn fz-btn-primary w-fit max-[640px]:w-full">
+                {t('openCenter')}
+              </Link>
+            </RevealItem>
+            <RevealItem from="up">
             <div className="flex flex-col gap-2.5 rounded-[20px] border border-(--line) bg-(--panel) p-[18px]">
               <div className="grid grid-cols-[56px_repeat(5,minmax(0,1fr))] gap-1.5 text-center text-[11px] font-bold text-(--faint)">
                 <span />
@@ -351,21 +401,26 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               ))}
               <span className="text-[13px] text-(--muted)">{t('centersNote')}</span>
             </div>
+            </RevealItem>
           </div>
-        </Reveal>
+        </RevealGroup>
       </section>
 
       {/* LIBRARY */}
       <section id="library" className="scroll-mt-20 border-t border-(--line) py-24">
-        <Reveal className="fz-wrap flex flex-col gap-8">
+        <RevealGroup className="fz-wrap flex flex-col gap-8" stagger={0.08}>
           <div className="flex max-w-[680px] flex-col gap-3.5">
-            <span className="fz-kicker text-(--mint-ink)">{t('libraryKicker')}</span>
-            <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('libraryTitle')}</h2>
+            <RevealItem>
+              <span className="fz-kicker text-(--mint-ink)">{t('libraryKicker')}</span>
+            </RevealItem>
+            <RevealItem>
+              <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('libraryTitle')}</h2>
+            </RevealItem>
           </div>
           <ul className="m-0 grid list-none grid-cols-6 gap-4 p-0 max-[1080px]:grid-cols-3 max-[640px]:grid-cols-2">
             {books.map((b, i) => (
               <li key={b.title}>
-                <Reveal index={i}>
+                <RevealItem from="zoom">
                 <Link href="/library" className="fz-lift group flex flex-col gap-2.5 text-(--text) no-underline">
                 <span
                   aria-hidden="true"
@@ -390,28 +445,33 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                   <span className="text-xs text-(--faint)">{b.meta}</span>
                 </span>
                 </Link>
-                </Reveal>
+                </RevealItem>
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <RevealItem className="flex flex-wrap items-center justify-between gap-4">
             <p className="m-0 max-w-[640px] text-xs text-(--faint)">{t('libraryNote')}</p>
             <Link href="/library" className="fz-btn fz-btn-ghost">
               {t('openLibrary')}
             </Link>
-          </div>
-        </Reveal>
+          </RevealItem>
+        </RevealGroup>
       </section>
 
       {/* PRICING */}
       <section id="pricing" className="scroll-mt-20 border-t border-(--line) bg-(--band) py-24">
-        <Reveal className="fz-wrap flex flex-col gap-8">
+        <RevealGroup className="fz-wrap flex flex-col gap-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('pricingTitle')}</h2>
-            <span className="rounded-full border border-dashed border-(--line2) px-[11px] py-[7px] text-xs font-semibold text-(--faint)">{t('pricingConcept')}</span>
+            <RevealItem>
+              <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('pricingTitle')}</h2>
+            </RevealItem>
+            <RevealItem from="right">
+              <span className="inline-block rounded-full border border-dashed border-(--line2) px-[11px] py-[7px] text-xs font-semibold text-(--faint)">{t('pricingConcept')}</span>
+            </RevealItem>
           </div>
           <div className="grid grid-cols-3 gap-5 max-[960px]:grid-cols-1">
-            <div className="fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
+            <RevealItem className="flex">
+            <div className="fz-card-hover flex flex-1 flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
               <span className="font-brand text-lg font-semibold">{t('planLearner')}</span>
               <span className="font-brand text-[38px] font-bold">{t('planFree')}</span>
               <span className="text-sm leading-relaxed text-(--muted)">{t('planLearnerBody')}</span>
@@ -419,7 +479,9 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                 {t('planLearnerCta')}
               </Link>
             </div>
-            <div className="fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
+            </RevealItem>
+            <RevealItem className="flex">
+            <div className="fz-card-hover flex flex-1 flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
               <div className="flex justify-between">
                 <span className="font-brand text-lg font-semibold">{t('planTeacher')}</span>
                 <span className="text-xs font-bold text-(--mint-ink)">{t('planMostUseful')}</span>
@@ -430,7 +492,9 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                 {t('planTeacherCta')}
               </Link>
             </div>
-            <div className="fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
+            </RevealItem>
+            <RevealItem className="flex">
+            <div className="fz-card-hover flex flex-1 flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
               <span className="font-brand text-lg font-semibold">{t('planCenter')}</span>
               {/* "Custom" / "Индивидуально" is longer than a price: smaller size and wrapping keep it inside the card. */}
               <span className="font-brand text-[30px] leading-tight font-bold [overflow-wrap:anywhere]">{t('planCustom')}</span>
@@ -439,29 +503,42 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                 {t('planCenterCta')}
               </Link>
             </div>
+            </RevealItem>
           </div>
-        </Reveal>
+        </RevealGroup>
       </section>
 
       {/* FAQ */}
       <section id="faq" className="scroll-mt-20 border-t border-(--line) py-24">
-        <Reveal className="fz-wrap grid grid-cols-2 items-start gap-7 max-[960px]:grid-cols-1">
-          <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('faqTitle')}</h2>
-          <Faq items={([1, 2, 3, 4, 5] as const).map((n) => ({ q: t(`faq${n}q`), a: t(`faq${n}a`) }))} />
-        </Reveal>
+        <RevealGroup className="fz-wrap grid grid-cols-2 items-start gap-7 max-[960px]:grid-cols-1">
+          <RevealItem from="left">
+            <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('faqTitle')}</h2>
+          </RevealItem>
+          <RevealItem from="up">
+            <Faq items={([1, 2, 3, 4, 5] as const).map((n) => ({ q: t(`faq${n}q`), a: t(`faq${n}a`) }))} />
+          </RevealItem>
+        </RevealGroup>
       </section>
 
       {/* FINAL CTA */}
       <section className="relative overflow-hidden border-t border-(--line) py-[110px]">
         <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--cta-glow)' }} />
-        <Reveal className="fz-wrap relative flex flex-col items-center gap-6 text-center">
-          <Image src="/brand/faroz-app-icon.svg" alt={t('appIcon')} width={84} height={84} />
-          <h2 className="m-0 max-w-[760px] text-[44px] leading-[1.1] font-bold max-[640px]:text-[32px]">{t('endTitle')}</h2>
-          <p className="m-0 max-w-[540px] text-[17px] text-(--muted)">{t('endSub')}</p>
-          <Link href={startHref} className="fz-btn fz-btn-primary fz-btn-lg min-h-[58px] px-[30px]">
-            {t('cta1')}
-          </Link>
-        </Reveal>
+        <RevealGroup className="fz-wrap relative flex flex-col items-center gap-6 text-center" stagger={0.13}>
+          <RevealItem from="zoom">
+            <Image src="/brand/faroz-app-icon.svg" alt={t('appIcon')} width={84} height={84} />
+          </RevealItem>
+          <RevealItem>
+            <h2 className="m-0 max-w-[760px] text-[44px] leading-[1.1] font-bold max-[640px]:text-[32px]">{t('endTitle')}</h2>
+          </RevealItem>
+          <RevealItem>
+            <p className="m-0 max-w-[540px] text-[17px] text-(--muted)">{t('endSub')}</p>
+          </RevealItem>
+          <RevealItem from="zoom">
+            <Link href={startHref} className="fz-btn fz-btn-primary fz-btn-lg min-h-[58px] px-[30px]">
+              {t('cta1')}
+            </Link>
+          </RevealItem>
+        </RevealGroup>
       </section>
     </main>
   );
