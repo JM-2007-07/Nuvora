@@ -1,15 +1,21 @@
 'use client';
 
 import {
+  ApiErrorSchema,
   type AttemptRequest,
   AttemptResultSchema,
   DemoProfileListSchema,
   LearnerSchema,
+  LearnerStatsSchema,
   LessonCompletionSchema,
+  LessonDetailSchema,
   type Locale,
+  MyGroupListSchema,
   ProgressSchema,
   type SessionRequest,
   SessionStateSchema,
+  SubjectDetailSchema,
+  TopicDetailSchema,
 } from '@nuvora/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
@@ -84,6 +90,7 @@ function useLearnerAction<TArgs, TResult>(run: (args: TArgs, locale: Locale) => 
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: learnerKeys.me });
       await queryClient.invalidateQueries({ queryKey: ['progress'] });
+      await queryClient.invalidateQueries({ queryKey: ['stats'] });
     },
   });
 }
@@ -122,6 +129,79 @@ export function useSubmitQuest(quizSlug: string) {
     onSuccess: async (result) => {
       queryClient.setQueryData(learnerKeys.attempt(result.attemptId, locale), result);
       await queryClient.invalidateQueries({ queryKey: ['progress'] });
+      await queryClient.invalidateQueries({ queryKey: ['stats'] });
+    },
+  });
+}
+
+/** Public content for the in-app pages (same-origin API, no session needed). */
+export function useSubject(slug: string) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: ['subject', slug, locale],
+    queryFn: () => clientFetch(`/subjects/${encodeURIComponent(slug)}`, SubjectDetailSchema, { locale }),
+  });
+}
+
+export function useTopic(slug: string, enabled = true) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: ['topic', slug, locale],
+    queryFn: () => clientFetch(`/topics/${encodeURIComponent(slug)}`, TopicDetailSchema, { locale }),
+    enabled,
+    retry: (count, error) => !(error instanceof ApiRequestError && error.status < 500) && count < 2,
+  });
+}
+
+export function useLesson(slug: string) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: ['lesson', slug, locale],
+    queryFn: () => clientFetch(`/lessons/${encodeURIComponent(slug)}`, LessonDetailSchema, { locale }),
+    retry: (count, error) => !(error instanceof ApiRequestError && error.status < 500) && count < 2,
+  });
+}
+
+/** XP, level, streak, badges of the current learner (GET /me/stats). */
+export function useStats(subject: string, enabled: boolean) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: ['stats', subject, locale],
+    queryFn: () => clientFetch(`/me/stats?subject=${encodeURIComponent(subject)}`, LearnerStatsSchema, { locale }),
+    enabled,
+    retry: false,
+  });
+}
+
+export function useMyGroups(enabled: boolean) {
+  const locale = useLocale();
+  return useQuery({
+    queryKey: ['groups', locale],
+    queryFn: () => clientFetch('/me/groups', MyGroupListSchema, { locale }),
+    enabled,
+    retry: false,
+  });
+}
+
+/** POST /me/groups/join answers 200 (body not relied on): read it leniently, map errors to ApiRequestError. */
+export function useJoinGroup() {
+  const locale = useLocale();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (code: string) => {
+      const response = await fetch('/api/v1/me/groups/join', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Accept-Language': locale, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      if (!response.ok) {
+        const parsed = ApiErrorSchema.safeParse(await response.json().catch(() => null));
+        throw new ApiRequestError(response.status, parsed.success ? parsed.data.error.code : 'REQUEST_FAILED');
+      }
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['groups'] });
     },
   });
 }

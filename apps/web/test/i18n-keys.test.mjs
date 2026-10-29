@@ -6,7 +6,17 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 const LOCALES = ['tg', 'ru', 'en'];
-const load = (locale) => JSON.parse(readFileSync(new URL(`../messages/${locale}.json`, import.meta.url), 'utf8'));
+const PARTS = ['site', 'learn', 'work']; // = MESSAGE_PARTS in src/i18n/request.ts
+const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
+const load = (locale) => {
+  const main = read(`../messages/${locale}.json`);
+  for (const part of PARTS) {
+    const extra = read(`../messages/parts/${part}/${locale}.json`);
+    for (const key of Object.keys(extra)) assert.ok(!(key in main), `messages/parts/${part}/${locale}.json redefines namespace "${key}"`);
+    Object.assign(main, extra);
+  }
+  return main;
+};
 
 function flatten(obj, prefix = '') {
   return Object.entries(obj).flatMap(([key, value]) =>

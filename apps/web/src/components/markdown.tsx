@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 /**
  * Lesson / quiz Markdown (D-12). react-markdown never renders raw HTML (no
@@ -11,7 +12,7 @@ const components: ComponentProps<typeof ReactMarkdown>['components'] = {
     <pre
       dir="ltr"
       lang="en"
-      className="my-4 overflow-x-auto rounded-md border border-border bg-muted p-4 font-mono text-sm leading-relaxed text-foreground"
+      className="my-4 overflow-x-auto rounded-[14px] border border-(--line) bg-(--code) p-4 font-mono text-sm leading-relaxed text-(--code-ink)"
     >
       {children}
     </pre>
@@ -20,7 +21,7 @@ const components: ComponentProps<typeof ReactMarkdown>['components'] = {
     className ? (
       <code className="font-mono">{children}</code>
     ) : (
-      <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em] text-foreground">
+      <code dir="ltr" className="rounded-md bg-(--panel2) px-1.5 py-0.5 font-mono text-[0.9em] text-(--text)">
         {children}
       </code>
     ),
@@ -30,21 +31,26 @@ const components: ComponentProps<typeof ReactMarkdown>['components'] = {
   ul: ({ children }) => <ul className="my-3 list-disc space-y-1 pl-6">{children}</ul>,
   ol: ({ children }) => <ol className="my-3 list-decimal space-y-1 pl-6">{children}</ol>,
   table: ({ children }) => (
-    <div className="my-4 overflow-x-auto">
+    <div className="my-4 overflow-x-auto rounded-[14px] border border-(--line)">
       <table className="w-full border-collapse text-sm">{children}</table>
     </div>
   ),
-  th: ({ children }) => <th className="border-b border-border px-3 py-2 text-left font-semibold">{children}</th>,
-  td: ({ children }) => <td className="border-b border-border px-3 py-2 align-top">{children}</td>,
+  th: ({ children }) => <th className="border-b border-(--line) bg-(--panel2) px-3 py-2 text-left font-semibold">{children}</th>,
+  td: ({ children }) => <td className="border-b border-(--line) px-3 py-2 align-top">{children}</td>,
   a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-(--blue-ink) underline underline-offset-4 transition-colors hover:text-(--text)">
       {children}
     </a>
   ),
 };
 
 export function Markdown({ children }: { children: string }) {
-  return <ReactMarkdown components={components}>{children}</ReactMarkdown>;
+  // GFM: lessons use tables (e.g. the Arrays method table).
+  return (
+    <ReactMarkdown components={components} remarkPlugins={[remarkGfm]}>
+      {children}
+    </ReactMarkdown>
+  );
 }
 
 /** Single-line Markdown (quiz options): inline code, no paragraph wrapper. */

@@ -31,6 +31,7 @@ export class IdentityController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<Learner> {
     const learner = await this.identity.startSession(body);
+    res.clearCookie('fz_staff', cookieOptions); // one identity per browser (see staff and auth controllers)
     res.cookie(SESSION_COOKIE, this.identity.signer.sign(learner.id), { ...cookieOptions, maxAge: SESSION_MAX_AGE_SECONDS * 1000 });
     return toLearner(learner);
   }

@@ -114,7 +114,13 @@ button:focus-visible,
     text-align: center;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: transform 0.12s ease;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      color 0.18s ease,
+      box-shadow 0.18s ease,
+      filter 0.18s ease,
+      transform 0.18s ease;
   }
   .fz-btn:active {
     transform: scale(0.97);
@@ -218,5 +224,188 @@ button:focus-visible,
     background: transparent;
     color: var(--hud-text);
     border-color: var(--hud-muted);
+  }
+}
+
+/*
+ * Motion and hover system. Colour/shadow hovers are always on; lifts and entrance animations
+ * are gated by prefers-reduced-motion below.
+ */
+:root,
+[data-theme='dark'] {
+  --btn-glow-hover: 0 0 36px -2px rgba(46, 242, 181, 0.95);
+  --card-glow-hover: 0 14px 34px -16px rgba(61, 123, 255, 0.55);
+  --row-hover: rgba(143, 149, 194, 0.08);
+  --ghost-hover: rgba(143, 149, 194, 0.1);
+}
+[data-theme='light'] {
+  --btn-glow-hover: 0 8px 20px -10px rgba(18, 20, 42, 0.55);
+  --card-glow-hover: 0 14px 30px -18px rgba(18, 20, 42, 0.35);
+  --row-hover: rgba(18, 20, 42, 0.045);
+  --ghost-hover: rgba(18, 20, 42, 0.05);
+}
+
+@layer components {
+  .fz-btn-primary:hover {
+    box-shadow: var(--btn-glow-hover);
+    filter: brightness(1.06);
+  }
+  .fz-btn-ghost:hover {
+    background: var(--ghost-hover);
+    border-color: var(--blue);
+  }
+  .fz-btn-hud:hover {
+    box-shadow: var(--btn-glow-hover);
+    filter: brightness(1.06);
+  }
+  .fz-btn-hud-ghost:hover {
+    background: var(--ghost-hover);
+    border-color: var(--hud-text);
+  }
+  .fz-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    filter: none;
+  }
+
+  /* Interactive card: border to --blue and a soft glow; the lift is added without reduced motion. */
+  .fz-card-hover {
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+  .fz-card-hover:hover,
+  .fz-card-hover:focus-within {
+    border-color: var(--blue);
+    box-shadow: var(--card-glow-hover);
+  }
+  /* Highlighted card (e.g. the next quest): constant soft glow. */
+  .fz-glow-blue {
+    box-shadow: var(--hud-glow);
+  }
+  .fz-glow-mint {
+    box-shadow: var(--glow);
+  }
+
+  /* Table / list row: background tint. */
+  .fz-row-hover {
+    transition: background-color 0.15s ease;
+  }
+  .fz-row-hover:hover {
+    background: var(--row-hover);
+  }
+
+  /* Website header link: underline grows from the start on hover and for the current item. */
+  .fz-nav-link {
+    position: relative;
+    transition: color 0.15s ease;
+  }
+  .fz-nav-link::after {
+    content: '';
+    position: absolute;
+    inset-inline: 12px;
+    bottom: 5px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--mint);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
+  }
+  .fz-nav-link:hover,
+  .fz-nav-link[aria-current] {
+    color: var(--text);
+  }
+  .fz-nav-link:hover::after,
+  .fz-nav-link[aria-current]::after {
+    transform: scaleX(1);
+  }
+
+  /* Skeleton wrapper that appears only after 200 ms (no grey flash on fast loads). */
+  .fz-delayed {
+    animation: fz-fade-in 0.2s ease 0.2s backwards;
+  }
+}
+
+@keyframes fz-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fz-bar-w {
+  from {
+    width: 0;
+  }
+}
+@keyframes fz-bar-h {
+  from {
+    height: 0;
+  }
+}
+@keyframes fz-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fz-card-hover:hover {
+    transform: translateY(-2px);
+  }
+  /* Route / section entrance. --fz-delay staggers siblings: style={{ '--fz-delay': '80ms' }}. */
+  .fz-page-in {
+    animation: fz-rise 0.32s ease-out backwards;
+  }
+  .fz-rise {
+    animation: fz-rise 0.45s ease-out backwards;
+    animation-delay: var(--fz-delay, 0ms);
+  }
+  /* Progress / score bars: put on the fill element that has an inline width (or height). */
+  .fz-bar-grow {
+    animation: fz-bar-w 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--fz-delay, 0.1s);
+  }
+  .fz-bar-grow-y {
+    animation: fz-bar-h 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--fz-delay, 0.1s);
+  }
+  .fz-menu-in {
+    animation: fz-menu-in 0.2s ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fz-btn,
+  .fz-card-hover,
+  .fz-row-hover,
+  .fz-nav-link,
+  .fz-nav-link::after {
+    transition-duration: 0.01ms;
+  }
+  .fz-btn:active {
+    transform: none;
+  }
+  .fz-delayed {
+    animation: none;
   }
 }

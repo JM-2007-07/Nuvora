@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/brand/logo';
 import { Link } from '@/i18n/navigation';
 
-/** Website footer (Faroz Home artboard). Privacy and Terms have no pages yet, so they are plain text. */
+/** Website footer (Faroz Home artboard). */
 export async function SiteFooter() {
   const t = await getTranslations('Footer');
   const tBrand = await getTranslations('Brand');
@@ -15,20 +15,24 @@ export async function SiteFooter() {
           <span className="text-(--faint)">{tBrand('tagline')}</span>
         </div>
         <nav aria-label={t('nav')} className="flex flex-wrap gap-5 text-(--muted)">
-          <Link href="/#how" className="no-underline hover:text-(--text)">
+          <Link href="/#how" className="no-underline py-1.5 hover:text-(--text)">
             {t('how')}
           </Link>
-          <Link href="/#library" className="no-underline hover:text-(--text)">
+          <Link href="/library" className="no-underline py-1.5 hover:text-(--text)">
             {t('library')}
           </Link>
-          <Link href="/#teachers" className="no-underline hover:text-(--text)">
+          <Link href="/start?role=teacher" className="no-underline py-1.5 hover:text-(--text)">
             {t('teachers')}
           </Link>
-          <Link href="/#centers" className="no-underline hover:text-(--text)">
+          <Link href="/start?role=center" className="no-underline py-1.5 hover:text-(--text)">
             {t('centers')}
           </Link>
-          <span>{t('privacy')}</span>
-          <span>{t('terms')}</span>
+          <Link href="/privacy" className="no-underline py-1.5 hover:text-(--text)">
+            {t('privacy')}
+          </Link>
+          <Link href="/terms" className="no-underline py-1.5 hover:text-(--text)">
+            {t('terms')}
+          </Link>
         </nav>
         <span className="w-full text-xs text-(--faint)">{t('note')}</span>
       </div>

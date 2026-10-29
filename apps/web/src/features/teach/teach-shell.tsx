@@ -1,18 +1,23 @@
 'use client';
 
-import { LayoutDashboardIcon, SearchIcon } from 'lucide-react';
+import { BarChart3Icon, GraduationCapIcon, LayoutDashboardIcon, SearchIcon, SettingsIcon, UsersIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PersonCard, WorkspaceShell } from '@/features/app/workspace-shell';
 import { usePathname } from '@/i18n/navigation';
-import { useLeaveStaff, useStaff } from './hooks';
+import { isAccountStaff, useLeaveStaff, useSignOut, useStaff } from './hooks';
 
 /** Teacher workspace shell (handoff TSidebar). */
 export function TeachShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations('Teach.nav');
   const pathname = usePathname();
+  const tw = useTranslations('WorkNav');
   const items = [
-    { href: '/teach', label: t('dashboard'), Icon: LayoutDashboardIcon, active: pathname === '/teach' || pathname.startsWith('/teach/students') },
+    { href: '/teach', label: t('dashboard'), Icon: LayoutDashboardIcon, active: pathname === '/teach' },
+    { href: '/teach/classes', label: tw('classes'), Icon: GraduationCapIcon, active: pathname.startsWith('/teach/classes') },
+    { href: '/teach/students', label: tw('students'), Icon: UsersIcon, active: pathname.startsWith('/teach/students') },
     { href: '/teach/insights', label: t('insights'), Icon: SearchIcon, active: pathname.startsWith('/teach/insights') },
+    { href: '/teach/analytics', label: tw('analytics'), Icon: BarChart3Icon, active: pathname.startsWith('/teach/analytics') },
+    { href: '/teach/settings', label: tw('settings'), Icon: SettingsIcon, active: pathname.startsWith('/teach/settings') },
   ];
   return (
     <WorkspaceShell items={items} chip={t('chip')} person={<StaffCard />}>
@@ -25,15 +30,18 @@ export function StaffCard() {
   const t = useTranslations('Teach.nav');
   const tRole = useTranslations('Teach.role');
   const staff = useStaff();
+  const tw = useTranslations('WorkNav');
   const leave = useLeaveStaff();
+  const signOut = useSignOut();
   if (!staff.data) return null;
+  const account = isAccountStaff(staff.data.slug);
   return (
     <PersonCard
       name={staff.data.name}
       note={`${tRole(staff.data.role)} · ${staff.data.title}`}
-      switchLabel={t('switch')}
-      onSwitch={() => leave.mutate()}
-      pending={leave.isPending}
+      switchLabel={account ? tw('signOut') : t('switch')}
+      onSwitch={() => (account ? signOut.mutate() : leave.mutate())}
+      pending={leave.isPending || signOut.isPending}
     />
   );
 }

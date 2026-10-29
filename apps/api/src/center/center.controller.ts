@@ -1,4 +1,4 @@
-import { Controller, ForbiddenException, Get, Inject, Param, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, ForbiddenException, Get, Inject, NotFoundException, Param, UseGuards, UseInterceptors } from '@nestjs/common';
 import type { CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, Locale } from '@nuvora/shared';
 import { z } from 'zod';
 import { ContentLanguageInterceptor, ContentLocale } from '../common/i18n/content-locale.js';
@@ -28,6 +28,8 @@ export class CenterController {
   @Get('groups/:code')
   group(@Param('code', new ZodValidationPipe(GroupCodeSchema)) code: string, @CurrentStaff() staff: DemoStaff, @ContentLocale() locale: Locale): Promise<CenterGroupDetail> {
     requirePermission(staff, 'coordGroups');
+    // Demo-org groups belong to the demo center only; an account admin's own groups are under /center/my-groups.
+    if (staff.accountId) throw new NotFoundException({ code: 'GROUP_NOT_FOUND', message: `Group ${code} not found` });
     return this.center.group(code, locale);
   }
 

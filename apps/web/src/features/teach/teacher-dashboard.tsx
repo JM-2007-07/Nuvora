@@ -1,9 +1,10 @@
 'use client';
 
 import type { GroupAnalytics, Staff, TeacherGroup } from '@nuvora/shared';
-import { ArrowRightIcon } from 'lucide-react';
+import { ArrowRightIcon, CheckIcon, CircleIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Markdown } from '@/components/markdown';
+import { Reveal } from '@/components/motion/reveal';
 import { shortDate } from '@/features/app/bits';
 import { Card, ErrorState, LoadingState } from '@/features/app/states';
 import { Link } from '@/i18n/navigation';
@@ -35,12 +36,15 @@ function Body({ staff }: { staff: Staff }) {
         <h1 className="text-3xl font-bold sm:text-4xl">{t('hello', { name: staff.name.split(' ')[0] })}</h1>
         <p className="mt-1.5 text-(--muted)">{t('subtitle', { count: active.length })}</p>
       </div>
+      <Kpis groups={active} />
       {group.isPending ? <LoadingState label={tStates('loading')} /> : group.isError ? <ErrorState error={group.error} onRetry={() => group.refetch()} /> : <NextStep g={group.data} />}
       <div className="grid gap-5 lg:grid-cols-2">
         <Classes groups={overview.data.groups} />
         {group.data ? <Attention g={group.data} /> : null}
       </div>
       {group.data ? <TopicMap g={group.data} groups={overview.data.groups} /> : null}
+      {group.data ? <Loop g={group.data} /> : null}
+      <QuickActions />
     </div>
   );
 }
@@ -98,11 +102,11 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
 function Classes({ groups }: { groups: TeacherGroup[] }) {
   const t = useTranslations('Teach.dashboard');
   return (
-    <Card className="p-0 sm:p-0" aria-labelledby="classes-title">
+    <Card interactive className="p-0 sm:p-0" aria-labelledby="classes-title">
       <h2 id="classes-title" className="px-5 pt-5 text-lg font-bold sm:px-6">{t('classes')}</h2>
       <ul className="mt-3 divide-y divide-(--line)">
         {groups.map((g) => (
-          <li key={g.code} className="flex flex-wrap items-center gap-3 px-5 py-3.5 sm:px-6">
+          <li key={g.code} className="fz-row-hover flex flex-wrap items-center gap-3 px-5 py-3.5 sm:px-6">
             <span className="grid h-11 w-14 place-items-center rounded-[12px] bg-(--blue-tint) font-bold text-(--blue-ink)">{g.code}</span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{g.name}</span>
@@ -138,7 +142,7 @@ function Attention({ g }: { g: GroupAnalytics }) {
       <ul className="mt-3 divide-y divide-(--line)">
         {rows.map(({ s, kind, note }) => (
           <li key={s.slug}>
-            <Link href={`/teach/students/${s.slug}?group=${encodeURIComponent(g.group.code)}`} className="flex min-h-14 items-center gap-3 px-5 py-2.5 text-(--text) no-underline hover:bg-(--panel2) sm:px-6">
+            <Link href={`/teach/students/${s.slug}?group=${encodeURIComponent(g.group.code)}`} className="flex min-h-14 items-center gap-3 px-5 py-2.5 text-(--text) fz-row-hover no-underline sm:px-6">
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold">{s.name}</span>
                 <span className="block text-sm text-(--faint)">{note}</span>
@@ -156,6 +160,7 @@ function Attention({ g }: { g: GroupAnalytics }) {
 
 function TopicMap({ g, groups }: { g: GroupAnalytics; groups: TeacherGroup[] }) {
   const t = useTranslations('Teach.dashboard');
+  const tw = useTranslations('Work.map');
   const reference = groups.filter((x) => !x.recorded && x.code !== g.group.code && x.weakestTopic);
   return (
     <Card aria-labelledby="map-title">
@@ -163,7 +168,18 @@ function TopicMap({ g, groups }: { g: GroupAnalytics; groups: TeacherGroup[] }) 
         <h2 id="map-title" className="text-lg font-bold">{t('topicMap')}</h2>
         <Link href="/teach/insights" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-(--blue-ink) no-underline">{t('insights')} <ArrowRightIcon aria-hidden="true" className="size-4" /></Link>
       </div>
-      <div className="mt-3 overflow-x-auto">
+      <ul className="mt-3 grid gap-2 sm:hidden">
+        {g.topics.map((x) => {
+          const ref = reference.filter((r) => r.weakestTopic?.title === x.topic.title);
+          return (
+            <li key={x.topic.slug} className={`flex items-center justify-between gap-3 rounded-[12px] px-3 py-2.5 text-sm font-semibold ${band(x.score.percent)}`}>
+              <span>{x.topic.title}</span>
+              <span className="font-brand tabular-nums">{g.group.code} {x.score.percent}%{ref.map((r) => ` · ${r.code} ${r.weakestTopic?.percent}% (${tw('referenceLabel')})`)}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-3 hidden overflow-x-auto sm:block">
         <table className="w-full min-w-[520px] border-separate border-spacing-1.5 text-sm">
           <thead>
             <tr>
@@ -178,11 +194,103 @@ function TopicMap({ g, groups }: { g: GroupAnalytics; groups: TeacherGroup[] }) 
                 <td key={x.topic.slug} className={`h-12 rounded-[12px] text-center font-brand font-bold tabular-nums ${band(x.score.percent)}`}>{x.score.percent}</td>
               ))}
             </tr>
+            {reference.map((x) => (
+              <tr key={x.code}>
+                <th scope="row" className="pr-2 text-left font-bold">
+                  {x.code}
+                  <span className="block text-xs font-normal text-(--faint)">{tw('referenceLabel')}</span>
+                </th>
+                {g.topics.map((tp) => (
+                  <td key={tp.topic.slug} className={`h-12 rounded-[12px] text-center tabular-nums ${x.weakestTopic?.title === tp.topic.title ? `border border-dashed border-(--line2) font-brand font-bold ${band(x.weakestTopic.percent)}` : 'text-(--faint)'}`}>
+                    {x.weakestTopic?.title === tp.topic.title ? x.weakestTopic.percent : '—'}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
       <p className="mt-3 text-sm text-(--faint)">{t('mapNote', { group: g.group.code, submitted: g.group.submitted, students: g.group.studentCount })}</p>
-      {reference.length ? <p className="mt-1 text-xs text-(--faint)">{t('mapReference', { groups: reference.map((x) => x.code).join(', ') })}</p> : null}
+      {reference.length ? <p className="mt-1 text-xs text-(--faint)">{tw('mapReferenceRow', { groups: reference.map((x) => x.code).join(', ') })}</p> : null}
     </Card>
+  );
+}
+
+function Kpis({ groups }: { groups: TeacherGroup[] }) {
+  const t = useTranslations('Work.kpi');
+  const students = groups.reduce((n, g) => n + g.studentCount, 0);
+  const done = groups.reduce((n, g) => n + g.submitted, 0);
+  const items = [
+    { label: t('classes'), value: groups.length, sub: t('classesSub') },
+    { label: t('students'), value: students, sub: t('studentsSub') },
+    { label: t('done'), value: done, sub: t('doneSub') },
+    { label: t('open'), value: Math.max(0, students - done), sub: t('openSub') },
+  ];
+  return (
+    <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {items.map((k, i) => (
+        <Reveal key={k.label} index={i}>
+          <Card as="div" interactive className="h-full">
+            <dt className="text-sm text-(--muted)">{k.label}</dt>
+            <dd className="mt-1 font-brand text-3xl font-bold tabular-nums">{k.value}</dd>
+            <dd className="text-xs text-(--faint)">{k.sub}</dd>
+          </Card>
+        </Reveal>
+      ))}
+    </dl>
+  );
+}
+
+/** The teaching loop, every state read from the recorded group: nothing here has an invented date. */
+function Loop({ g }: { g: GroupAnalytics }) {
+  const t = useTranslations('Work.loop');
+  const weakest = [...g.topics].sort((a, b) => a.score.percent - b.score.percent)[0];
+  const steps = [
+    { title: t('setup'), done: true, note: t('setupNote', { group: g.group.code, students: g.group.studentCount }) },
+    { title: t('published'), done: g.questions.length > 0, note: t('publishedNote', { quiz: g.diagnostic.quiz.title, count: g.questions.length }) },
+    { title: t('reviewed'), done: g.group.submitted > 0, note: t('reviewedNote', { submitted: g.group.submitted, students: g.group.studentCount }) },
+    { title: t('gap'), done: Boolean(weakest), note: weakest ? t('gapNote', { topic: weakest.topic.title, percent: weakest.score.percent }) : t('gapNone') },
+    { title: t('retest'), done: Boolean(g.retest), note: g.retest ? t('retestNote', { takers: g.retest.takers, topic: g.retest.topic.title }) : t('retestNone') },
+  ];
+  return (
+    <Card aria-labelledby="loop-title">
+      <h2 id="loop-title" className="text-lg font-bold">{t('title')}</h2>
+      <ol className="mt-4 grid gap-3 md:grid-cols-5">
+        {steps.map((s, i) => (
+          <li key={s.title} className="fz-rise rounded-[16px] border border-(--line) bg-(--panel2) p-4" style={{ ['--fz-delay' as string]: `${i * 70}ms` } as React.CSSProperties}>
+            <span className={`grid size-7 place-items-center rounded-full ${s.done ? 'bg-(--mint-tint) text-(--mint-ink)' : 'bg-(--panel) text-(--faint)'}`}>
+              {s.done ? <CheckIcon aria-hidden="true" className="size-4" /> : <CircleIcon aria-hidden="true" className="size-4" />}
+            </span>
+            <p className="mt-2 font-semibold">{s.title}</p>
+            <p className="mt-1 text-sm text-(--muted)">{s.note}</p>
+            <span className="sr-only">{s.done ? t('doneSr') : t('todoSr')}</span>
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
+function QuickActions() {
+  const t = useTranslations('Work.quick');
+  const links = [
+    { href: '/teach/classes', label: t('classes') },
+    { href: '/teach/students', label: t('students') },
+    { href: '/teach/insights', label: t('insights') },
+    { href: '/teach/analytics', label: t('analytics') },
+  ] as const;
+  return (
+    <section aria-labelledby="quick-title">
+      <h2 id="quick-title" className="text-lg font-bold">{t('title')}</h2>
+      <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {links.map((l) => (
+          <li key={l.href}>
+            <Link href={l.href} className="fz-card-hover flex min-h-14 items-center justify-between gap-2 rounded-[18px] border border-(--line) bg-(--panel) px-4 font-semibold text-(--text) no-underline">
+              {l.label} <ArrowRightIcon aria-hidden="true" className="size-4 text-(--faint)" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

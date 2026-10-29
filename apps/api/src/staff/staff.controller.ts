@@ -3,7 +3,7 @@ import { type Staff, type StaffSessionState, StaffSessionRequestSchema } from '@
 import type { Request, Response } from 'express';
 import { IdentityService } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { readCookie, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
+import { readCookie, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import { DEMO_STAFF, type DemoStaff, findStaff } from './demo-org.js';
 import { signStaff, STAFF_COOKIE, staffFromCookie } from './staff.guard.js';
@@ -35,6 +35,7 @@ export class StaffController {
   start(@Body(new ZodValidationPipe(StaffSessionRequestSchema)) body: { staff: string }, @Res({ passthrough: true }) res: Response): Staff {
     const staff = findStaff(body.staff);
     if (!staff) throw new NotFoundException({ code: 'STAFF_NOT_FOUND', message: `Staff "${body.staff}" not found` });
+    res.clearCookie(SESSION_COOKIE, cookieOptions); // one identity per browser
     res.cookie(STAFF_COOKIE, signStaff(this.identity, staff.slug), { ...cookieOptions, maxAge: SESSION_MAX_AGE_SECONDS * 1000 });
     return toStaff(staff);
   }

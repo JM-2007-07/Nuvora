@@ -10,13 +10,13 @@ import { Link } from '@/i18n/navigation';
 export async function SiteHeader() {
   const t = await getTranslations('Header');
   const tBrand = await getTranslations('Brand');
-  // The CTA leads into the learner app (diagnostic → quests → retest).
-  const startHref = '/app';
+  // The CTA opens the role chooser (learner, teacher, center); sign-in sits next to it in the menu.
+  const startHref = '/start';
 
   const links = [
     { href: '/#how', label: t('navHow') },
     { href: '/#learners', label: t('navLearners') },
-    { href: '/#library', label: t('navLibrary') },
+    { href: '/library', label: t('navLibrary') },
     { href: '/#teachers', label: t('navTeachers') },
     { href: '/#centers', label: t('navCenters') },
   ];
@@ -26,20 +26,22 @@ export async function SiteHeader() {
       <Link href="/" aria-label={t('home')} className="shrink-0 rounded-md">
         <Logo name={tBrand('name')} size={34} textClass="text-xl" />
       </Link>
-      <nav aria-label={t('primaryNav')} className="hidden gap-0.5 min-[1081px]:flex">
+      <nav aria-label={t('primaryNav')} className="hidden gap-0.5 min-[1181px]:flex">
         {links.map((l) => (
-          <Link key={l.href} href={l.href} className="rounded-[10px] px-3 py-2.5 text-sm font-semibold text-(--muted) no-underline hover:text-(--text)">
+          <Link key={l.href} href={l.href} className="fz-nav-link rounded-[10px] px-3 py-2.5 text-sm font-semibold whitespace-nowrap text-(--muted) no-underline">
             {l.label}
           </Link>
         ))}
       </nav>
-      <div className="ml-auto flex items-center gap-2 min-[1081px]:ml-0">
-        <div className="hidden min-[1081px]:block">
+      <div className="ml-auto flex items-center gap-2.5">
+        <div className="hidden min-[1181px]:block">
           <LocaleButtons compact />
         </div>
         <ThemeSwitcher />
-        <LearnerMenu />
-        <Link href={startHref} className="fz-btn fz-btn-primary hidden min-h-11 px-[18px] min-[1081px]:inline-flex">
+        <div className="hidden min-[1181px]:block">
+          <LearnerMenu />
+        </div>
+        <Link href={startHref} className="fz-btn fz-btn-primary hidden min-h-11 px-[18px] whitespace-nowrap min-[1181px]:inline-flex">
           {t('cta')}
         </Link>
       </div>
@@ -49,14 +51,15 @@ export async function SiteHeader() {
   const menu = (
     <>
       {links.map((l) => (
-        <Link key={l.href} href={l.href} className="rounded-[10px] px-1 py-3.5 text-[17px] font-semibold text-(--text) no-underline">
+        <Link key={l.href} href={l.href} className="rounded-[10px] px-1 py-3.5 text-[17px] font-semibold text-(--text) no-underline transition-colors duration-150 hover:text-(--mint-ink) motion-reduce:transition-none">
           {l.label}
         </Link>
       ))}
       <div className="py-3.5">
         <LocaleButtons />
       </div>
-      <Link href={startHref} className="fz-btn fz-btn-primary">
+      <LearnerMenu layout="list" />
+      <Link href={startHref} className="fz-btn fz-btn-primary mt-2">
         {t('cta')}
       </Link>
     </>

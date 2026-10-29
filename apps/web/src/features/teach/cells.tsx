@@ -23,7 +23,7 @@ export function Bar({ value, max, tone }: { value: number; max: number; tone: 'm
   const fill = tone === 'mint' ? 'bg-(--mint)' : tone === 'mag' ? 'bg-(--mag)' : 'bg-(--line2)';
   return (
     <span aria-hidden="true" className="block h-2 w-full overflow-hidden rounded-full bg-(--track)">
-      <span className={`block h-full rounded-full ${fill}`} style={{ width: `${max ? (value / max) * 100 : 0}%` }} />
+      <span className={`fz-bar-grow block h-full rounded-full ${fill}`} style={{ width: `${max ? (value / max) * 100 : 0}%` }} />
     </span>
   );
 }

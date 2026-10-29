@@ -8,6 +8,7 @@ import { InlineMarkdown, Markdown } from '@/components/markdown';
 import { useSubmitQuest } from '@/features/learning/hooks';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ApiRequestError } from '@/lib/client-api';
+import { FocusFrame } from './focus-frame';
 import { ChooseLearner, LearnerGate } from './learner-gate';
 import { Card, ErrorState } from './states';
 
@@ -36,7 +37,11 @@ function saveAnswers(slug: string, answers: Answers | null) {
  * Correctness is never in the page before submission (the public quiz has none).
  */
 export function QuestPlayer({ quiz }: { quiz: PublicQuiz }) {
-  return <LearnerGate>{() => <Player quiz={quiz} />}</LearnerGate>;
+  return (
+    <FocusFrame title={quiz.title}>
+      <LearnerGate>{() => <Player quiz={quiz} />}</LearnerGate>
+    </FocusFrame>
+  );
 }
 
 function Player({ quiz }: { quiz: PublicQuiz }) {
@@ -64,6 +69,22 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
       return next;
     });
 
+  const question = quiz.questions[index];
+
+  // Keyboard: 1-9 picks the matching option of the current question (arrows and Tab work natively on the radios).
+  useEffect(() => {
+    if (!started || reviewing || !question) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || !/^[1-9]$/.test(event.key)) return;
+      const option = question.options[Number(event.key) - 1];
+      if (option) choose(question.key, option.key);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // choose only closes over setAnswers and the quiz slug, so it is safe to leave out of the deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, reviewing, question]);
+
   const send = () => {
     // Duplicate-submit protection: one request at a time, even on a double click.
     if (sending.current || answered < total) return;
@@ -86,22 +107,24 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
 
   if (!started) {
     return (
-      <div className="max-w-3xl">
+      <div className="fz-rise max-w-3xl">
         <p className="inline-flex rounded-full bg-(--blue-tint) px-3 py-1.5 fz-kicker text-(--blue-ink)">{quiz.kind === 'CHECKPOINT' ? t('kickerScan') : t('kickerQuest')}</p>
         <h1 className="mt-4 text-3xl font-bold sm:text-4xl">{quiz.title}</h1>
         <p className="mt-3 text-lg text-(--muted)">{quiz.kind === 'CHECKPOINT' ? t('introScan') : t('introQuest')}</p>
-        <dl className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-[18px] border border-(--line) bg-(--panel) p-4">
-            <dt className="text-sm text-(--faint)">{t('questionsLabel')}</dt>
-            <dd className="mt-1 font-brand text-2xl font-bold">{total}</dd>
-          </div>
-          <div className="rounded-[18px] border border-(--line) bg-(--panel) p-4">
-            <dt className="text-sm text-(--faint)">{t('timeLabel')}</dt>
-            <dd className="mt-1 font-brand text-2xl font-bold">{t('noLimit')}</dd>
-          </div>
+        <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: t('questionsLabel'), value: String(total), cls: '' },
+            { label: t('timeLabel'), value: t('noLimit'), cls: '' },
+            { label: t('rewardLabel'), value: t('rewardValue'), cls: 'text-(--gold-ink)' },
+          ].map((tile, i) => (
+            <div key={tile.label} style={{ '--fz-delay': `${i * 70}ms` } as React.CSSProperties} className="fz-rise fz-card-hover rounded-[18px] border border-(--line) bg-(--panel) p-4">
+              <dt className="text-sm text-(--faint)">{tile.label}</dt>
+              <dd className={`mt-1 font-brand text-2xl font-bold ${tile.cls}`}>{tile.value}</dd>
+            </div>
+          ))}
         </dl>
         <ul className="mt-6 grid gap-2.5 text-(--text)">
-          {(['rule1', 'rule2', 'rule3'] as const).map((rule) => (
+          {(['rule1', 'rule2', 'rule3', 'rule4'] as const).map((rule) => (
             <li key={rule} className="flex gap-2.5">
               <CheckIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-(--mint-ink)" />
               {t(rule)}
@@ -120,8 +143,6 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
     );
   }
 
-  const question = quiz.questions[index];
-
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between gap-3 text-sm text-(--muted)">
@@ -131,7 +152,7 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
         </span>
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-(--track)" aria-hidden="true">
-        <div className="h-full rounded-full bg-(--blue) transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${(answered / total) * 100}%` }} />
+        <div className="h-full rounded-full bg-(--blue) transition-[width] duration-500 ease-out motion-reduce:transition-none" style={{ width: `${(answered / total) * 100}%` }} />
       </div>
       <nav aria-label={t('jump')} className="mt-3 flex flex-wrap gap-1.5">
         {quiz.questions.map((q, i) => (
@@ -141,7 +162,7 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
             onClick={() => setIndex(i)}
             aria-current={i === index ? 'step' : undefined}
             aria-label={t('jumpTo', { number: i + 1 })}
-            className={`grid size-9 place-items-center rounded-[10px] border text-xs font-bold tabular-nums ${
+            className={`grid size-11 place-items-center rounded-[10px] border text-xs font-bold tabular-nums transition-colors duration-150 hover:border-(--blue) sm:size-9 ${
               i === index ? 'border-(--sel) bg-(--sel) text-(--sel-ink)' : answers[q.key] ? 'border-(--blue) bg-(--blue-tint) text-(--text)' : 'border-(--line2) text-(--faint)'
             }`}
           >
@@ -178,7 +199,7 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
           </div>
         </Card>
       ) : (
-        <fieldset key={question.key} className="mt-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
+        <fieldset key={question.key} className="mt-6 min-w-0 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
           <legend className="w-full">
             <h2 ref={headingRef} tabIndex={-1} className="text-sm font-semibold text-(--faint) outline-none">
               {t('progress', { current: index + 1, total })}
@@ -188,19 +209,23 @@ function Player({ quiz }: { quiz: PublicQuiz }) {
             </div>
           </legend>
           <div className="mt-5 grid gap-3">
-            {question.options.map((option) => {
+            {question.options.map((option, i) => {
               const id = `${question.key}-${option.key}`;
               const checked = answers[question.key] === option.key;
               return (
                 <label
                   key={option.key}
                   htmlFor={id}
-                  className={`flex min-h-14 cursor-pointer items-center gap-3 rounded-[16px] border-2 px-4 py-3 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--sel) ${
-                    checked ? 'border-(--sel) bg-(--mint-tint)' : 'border-(--line2) bg-(--panel) hover:border-(--blue)'
+                  style={{ '--fz-delay': `${i * 50}ms` } as React.CSSProperties}
+                  className={`fz-rise flex min-h-14 cursor-pointer items-center gap-3 rounded-[16px] border-2 px-4 py-3 transition-[border-color,background-color,box-shadow,transform] duration-150 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--sel) motion-reduce:transition-none ${
+                    checked ? 'border-(--sel) bg-(--mint-tint) shadow-(--glow)' : 'border-(--line2) bg-(--panel) hover:border-(--blue) hover:bg-(--panel2) motion-safe:hover:-translate-y-px'
                   }`}
                 >
-                  <input id={id} type="radio" name={question.key} value={option.key} checked={checked} onChange={() => choose(question.key, option.key)} className="size-4 accent-(--sel)" />
-                  <span className="font-mono text-[15px] text-(--text)">
+                  <input id={id} type="radio" name={question.key} value={option.key} checked={checked} onChange={() => choose(question.key, option.key)} className="sr-only" />
+                  <span aria-hidden="true" className={`grid size-7 shrink-0 place-items-center rounded-[8px] text-xs font-bold tabular-nums transition-colors duration-150 ${checked ? 'bg-(--sel) text-(--sel-ink)' : 'bg-(--panel2) text-(--faint)'}`}>
+                    {checked ? <CheckIcon className="size-4 motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-200" /> : i + 1}
+                  </span>
+                  <span className="min-w-0 font-mono text-[15px] break-words text-(--text)">
                     <InlineMarkdown>{option.text}</InlineMarkdown>
                   </span>
                 </label>

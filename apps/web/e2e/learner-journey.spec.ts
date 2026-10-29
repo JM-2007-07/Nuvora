@@ -16,7 +16,9 @@ const AMINA_RETEST = '01213';
 async function answerAll(page: Page, choices: string) {
   for (const [i, choice] of [...choices].entries()) {
     await expect(page.getByText(new RegExp(`^Question ${i + 1} of ${choices.length}$`))).toBeVisible();
-    await page.getByRole('radio').nth(Number(choice)).check();
+    // Options are cards (label around a visually hidden radio): click the card.
+    await page.locator('fieldset label').nth(Number(choice)).click();
+    await expect(page.getByRole('radio').nth(Number(choice))).toBeChecked();
     await page.getByRole('button', { name: i === choices.length - 1 ? 'Review' : 'Next', exact: true }).click(); // exact: the dev overlay has a "Next.js" button
   }
   await expect(page.getByRole('heading', { name: 'Ready to submit?' })).toBeVisible();

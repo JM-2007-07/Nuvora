@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Fragment, type ReactNode } from 'react';
+import { Reveal } from '@/components/motion/reveal';
+import { GrowBar, XpSegments } from '@/features/home/bars';
 import { Faq } from '@/features/home/faq';
 import { Icon, ICONS } from '@/features/home/icon';
 import { LearningLoop } from '@/features/home/learning-loop';
@@ -21,7 +23,8 @@ type Tone = keyof typeof TONES;
 /** Score bands used by the demo tiles: strong ≥ 80 %, getting there ≥ 60 %, else needs practice. */
 const band = (percent: number): Tone => (percent >= 80 ? 'mint' : percent >= 60 ? 'blue' : 'mag');
 
-const HUD = { background: 'var(--hud)', boxShadow: 'var(--hud-glow)' } as const;
+/** HUD card background; the glow comes from the `fz-glow-blue` class so cards can also react to hover. */
+const HUD = { background: 'var(--hud)' } as const;
 
 /**
  * Faroz homepage (handoff §4 "Main", screens/Main.jpg) with the flat "Orbit" hero.
@@ -33,9 +36,10 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations('Home');
+  const tPhotos = await getTranslations('HomePhotos');
 
-  // Entry into the learner app (diagnostic → quests → retest), same as the header CTA.
-  const startHref = '/app';
+  // Public entry points: the role chooser, a learner start, and sign-up per role (concept pricing, demo checkout).
+  const startHref = '/start';
 
   const subjects = [
     { key: 'math', tone: 'blue' },
@@ -75,9 +79,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         <span>{t('p0Progress')}</span>
         <span className="text-(--mint-ink)">{t('p0Saved')}</span>
       </div>
-      <div className="h-2 rounded-full bg-(--track)">
-        <div className="h-full w-[35%] rounded-full bg-(--blue)" />
-      </div>
+      <GrowBar percent={35} trackClass="h-2 rounded-full bg-(--track)" fillClass="h-full rounded-full bg-(--blue)" />
       <span className="fz-kicker text-[11px] text-(--blue-ink)">{t('p0Topic')}</span>
       <p className="m-0 font-brand text-[22px] font-semibold tracking-[-0.02em]">{t('p0Question')}</p>
       <code lang="en" dir="ltr" className="rounded-[14px] border border-(--line) bg-(--code) px-4 py-3.5 font-mono text-[15px] font-semibold text-(--code-ink)">
@@ -113,7 +115,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
       </p>
     </Fragment>,
     <Fragment key="quest">
-      <div className="flex flex-col gap-2 rounded-[20px] border border-(--hud-border) p-5 text-(--hud-text)" style={HUD}>
+      <div className="fz-glow-blue flex flex-col gap-2 rounded-[20px] border border-(--hud-border) p-5 text-(--hud-text)" style={HUD}>
         <div className="flex justify-between">
           <span className="fz-kicker text-[11px] text-(--hud-btn)">{t('p2Kicker')}</span>
           <span className="rounded-md bg-(--xp-chip) px-2 py-1 text-xs font-bold text-(--xp-chip-ink)">+120 XP</span>
@@ -154,14 +156,23 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
     </Fragment>,
   ];
 
-  const photo = (caption: string, extra?: ReactNode, className = '') => (
-    <figure className={`fz-photo relative m-0 overflow-hidden rounded-[26px] border border-(--line) ${className}`}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 text-(--faint)">
-        <Icon d={ICONS.camera} size={40} stroke={1.6} />
-        <span className="text-[13px] font-semibold">{t('photoHere')}</span>
-      </div>
-      <figcaption className="absolute right-4 bottom-4 left-4 rounded-[14px] border border-(--line) bg-(--panel) px-3.5 py-3 text-[13px] leading-snug">
-        <strong>{t('photo')}</strong> {caption}
+  // Licensed photos (Unsplash License, credits in public/photos/CREDITS.md). All three sit below the fold: lazy-loaded.
+  const PHOTOS = {
+    learners: { author: '@soundtrap', sizes: '(max-width: 640px) 100vw, (max-width: 1080px) 100vw, 620px' },
+    teachers: { author: '@poddarcollegejpr', sizes: '(max-width: 960px) 100vw, 600px' },
+    centers: { author: '@shaker_jpg', sizes: '(max-width: 960px) 100vw, 600px' },
+  } as const;
+  const photo = (slot: keyof typeof PHOTOS, extra?: ReactNode, className = '') => (
+    <figure data-photo-slot={slot} className={`group relative m-0 overflow-hidden rounded-[26px] border border-(--line) bg-(--photo-bg) ${className}`}>
+      <Image
+        src={`/photos/${slot}.jpg`}
+        alt={tPhotos(`${slot}Alt`)}
+        fill
+        sizes={PHOTOS[slot].sizes}
+        className="object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+      />
+      <figcaption className="absolute right-3 bottom-3 rounded-lg border border-(--line) bg-(--panel) px-2.5 py-1.5 text-xs leading-snug text-(--muted)">
+        {tPhotos('credit', { author: PHOTOS[slot].author })}
       </figcaption>
       {extra}
     </figure>
@@ -174,7 +185,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         <div aria-hidden="true" className="fz-dots absolute inset-0" />
         <div aria-hidden="true" className="absolute top-[-20%] right-[-10%] h-[120%] w-[70%]" style={{ background: 'var(--hero-glow)' }} />
         <div className="fz-wrap relative grid grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] items-center gap-8 max-[960px]:grid-cols-1">
-          <div className="flex flex-col gap-6">
+          <div className="fz-rise flex flex-col gap-6">
             <span className="inline-flex items-center gap-2 self-start rounded-full border border-(--line) bg-(--panel) px-3.5 py-2 text-[13px] font-semibold text-(--muted)">
               <span className="fz-pulse size-2 rounded-full bg-(--mint)" />
               {t('eyebrow')}
@@ -184,7 +195,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             </h1>
             <p className="m-0 max-w-[520px] text-lg leading-relaxed text-(--muted)">{t('sub')}</p>
             <div className="flex flex-wrap gap-3">
-              <Link href={startHref} className="fz-btn fz-btn-primary fz-btn-lg">
+              <Link href="/start?role=learner" className="fz-btn fz-btn-primary fz-btn-lg">
                 {t('cta1')}
                 <Icon d={ICONS.arrow} size={18} stroke={2.4} />
               </Link>
@@ -225,7 +236,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                     >
                       <div className="fz-tin">
                         <div
-                          className="flex w-[104px] flex-col items-center gap-1.5 rounded-[18px] border border-(--line) bg-(--panel) px-2 py-3 max-[640px]:w-[84px] max-[640px]:py-2"
+                          className="flex w-[104px] flex-col items-center gap-1.5 rounded-[18px] border border-(--line) bg-(--panel) px-2 py-3 transition-[transform,border-color] duration-200 hover:scale-[1.08] hover:border-(--blue) motion-reduce:transition-none motion-reduce:hover:scale-100 max-[640px]:w-[84px] max-[640px]:py-2"
                           style={{ boxShadow: 'var(--tile-shadow)' }}
                         >
                           <span className={`flex size-10 items-center justify-center rounded-xl max-[640px]:size-8 ${TONES[s.tone]}`}>
@@ -258,7 +269,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
       {/* HOW IT WORKS */}
       <section id="how" className="scroll-mt-20 border-t border-(--line) py-24">
-        <div className="fz-wrap flex flex-col gap-10">
+        <Reveal className="fz-wrap flex flex-col gap-10">
           <div className="flex max-w-[760px] flex-col gap-3.5">
             <span className="fz-kicker text-(--mint-ink)">{t('howKicker')}</span>
             <h2 className="m-0 text-[40px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('howTitle')}</h2>
@@ -273,60 +284,59 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             ]}
             panels={panels}
           />
-        </div>
+        </Reveal>
       </section>
 
       {/* LEARNERS */}
       <section id="learners" className="scroll-mt-20 border-t border-(--line) py-24">
-        <div className="fz-wrap flex flex-col gap-9">
+        <Reveal className="fz-wrap flex flex-col gap-9">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div className="flex max-w-[700px] flex-col gap-3.5">
               <span className="fz-kicker text-(--blue-ink)">{t('learnersKicker')}</span>
               <h2 className="m-0 text-[40px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('learnersTitle')}</h2>
             </div>
-            <Link href={startHref} className="fz-btn fz-btn-ghost">
+            <Link href="/app" className="fz-btn fz-btn-ghost">
               {t('openApp')}
             </Link>
           </div>
           <div className="grid grid-cols-4 gap-4 max-[1080px]:grid-cols-2 max-[640px]:grid-cols-1">
-            {photo(t('learnersPhoto'), null, 'col-span-2 row-span-2 min-h-[420px] max-[640px]:col-auto max-[640px]:row-auto')}
-            <div className="flex flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
+            {photo('learners', null, 'col-span-2 row-span-2 min-h-[420px] max-[640px]:col-auto max-[640px]:row-auto')}
+            <div className="fz-card-hover flex flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
               <span className={`flex size-11 items-center justify-center rounded-[14px] ${TONES.mint}`}>
                 <Icon d={ICONS.clock} size={22} />
               </span>
               <strong className="font-brand text-base tracking-[-0.02em]">{t('scanTitle')}</strong>
               <span className="text-sm leading-normal text-(--muted)">{t('scanBody')}</span>
             </div>
-            <div className="flex flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
+            <div className="fz-card-hover flex flex-col gap-2.5 rounded-[22px] border border-(--line) bg-(--panel) p-[22px]">
               <span className={`flex size-11 items-center justify-center rounded-[14px] ${TONES.blue}`}>
                 <Icon d={ICONS.tree} size={22} />
               </span>
               <strong className="font-brand text-base tracking-[-0.02em]">{t('treeTitle')}</strong>
               <span className="text-sm leading-normal text-(--muted)">{t('treeBody')}</span>
             </div>
-            <div className="col-span-2 flex flex-col gap-3 rounded-[22px] border border-(--hud-border) p-[22px] text-(--hud-text) max-[640px]:col-auto" style={HUD}>
+            <div className="fz-glow-blue fz-card-hover col-span-2 flex flex-col gap-3 rounded-[22px] border border-(--hud-border) p-[22px] text-(--hud-text) max-[640px]:col-auto" style={HUD}>
               <div className="flex justify-between text-xs font-bold text-(--hud-muted)">
                 <span>{t('xpLabel')}</span>
                 <span className="text-(--hud-text)">340 / 500</span>
               </div>
-              <div aria-hidden="true" className="grid grid-cols-10 gap-1">
-                {Array.from({ length: 10 }, (_, i) => (
-                  <span key={i} className={`h-3 rounded ${i < 7 ? 'bg-(--xp-on)' : 'bg-(--xp-off)'}`} />
-                ))}
-              </div>
+              <XpSegments on={7} total={10} onClass="bg-(--xp-on)" offClass="bg-(--xp-off)" />
               <span className="text-sm text-(--hud-muted)">{t('xpNote')}</span>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* TEACHERS */}
       <section id="teachers" className="scroll-mt-20 border-t border-(--line) bg-(--band) py-24">
-        <div className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
+        <Reveal className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
           <div className="flex flex-col gap-[18px]">
             <span className="fz-kicker text-(--mag-ink)">{t('teachersKicker')}</span>
             <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('teachersTitle')}</h2>
             <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t('teachersBody')}</p>
+            <Link href="/start?role=teacher" className="fz-btn fz-btn-primary w-fit max-[640px]:w-full">
+              {t('openTeacher')}
+            </Link>
             <div className="overflow-hidden rounded-[20px] border border-(--line) bg-(--panel)">
               <div className="flex justify-between border-b border-(--line) px-[18px] py-3.5 text-[13px] font-bold">
                 <span>{t('teachersTable')}</span>
@@ -337,7 +347,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                 { q: 'Q9', ok: '9/24', why: t('why9') },
                 { q: 'Q17', ok: '10/24', why: t('why17') },
               ].map((r) => (
-                <div key={r.q} className="grid grid-cols-[50px_80px_minmax(0,1fr)] items-center gap-3 border-t border-(--line) px-[18px] py-3 text-sm first-of-type:border-t-0">
+                <div key={r.q} className="fz-row-hover grid grid-cols-[50px_80px_minmax(0,1fr)] items-center gap-3 border-t border-(--line) px-[18px] py-3 text-sm first-of-type:border-t-0">
                   <strong>{r.q}</strong>
                   <span className="font-brand text-[13px] font-bold text-(--mag-ink)">{r.ok}</span>
                   <span className="text-(--muted)">{r.why}</span>
@@ -346,21 +356,24 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             </div>
           </div>
           {photo(
-            t('teachersPhoto'),
+            'teachers',
             <span className="absolute top-[18px] right-[18px] rounded-[14px] border border-(--line) bg-(--panel) px-3 py-2.5 text-[13px] font-bold">{t('teachersBadge')}</span>,
             'min-h-[460px]',
           )}
-        </div>
+        </Reveal>
       </section>
 
       {/* CENTERS */}
       <section id="centers" className="scroll-mt-20 border-t border-(--line) py-24">
-        <div className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
-          {photo(t('centersPhoto'), null, 'min-h-[440px] max-[960px]:order-2')}
+        <Reveal className="fz-wrap grid grid-cols-2 items-center gap-7 max-[960px]:grid-cols-1">
+          {photo('centers', null, 'min-h-[440px] max-[960px]:order-2')}
           <div className="flex flex-col gap-[18px]">
             <span className="fz-kicker text-(--gold-ink)">{t('centersKicker')}</span>
             <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('centersTitle')}</h2>
             <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t('centersBody')}</p>
+            <Link href="/start?role=center" className="fz-btn fz-btn-primary w-fit max-[640px]:w-full">
+              {t('openCenter')}
+            </Link>
             <div className="flex flex-col gap-2.5 rounded-[20px] border border-(--line) bg-(--panel) p-[18px]">
               <div className="grid grid-cols-[56px_repeat(5,minmax(0,1fr))] gap-1.5 text-center text-[11px] font-bold text-(--faint)">
                 <span />
@@ -374,7 +387,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                 <div key={row.group} className="grid grid-cols-[56px_repeat(5,minmax(0,1fr))] items-center gap-1.5">
                   <strong className="text-[13px]">{row.group}</strong>
                   {row.values.map((v, i) => (
-                    <span key={i} className={`flex h-[38px] items-center justify-center rounded-[10px] font-brand text-xs font-bold ${TONES[band(v)].split(' ').slice(0, 2).join(' ')}`}>
+                    <span key={i} className={`flex h-[38px] items-center justify-center rounded-[10px] transition-transform duration-150 hover:scale-105 motion-reduce:hover:scale-100 font-brand text-xs font-bold ${TONES[band(v)].split(' ').slice(0, 2).join(' ')}`}>
                       {v}
                     </span>
                   ))}
@@ -383,22 +396,24 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               <span className="text-[13px] text-(--muted)">{t('centersNote')}</span>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* LIBRARY */}
       <section id="library" className="scroll-mt-20 border-t border-(--line) py-24">
-        <div className="fz-wrap flex flex-col gap-8">
+        <Reveal className="fz-wrap flex flex-col gap-8">
           <div className="flex max-w-[680px] flex-col gap-3.5">
             <span className="fz-kicker text-(--mint-ink)">{t('libraryKicker')}</span>
             <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('libraryTitle')}</h2>
           </div>
           <ul className="m-0 grid list-none grid-cols-6 gap-4 p-0 max-[1080px]:grid-cols-3 max-[640px]:grid-cols-2">
             {books.map((b, i) => (
-              <li key={b.title} className="fz-lift flex flex-col gap-2.5">
+              <li key={b.title}>
+                <Reveal index={i}>
+                <Link href="/library" className="fz-lift group flex flex-col gap-2.5 text-(--text) no-underline">
                 <span
                   aria-hidden="true"
-                  className="relative flex aspect-[2/3] flex-col justify-between overflow-hidden rounded-[8px_16px_16px_8px] pt-4 pr-3.5 pb-3.5 pl-5"
+                  className="relative flex aspect-[2/3] flex-col justify-between overflow-hidden rounded-[8px_16px_16px_8px] transition-[filter] duration-200 group-hover:brightness-110 pt-4 pr-3.5 pb-3.5 pl-5"
                   style={{ background: `var(--cover-${i + 1})`, boxShadow: 'var(--cover-spine), var(--tile-shadow)' }}
                 >
                   <span className="fz-kicker text-[9px]" style={{ color: `var(--cover-${i + 1}-ink)` }}>
@@ -418,74 +433,79 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
                   </strong>
                   <span className="text-xs text-(--faint)">{b.meta}</span>
                 </span>
+                </Link>
+                </Reveal>
               </li>
             ))}
           </ul>
-          <p className="m-0 text-xs text-(--faint)">{t('libraryNote')}</p>
-        </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="m-0 max-w-[640px] text-xs text-(--faint)">{t('libraryNote')}</p>
+            <Link href="/library" className="fz-btn fz-btn-ghost">
+              {t('openLibrary')}
+            </Link>
+          </div>
+        </Reveal>
       </section>
 
       {/* PRICING */}
-      <section className="border-t border-(--line) bg-(--band) py-24">
-        <div className="fz-wrap flex flex-col gap-8">
+      <section id="pricing" className="scroll-mt-20 border-t border-(--line) bg-(--band) py-24">
+        <Reveal className="fz-wrap flex flex-col gap-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('pricingTitle')}</h2>
             <span className="rounded-full border border-dashed border-(--line2) px-[11px] py-[7px] text-xs font-semibold text-(--faint)">{t('pricingConcept')}</span>
           </div>
           <div className="grid grid-cols-3 gap-5 max-[960px]:grid-cols-1">
-            <div className="flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
+            <div className="fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
               <span className="font-brand text-lg font-semibold">{t('planLearner')}</span>
               <span className="font-brand text-[38px] font-bold">{t('planFree')}</span>
               <span className="text-sm leading-relaxed text-(--muted)">{t('planLearnerBody')}</span>
-              <Link href={startHref} className="fz-btn fz-btn-ghost mt-auto">
+              <Link href="/signup?role=learner" className="fz-btn fz-btn-ghost mt-auto">
                 {t('planLearnerCta')}
               </Link>
             </div>
-            <div className="flex flex-col gap-3.5 rounded-3xl border border-(--hud-border) p-[26px] text-(--hud-text)" style={HUD}>
+            <div className="fz-glow-blue fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--hud-border) p-[26px] text-(--hud-text)" style={HUD}>
               <div className="flex justify-between">
                 <span className="font-brand text-lg font-semibold">{t('planTeacher')}</span>
                 <span className="text-xs font-bold text-(--hud-btn)">{t('planMostUseful')}</span>
               </div>
-              <span className="font-brand text-[38px] font-bold">
-                {t('planPrice')}
-                <span className="font-sans text-sm font-normal text-(--hud-muted)">{t('planPerMonth')}</span>
-              </span>
+              <span className="font-brand text-[24px] leading-tight font-bold">{t('planPrice')}</span>
               <span className="text-sm leading-relaxed text-(--hud-muted)">{t('planTeacherBody')}</span>
-              <Link href="/#teachers" className="fz-btn mt-auto bg-(--hud-btn) text-(--hud-btn-ink)">
+              <Link href="/signup?role=teacher" className="fz-btn fz-btn-hud mt-auto">
                 {t('planTeacherCta')}
               </Link>
             </div>
-            <div className="flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
+            <div className="fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
               <span className="font-brand text-lg font-semibold">{t('planCenter')}</span>
-              <span className="font-brand text-[38px] font-bold">{t('planCustom')}</span>
+              {/* "Custom" / "Индивидуально" is longer than a price: smaller size and wrapping keep it inside the card. */}
+              <span className="font-brand text-[30px] leading-tight font-bold [overflow-wrap:anywhere]">{t('planCustom')}</span>
               <span className="text-sm leading-relaxed text-(--muted)">{t('planCenterBody')}</span>
-              <Link href="/#centers" className="fz-btn fz-btn-ghost mt-auto">
+              <Link href="/signup?role=center" className="fz-btn fz-btn-ghost mt-auto">
                 {t('planCenterCta')}
               </Link>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* FAQ */}
-      <section className="border-t border-(--line) py-24">
-        <div className="fz-wrap grid grid-cols-2 items-start gap-7 max-[960px]:grid-cols-1">
+      <section id="faq" className="scroll-mt-20 border-t border-(--line) py-24">
+        <Reveal className="fz-wrap grid grid-cols-2 items-start gap-7 max-[960px]:grid-cols-1">
           <h2 className="m-0 text-[38px] leading-[1.15] font-bold max-[640px]:text-[30px]">{t('faqTitle')}</h2>
           <Faq items={([1, 2, 3, 4, 5] as const).map((n) => ({ q: t(`faq${n}q`), a: t(`faq${n}a`) }))} />
-        </div>
+        </Reveal>
       </section>
 
       {/* FINAL CTA */}
       <section className="relative overflow-hidden border-t border-(--line) py-[110px]">
         <div aria-hidden="true" className="absolute inset-0" style={{ background: 'var(--cta-glow)' }} />
-        <div className="fz-wrap relative flex flex-col items-center gap-6 text-center">
+        <Reveal className="fz-wrap relative flex flex-col items-center gap-6 text-center">
           <Image src="/brand/faroz-app-icon.svg" alt={t('appIcon')} width={84} height={84} />
           <h2 className="m-0 max-w-[760px] text-[44px] leading-[1.1] font-bold max-[640px]:text-[32px]">{t('endTitle')}</h2>
           <p className="m-0 max-w-[540px] text-[17px] text-(--muted)">{t('endSub')}</p>
           <Link href={startHref} className="fz-btn fz-btn-primary fz-btn-lg min-h-[58px] px-[30px]">
             {t('cta1')}
           </Link>
-        </div>
+        </Reveal>
       </section>
     </main>
   );

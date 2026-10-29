@@ -35,8 +35,8 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
           key={href}
           href={href}
           aria-current={active ? 'page' : undefined}
-          className={`flex min-h-11 items-center gap-3 rounded-[14px] px-3.5 text-[15px] font-semibold no-underline ${
-            active ? 'bg-(--mint-tint) text-(--mint-ink)' : 'text-(--muted) hover:bg-(--panel2) hover:text-(--text)'
+          className={`flex min-h-11 items-center gap-3 rounded-[14px] px-3.5 text-[15px] font-semibold no-underline transition-[background-color,color,box-shadow] duration-150 motion-reduce:transition-none ${
+            active ? 'bg-(--mint-tint) text-(--mint-ink) shadow-[inset_3px_0_0_var(--mint)]' : 'text-(--muted) hover:bg-(--panel2) hover:text-(--text)'
           }`}
         >
           <Icon aria-hidden="true" className="size-[18px]" />
@@ -83,14 +83,14 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
               aria-controls="app-menu"
               aria-label={open ? t('closeMenu') : t('openMenu')}
               onClick={() => setOpenOn(open ? null : pathname)}
-              className="grid size-11 place-items-center rounded-xl border border-(--line) text-(--text)"
+              className="grid size-11 place-items-center rounded-xl border border-(--line) text-(--text) transition-colors duration-150 hover:bg-(--panel2) motion-reduce:transition-none"
             >
               {open ? <XIcon aria-hidden="true" className="size-5" /> : <MenuIcon aria-hidden="true" className="size-5" />}
             </button>
           </div>
         </header>
         {open ? (
-          <div id="app-menu" className="grid gap-4 border-b border-(--line) bg-(--side-bg) px-[18px] py-4 min-[900px]:hidden">
+          <div id="app-menu" className="fz-menu-in grid gap-4 border-b border-(--line) bg-(--side-bg) px-[18px] py-4 min-[900px]:hidden">
             {nav}
             {person}
             <LocaleButtons />
@@ -121,7 +121,7 @@ export function PersonCard({ name, note, switchLabel, onSwitch, pending }: { nam
         <span className="block truncate text-sm font-semibold text-(--text)">{name}</span>
         <span className="block text-xs text-(--faint)">{note}</span>
       </span>
-      <button type="button" onClick={onSwitch} disabled={pending} aria-label={switchLabel} title={switchLabel} className="grid size-11 shrink-0 place-items-center rounded-xl text-(--faint) hover:text-(--text)">
+      <button type="button" onClick={onSwitch} disabled={pending} aria-label={switchLabel} title={switchLabel} className="grid size-11 shrink-0 place-items-center rounded-xl text-(--faint) transition-colors duration-150 hover:bg-(--panel2) hover:text-(--text) motion-reduce:transition-none">
         <LogOutIcon aria-hidden="true" className="size-4" />
       </button>
     </div>

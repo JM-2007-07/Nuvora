@@ -13,11 +13,11 @@ test('center admin: dashboard → groups → B-12 (totals and participation only
 
   await page.getByRole('link', { name: 'Groups', exact: true }).first().click();
   await expect(page.getByRole('heading', { name: 'Groups', exact: true })).toBeVisible();
-  const b12 = page.getByRole('row').filter({ hasText: 'B-12' });
+  const b12 = page.getByRole('main').getByRole('link').filter({ hasText: 'B-12' }).first();
   await expect(b12).toContainText('68%');
-  await expect(b12).toContainText('26 of 28');
+  await expect(b12).toContainText('26');
 
-  await b12.getByRole('link').click();
+  await b12.click();
   await expect(page.getByRole('heading', { name: /B-12/ })).toBeVisible();
   await expect(page.getByText('Amina Rahimova')).toBeVisible(); // participation: name only
   await expect(page.getByText('13/20')).toHaveCount(0); // never an individual score

@@ -11,9 +11,9 @@ export function useCenterOverview() {
   return useQuery({ queryKey: ['center', 'overview', locale], queryFn: () => clientFetch('/center/overview', CenterOverviewSchema, { locale }), retry });
 }
 
-export function useCenterGroup(code: string) {
+export function useCenterGroup(code: string, enabled = true) {
   const locale = useLocale();
-  return useQuery({ queryKey: ['center', 'group', code, locale], queryFn: () => clientFetch(`/center/groups/${encodeURIComponent(code)}`, CenterGroupDetailSchema, { locale }), retry });
+  return useQuery({ queryKey: ['center', 'group', code, locale], queryFn: () => clientFetch(`/center/groups/${encodeURIComponent(code)}`, CenterGroupDetailSchema, { locale }), enabled, retry });
 }
 
 export function useCenterStaff() {

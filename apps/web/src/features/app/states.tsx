@@ -11,7 +11,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 export function LoadingState({ label }: { label: string }) {
   return (
-    <div role="status" aria-live="polite" className="grid gap-4">
+    <div role="status" aria-live="polite" className="fz-delayed grid gap-4">
       <span className="sr-only">{label}</span>
       <Skeleton className="h-40" />
       <div className="grid gap-4 md:grid-cols-2">
@@ -57,9 +57,9 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
 }
 
 /** Card surface used across the learner app (handoff: radius 20–26 px, --panel, 1 px --line). */
-export function Card({ children, className = '', as: Tag = 'section', ...rest }: { children: React.ReactNode; className?: string; as?: 'section' | 'div' | 'article' } & React.HTMLAttributes<HTMLElement>) {
+export function Card({ children, className = '', as: Tag = 'section', interactive = false, ...rest }: { children: React.ReactNode; className?: string; interactive?: boolean; as?: 'section' | 'div' | 'article' } & React.HTMLAttributes<HTMLElement>) {
   return (
-    <Tag className={`min-w-0 rounded-[22px] border border-(--line) bg-(--panel) p-5 sm:p-6 ${className}`} {...rest}>
+    <Tag className={`min-w-0 rounded-[22px] border border-(--line) bg-(--panel) p-5 sm:p-6 ${interactive ? 'fz-card-hover' : ''} ${className}`} {...rest}>
       {children}
     </Tag>
   );
