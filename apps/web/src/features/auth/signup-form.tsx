@@ -5,9 +5,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { Building2Icon, GraduationCapIcon, type LucideIcon, PresentationIcon } from 'lucide-react';
-import { AuthShowcase } from './auth-showcase';
+import { AuthScreen } from './auth-screen';
 import { authErrorKey } from './errors';
-import { AuthCard, Field } from './field';
+import { Field } from './field';
 import { homeFor, usePlans, useRegister } from './hooks';
 import { PasswordField } from './password-field';
 import { SITE_ROLES, type SiteRole } from './roles';
@@ -86,7 +86,7 @@ export function SignupForm({ initialRole, initialEmail = '', next = null }: { in
       : t('planPriceTbd');
 
   return (
-    <AuthCard showcase={<AuthShowcase variant={role} />}>
+    <AuthScreen variant={role}>
       <div className="flex flex-col gap-2">
         <h1 className="m-0 text-[30px] leading-tight font-bold">{t('signupTitle')}</h1>
         <p className="m-0 text-[15px] text-(--muted)">{t('signupSub')}</p>
@@ -168,6 +168,6 @@ export function SignupForm({ initialRole, initialEmail = '', next = null }: { in
           </Link>
         </span>
       </div>
-    </AuthCard>
+    </AuthScreen>
   );
 }

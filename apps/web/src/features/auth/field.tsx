@@ -36,23 +36,3 @@ export function Field({
     </div>
   );
 }
-
-/**
- * Sign-in and sign-up stage: one framed card split into the form and the brand showcase
- * (AuthShowcase). From 960 px they sit side by side, form first; below, the showcase is a
- * strip above the form.
- */
-export function AuthCard({ children, showcase }: { children: ReactNode; showcase: ReactNode }) {
-  return (
-    <main id="main" className="relative flex-1 overflow-hidden py-12 max-[640px]:py-5">
-      <div aria-hidden="true" className="fz-dots absolute inset-0" />
-      <div aria-hidden="true" className="absolute top-[-30%] left-1/2 h-[90%] w-[70%] -translate-x-1/2" style={{ background: 'var(--hero-glow)' }} />
-      <div className="fz-wrap relative">
-        <div className="fz-rise fz-auth-frame mx-auto grid w-full max-w-[1080px] grid-cols-[minmax(0,1fr)] overflow-hidden rounded-[28px] border border-(--line) bg-(--panel) min-[960px]:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
-          <div className="order-2 flex flex-col gap-6 p-10 max-[640px]:p-5 min-[960px]:order-1 min-[960px]:p-12">{children}</div>
-          <div className="order-1 min-[960px]:order-2">{showcase}</div>
-        </div>
-      </div>
-    </main>
-  );
-}
