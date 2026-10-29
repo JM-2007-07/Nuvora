@@ -785,5 +785,8 @@
       "open": "Open group",
       "toGroups": "All groups"
     }
+  },
+  "Loader": {
+    "label": "Loading…"
   }
 }

@@ -525,3 +525,66 @@ button:focus-visible,
     transform: scale(1.03);
   }
 }
+
+/* Route loader (components/faroz-loader.tsx): a mini Faroz Orbit atom. */
+@layer components {
+  .fz-loader-orbit {
+    stroke-width: 1.6px;
+    stroke-opacity: 0.6;
+  }
+  .fz-loader-cyan {
+    stroke: var(--orbit-cyan);
+  }
+  .fz-loader-blue {
+    stroke: var(--orbit-blue);
+  }
+  .fz-loader-violet {
+    stroke: var(--orbit-violet);
+  }
+  .fz-loader-electron {
+    fill: var(--gold);
+    stroke: var(--gold);
+    stroke-opacity: 0.3;
+    stroke-width: 6px;
+  }
+  .fz-loader-still {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-loader-core {
+    animation: fz-loader-breathe 2.4s ease-in-out infinite;
+  }
+  .fz-loader-aura {
+    transform-origin: center;
+    animation: fz-loader-aura 2.4s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fz-loader-moving {
+    display: none;
+  }
+  .fz-loader-still {
+    display: inline;
+  }
+}
+@keyframes fz-loader-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+@keyframes fz-loader-aura {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
