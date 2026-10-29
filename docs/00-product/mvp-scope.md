@@ -1,6 +1,43 @@
-# MVP scope (presentation: Saturday, October 31, 2026)
+# MVP scope (Faroz defense: Monday, 2 November 2026)
 
-Status: **Approved** (G0 baseline, owner, 2026-10-25).
+Status: **Approved** (G0 baseline, owner, 2026-10-25). Updated for the Faroz rebrand and defense (D-23, owner, 2026-10-28). The current scope is the first section below; the sections after it are the original Nuvora plan, kept for reference and for the Python subject that still exists.
+
+## Current scope (Faroz, since 2026-10-28)
+
+The owner moved the project to the Faroz design ([FAROZ_HANDOFF.md](../02-design/FAROZ_HANDOFF.md)) and to the **defense on Mon 2 Nov 2026** (implementation deadline Sun 1 Nov). It still runs locally on the team's laptop (D-10), from a production build, with a backup recording. The state of each part is in the [handover story](../stories/2026-10-29-handover.md).
+
+**Demo subject: JavaScript** (slug `javascript`), from the handoff's demo data:
+
+| # | Topic (slug) | Direct prerequisites |
+| --- | --- | --- |
+| 1 | Variables (`js-variables`) | — |
+| 2 | Conditions (`js-conditions`) | js-variables |
+| 3 | Functions (`js-functions`) | js-variables |
+| 4 | Arrays (`js-arrays`) | js-variables |
+| 5 | Objects (`js-objects`) | js-variables |
+
+Each topic has one short lesson, real resources, and a 5-question practice/retest quiz. The **20-question diagnostic** (`javascript-diagnostic`) covers all five topics with the handoff's questions and correct answers. All texts are `needs-review` in every language. The original Python Informatics subject (below) stays in the catalog.
+
+**Core flows for the defense** (handoff §5):
+
+1. **Learner:** home → diagnostic → results by topic → Arrays gap → practice quest → retest → before/after progress. Demo learner Amina Rahimova: 13/20, Arrays 1/4 → 4/5. A live run is done as a guest.
+2. **Teacher** (Dilshod Karimov): dashboard → group B-12 → analytics → gap insights → a student answer by answer.
+3. **Center** (Farhod Jalilov): dashboard → groups → B-12 totals → staff, students (participation only), analytics, settings. Coordinator Komila Rasulova is refused on settings by the server.
+
+**In scope and built:** public site (home, start, login, signup with demo checkout, library, privacy, terms), learner app (`/app`: dashboard, quests, quest player, results, skill tree, progress, XP/level/streak/badges), teacher workspace (`/teach`), center workspace (`/center`), simple local accounts with groups and join codes, three languages, dark default theme with a light alternative, PWA manifest.
+
+**Handoff screens not built** (say so if asked): assessment builder, question bank, materials, invitations, editable permissions, oversight. Account teachers see each member's diagnostic score, not answer by answer (the demo group B-12 has answer-by-answer data).
+
+**Do not promise at the defense:**
+
+- Demo numbers for B-14 are reference values from the design; C-02 and A-05 are synthetic. They are labelled in the UI.
+- "Adaptive" means rule-based analysis of results and quests for weak topics, not adaptive question selection.
+- Russian and Tajik texts are AI drafts awaiting a native-speaker review.
+- Not ready for public use: demo profiles have no passwords, there is no rate limiting, and the cookie has no `secure` flag.
+
+## Original Nuvora scope (G0 baseline, for reference)
+
+The sections below are the plan approved on 2026-10-25 for a presentation on Sat Oct 31. The Faroz scope above replaces their dates, demo subject, demo storyline, and the "no accounts / no teacher features" limits.
 
 ## Reality check
 

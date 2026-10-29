@@ -1,14 +1,16 @@
-# AGENTS.md: Nuvora development conventions
+# AGENTS.md: Faroz development conventions
 
 This file is the **authoritative source for how work is done** in this repository: commands, conventions, safety rules, and approval gates. It applies to every contributor, human or AI. Product, architecture, design, and quality rules live in [`docs/`](docs/README.md); the workflow (task sizing, planning, delegation, review, stories) is in [docs/engineering/HARNESS.md](docs/engineering/HARNESS.md). Link to them; don't copy them here.
 
-## What Nuvora is
+## What Faroz is
 
-A multilingual learning platform for school and university students and self-learners: structured lessons, recommended books, quizzes that explain answers, and rule-based recommendations of what to review next ([vision](docs/00-product/vision.md)). Interface and content in **Russian (`ru`, default)**, Tajik (`tg`), and English (`en`). The MVP is one subject (introductory Informatics, six connected topics) presented live on Sat Oct 31, 2026 from the team's laptop ([MVP scope](docs/00-product/mvp-scope.md)). Demo profiles and guest mode only, no real accounts, so it **must not be deployed publicly**.
+**Faroz** (formerly Nuvora, renamed in [D-23](docs/01-architecture/decisions.md); "Nuvora" never appears in the UI, internal names like `@nuvora/*` and `nuvora_dev` stay) is a multilingual EdTech platform. Learners take a diagnostic, see their gaps per topic, and get quests (lesson, practice, retest) with a before/after view. Teachers see their groups answer by answer. Centers see group totals and participation only ([vision](docs/00-product/vision.md), [design handoff](docs/02-design/FAROZ_HANDOFF.md)). Interface and content in **Russian (`ru`, default)**, Tajik (`tg`), and English (`en`).
+
+The MVP is presented live at the **defense on Mon 2 Nov 2026** (implementation deadline Sun 1 Nov) from the team's laptop ([MVP scope](docs/00-product/mvp-scope.md)). Demo subject: JavaScript (5 topics and a 20-question diagnostic); the earlier Python Informatics subject is kept. Demo profiles without passwords, guest mode, and simple local accounts (no rate limiting, no `secure` cookie), so it **must not be deployed publicly**.
 
 ## Current phase
 
-**Gate G4 (user-facing MVP), in progress** (as of 2026-10-26). G0, G1, and G3 are approved. G2's schema and migrations are applied with the owner's approval; its **Tajik copy review is still open**. G4 is tracked as sub-milestones G4-A … G4-E with their real status in the [roadmap](docs/05-planning/roadmap.md#g4-user-facing-mvp). Much of G4-A, C, and D is implemented but uncommitted on `feat/g0-g1-baseline`; the homepage (G4-B) has a first pass that doesn't yet meet the [visual contract](docs/engineering/VISUAL_EXPERIENCE.md). **Feature freeze** (Fri Oct 30, 12:00) is a separate milestone, not a gate.
+**Gate G4 (user-facing MVP), continued as the Faroz defense phases F1–F7** (as of 2026-10-29). G0, G1, and G3 are approved. G2's schema and migrations are applied with the owner's approval; its **Tajik copy review is still open**. Since 2026-10-28 G4 follows the [Faroz defense phases](docs/05-planning/roadmap.md#faroz-defense-phases-from-2026-10-28): public site, learner app, teacher and center workspaces, and accounts are implemented and verified on branch `feat/faroz-rebrand` (PR [JM-2007-07/Nuvora#1](https://github.com/JM-2007-07/Nuvora/pull/1)). Open items and the latest state: [handover story](docs/stories/2026-10-29-handover.md). The G4-A … G4-E table in the roadmap describes the earlier Nuvora plan. **Feature freeze** is a separate milestone, not a gate (see [Approval gates](#approval-gates)).
 
 ## Repository layout
 
@@ -53,7 +55,7 @@ Run from the root as `pnpm <script>` (pnpm, [D-17](docs/01-architecture/decision
 | next-intl / next-themes / Zod | 4.14.9 / 0.4.6 / 4.6.7 | |
 | TanStack Query / react-markdown | 5.104.5 / 10.1.0 | D-01, D-12 |
 | Motion for React (`motion`) | 14.6.0 (web) | D-22. Installed 2026-10-26; use `motion/react`, `LazyMotion` + `motion/react-m` |
-| shadcn/ui | 4.22.1, preset `radix-vega` | Colours mapped to Nuvora tokens in `apps/web/src/app/globals.css` |
+| shadcn/ui | 4.22.1, preset `radix-vega` | Colours mapped to Faroz tokens in `apps/web/src/app/globals.css` |
 | Playwright | `@playwright/test` 1.64.1 (web, dev only) | `channel: 'msedge'`: runs on the installed Microsoft Edge, no browser download |
 
 Homepage visual direction and Motion for React are approved in D-22 ([decisions](docs/01-architecture/decisions.md)); 3D libraries stay conditional, GSAP is not used.
@@ -62,7 +64,7 @@ Homepage visual direction and Motion for React are approved in D-22 ([decisions]
 
 **Dependency install scripts:** pnpm denies them by default. `allowBuilds` in `pnpm-workspace.yaml` is the only allow list. Never add a `true` entry, run `pnpm approve-builds`, or set `dangerouslyAllowAllBuilds` without the owner's approval.
 
-**Brand copies:** `apps/web/src/styles/brand-tokens.css`, `apps/web/public/brand/*.svg`, and `apps/web/src/app/icon.svg` are copies of `assets/brand/` (D-16). Edit the source first, then copy.
+**Brand copies:** `apps/web/src/styles/faroz-tokens.css` and `apps/web/public/brand/faroz-*.svg` are copies of `assets/brand/faroz/` (the Faroz source of truth, D-23). The older `brand-tokens.css` and `logo-*.svg` copies come from the Nuvora files in `assets/brand/` (D-16). Edit the source first, then copy.
 
 ## Per-app tooling
 
@@ -127,6 +129,6 @@ Work stops at each gate until the team explicitly approves.
 | **G3** ✅ | Seed loader (`db:seed`, `db:seed:dry-run`) and read-only Content API, verified against real PostgreSQL data in `nuvora_dev`. Approved 2026-10-25 | User-facing MVP work |
 | **G4** | User-facing MVP: G4-A content, G4-B distinctive homepage, G4-C subject and lesson pages, G4-D complete learning loop, G4-E verification and demo readiness ([roadmap](docs/05-planning/roadmap.md#g4-user-facing-mvp)) | Feature freeze |
 
-**Feature freeze** is a separate milestone: Fri Oct 30, 12:00, before the presentation on Sat Oct 31. After it, only bug fixes and content change. The release check includes the Tajik copy review ([quality gates](docs/06-quality/quality-standards.md#quality-gates)).
+**Feature freeze** is a separate milestone: the implementation deadline, Sun 1 Nov 2026, before the defense on Mon 2 Nov. After it, only bug fixes and content change. (The original plan had the freeze on Fri Oct 30 and the presentation on Sat Oct 31; the owner moved to the defense date with D-23.) The release check includes the Tajik copy review ([quality gates](docs/06-quality/quality-standards.md#quality-gates)).
 
 Also requires approval at any time: changing an **Approved** decision, adding a library with architectural impact (including the conditional 3D libraries in D-22), installing or upgrading packages, changing the database schema, writing to or resetting database data, or removing an MVP requirement. The full list is in [HARNESS.md](docs/engineering/HARNESS.md#actions-that-need-approval).
