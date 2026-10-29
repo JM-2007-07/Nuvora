@@ -1,6 +1,6 @@
 # 2026-10-29: Messages and calls inside Faroz
 
-Status: **implemented; server verified with tests; live browser check pending** (the running dev API must be restarted to load the new module).
+Status: **implemented and verified live** (two Edge windows against the real API, after the owner restarted `pnpm dev`).
 Gate: G4 (Faroz)   Decision: D-24 (owner-approved in the chat, 2026-10-29)   Design: no handoff screen; built in the Faroz HUD style
 
 ## Context
@@ -83,3 +83,29 @@ The owner's idea: a teacher who cannot come to class should reach a learner, or 
 - Across different networks (mobile data, other sites), calls need STUN/TURN (`COMMS_ICE_SERVERS`). The same machine or Wi-Fi works without.
 - On one laptop, Windows may give the camera to only one browser at a time. For a two-window demo, use audio, or video plus screen sharing in the second window.
 - Live calls live in API memory: restarting the API ends them.
+
+## Follow-up the same day: live check and fixes
+
+**Owner feedback:**
+- Chat rows overflowed the list column.
+- There was no way to see a group's members or to write to one of them.
+- Use real icons, not emoji.
+
+**Fixes:**
+- **List rows:** a `minmax(0,1fr)` track and `min-w-0` on the list.
+- **Contacts:** clicking a contact did not open the chat. The list hid direct chats without messages, so the new chat could not be selected.
+- **Members:** a members panel (teacher first, online state, "Write" for people I may contact). The overview gets `members` per group.
+- **Icons:** lucide icons replace the emoji in previews.
+- **Recording clock:** `role="timer"`.
+
+**Live check:** `comms-live.mjs` in the scratchpad: Edge, two contexts (Dilshod and Amina), fake camera and microphone, production web build and the real API. 28 of 29 passed:
+- directory and online state; live text, typing and an unread badge;
+- a voice message (8.9 kB webm, 1.9 s) that downloads for the other side;
+- rows stay inside the column; a members panel listing 27 people with a working "Write";
+- a video call with remote video in both directions (1280×720 frames), remote audio playing, a running timer, mute shown to the other side, minimize, end for both, and a call log line;
+- a group audio call that connects and survives one person leaving;
+- clean consoles.
+
+The one miss was the script's lookup of the recording clock (the voice message itself was sent); fixed with `role="timer"`.
+
+The check wrote a few real messages and call log lines into the demo chats between Dilshod, Amina and B-12.

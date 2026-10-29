@@ -112,6 +112,10 @@ export class CommsService {
           peer,
           groupCode: group?.code ?? null,
           memberCount: group ? group.learners.length + (group.teacher ? 1 : 0) : 2,
+          // Group members (teacher first) with online state; the client offers "write" to those in `contacts`.
+          members: group
+            ? [...(group.teacher ? [group.teacher] : []), ...group.learners].map((p) => ({ ...p, groups: [group.code], online: p.key === me.key || this.hub.isOnline(p.key) }))
+            : [],
           lastMessage: last ? toMessage(last) : null,
           unread,
           activeCall: this.calls.activeIn(row.id),
@@ -119,9 +123,8 @@ export class CommsService {
         };
       }),
     );
-    // Direct conversations without messages are only shown once used; groups always.
+    // A direct conversation exists once someone opened it (POST /comms/direct), so it is listed from then on.
     const conversations = summaries
-      .filter((s) => s.kind === 'GROUP' || s.lastMessage || s.activeCall)
       .sort((a, b) => b.sort - a.sort)
       .map(({ sort: _sort, ...s }) => s);
     return { me, contacts, conversations, rtc: this.rtcConfig() };

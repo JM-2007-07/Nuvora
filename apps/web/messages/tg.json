@@ -858,6 +858,12 @@
     "screen": "{name} · экран",
     "callEnded": "Занг анҷом ёфт",
     "callBusy": "Занг аллакай идома дорад",
-    "me": "Шумо"
+    "me": "Шумо",
+    "membersTitle": "Иштирокчиён",
+    "showMembers": "Нишон додани иштирокчиён",
+    "closePanel": "Пӯшидан",
+    "write": "Навиштан",
+    "roleTeacher": "Омӯзгор",
+    "roleLearner": "Хонанда"
   }
 }

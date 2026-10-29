@@ -77,6 +77,8 @@ export const ConversationSummarySchema = z.strictObject({
   /** Group code (group conversations) */
   groupCode: z.string().nullable(),
   memberCount: z.number().int(),
+  /** Group members, teacher first, with online state (empty for direct conversations) */
+  members: z.array(ContactSchema),
   lastMessage: MessageSchema.nullable(),
   unread: z.number().int().nonnegative(),
   activeCall: ActiveCallSchema.nullable(),

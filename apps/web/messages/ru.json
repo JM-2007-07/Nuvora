@@ -858,6 +858,12 @@
     "screen": "{name} · экран",
     "callEnded": "Звонок завершён",
     "callBusy": "Звонок уже идёт",
-    "me": "Вы"
+    "me": "Вы",
+    "membersTitle": "Участники",
+    "showMembers": "Показать участников",
+    "closePanel": "Закрыть",
+    "write": "Написать",
+    "roleTeacher": "Учитель",
+    "roleLearner": "Ученик"
   }
 }

@@ -124,7 +124,11 @@ export function CommsProvider({ identity, children }: { identity: string | null;
       patchOverview((o) => ({
         ...o,
         contacts: o.contacts.map((c) => (c.key === key ? { ...c, online } : c)),
-        conversations: o.conversations.map((c) => (c.peer?.key === key ? { ...c, peer: { ...c.peer, online } } : c)),
+        conversations: o.conversations.map((c) => ({
+          ...c,
+          peer: c.peer?.key === key ? { ...c.peer, online } : c.peer,
+          members: c.members.map((m) => (m.key === key ? { ...m, online } : m)),
+        })),
       }));
     });
     socket.on(COMMS_EVENTS.typing, ({ conversationId, name }: { conversationId: string; name: string }) => {

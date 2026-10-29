@@ -41,7 +41,7 @@ export function CommsView() {
           <Sidebar selectedId={conversation?.id ?? null} onSelect={select} />
         </div>
         <div className={`min-h-0 ${conversation ? '' : 'max-[900px]:hidden'}`}>
-          {conversation ? <ConversationPane key={conversation.id} conversation={conversation} onBack={() => select(null)} /> : <EmptyPane />}
+          {conversation ? <ConversationPane key={conversation.id} conversation={conversation} onBack={() => select(null)} onSelect={select} /> : <EmptyPane />}
         </div>
       </div>
     </div>
@@ -116,7 +116,7 @@ function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect
           </div>
         ) : tab === 'chats' ? (
           conversations.length ? (
-            <ul className="m-0 grid list-none gap-0.5 p-0">
+            <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
               {conversations.map((c) => (
                 <li key={c.id}>
                   <ConversationRow conversation={c} active={c.id === selectedId} typing={comms.typing[c.id]} onSelect={() => onSelect(c.id)} />
@@ -127,10 +127,10 @@ function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect
             <p className="m-0 p-4 text-center text-sm text-(--muted)">{q ? t('emptySearch') : t('emptyChats')}</p>
           )
         ) : contacts.length ? (
-          <ul className="m-0 grid list-none gap-0.5 p-0">
+          <ul className="m-0 grid list-none grid-cols-[minmax(0,1fr)] gap-0.5 p-0">
             {contacts.map((c) => (
               <li key={c.key}>
-                <button type="button" onClick={() => void openContact(c)} className="flex w-full items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-(--panel2)">
+                <button type="button" onClick={() => void openContact(c)} className="flex w-full min-w-0 items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-(--panel2)">
                   <Avatar name={c.name} size={42} online={c.online} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-(--text)">{c.name}</span>
@@ -151,11 +151,21 @@ function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect
   );
 }
 
-function preview(message: Message | null, t: ReturnType<typeof useTranslations<'Comms'>>, meKey: string | undefined): string {
+/** Last-message line under a conversation title: text, or an icon and label for voice and calls. */
+function preview(message: Message | null, t: ReturnType<typeof useTranslations<'Comms'>>, meKey: string | undefined): React.ReactNode {
   if (!message) return '';
   const who = message.sender.key === meKey ? `${t('me')}: ` : '';
-  if (message.kind === 'VOICE') return `${who}🎤 ${t('lastVoice')}`;
-  if (message.kind === 'CALL') return `📞 ${t('lastCall')}`;
+  if (message.kind === 'VOICE' || message.kind === 'CALL') {
+    const missed = message.kind === 'CALL' && message.call?.event !== 'ended';
+    const Icon = message.kind === 'VOICE' ? MicIcon : missed ? PhoneMissedIcon : message.call?.media === 'video' ? VideoIcon : PhoneIcon;
+    return (
+      <span className={`inline-flex max-w-full items-center gap-1 align-bottom ${missed ? 'text-(--mag-ink)' : ''}`}>
+        {message.kind === 'VOICE' ? who : null}
+        <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+        <span className="truncate">{message.kind === 'VOICE' ? t('lastVoice') : t('lastCall')}</span>
+      </span>
+    );
+  }
   return `${who}${message.text ?? ''}`;
 }
 
@@ -170,7 +180,7 @@ function ConversationRow({ conversation: c, active, typing, onSelect }: { conver
       type="button"
       onClick={onSelect}
       aria-current={active ? 'true' : undefined}
-      className={`flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition-colors motion-reduce:transition-none ${active ? 'bg-(--mint-tint)' : 'hover:bg-(--panel2)'}`}
+      className={`flex w-full min-w-0 items-center gap-3 rounded-2xl p-2.5 text-left transition-colors motion-reduce:transition-none ${active ? 'bg-(--mint-tint)' : 'hover:bg-(--panel2)'}`}
     >
       {c.kind === 'GROUP' ? (
         <span aria-hidden="true" className="grid size-[42px] shrink-0 place-items-center rounded-[14px] bg-(--blue-tint) font-brand text-xs font-bold text-(--blue-ink)">
@@ -210,9 +220,10 @@ function ConversationRow({ conversation: c, active, typing, onSelect }: { conver
 
 // ---------- conversation ----------
 
-function ConversationPane({ conversation, onBack }: { conversation: ConversationSummary; onBack: () => void }) {
+function ConversationPane({ conversation, onBack, onSelect }: { conversation: ConversationSummary; onBack: () => void; onSelect: (id: string) => void }) {
   const t = useTranslations('Comms');
   const comms = useComms();
+  const [members, setMembers] = useState(false);
   const snap = useCallSnapshot(comms.engine);
   const inThisCall = !!snap && snap.conversationId === conversation.id && (snap.status === 'active' || snap.status === 'outgoing');
   const busy = !!snap && (snap.status === 'active' || snap.status === 'outgoing');
@@ -227,7 +238,7 @@ function ConversationPane({ conversation, onBack }: { conversation: Conversation
   const callButton = 'grid size-11 place-items-center rounded-xl border border-(--line2) text-(--text) transition-colors hover:border-(--blue) hover:bg-(--panel2) disabled:opacity-50 motion-reduce:transition-none';
 
   return (
-    <section aria-label={conversation.title} className="flex h-full min-h-0 flex-col">
+    <section aria-label={conversation.title} className="relative flex h-full min-h-0 flex-col">
       <header className="flex items-center gap-3 border-b border-(--line) px-4 py-3">
         <button type="button" onClick={onBack} aria-label={t('back')} className="grid size-10 place-items-center rounded-xl text-(--muted) hover:bg-(--panel2) min-[900px]:hidden">
           <ArrowLeftIcon aria-hidden="true" className="size-5" />
@@ -252,6 +263,11 @@ function ConversationPane({ conversation, onBack }: { conversation: Conversation
             )}
           </p>
         </div>
+        {conversation.kind === 'GROUP' ? (
+          <button type="button" onClick={() => setMembers((v) => !v)} aria-pressed={members} aria-label={t('showMembers')} title={t('membersTitle')} className={`${callButton} ${members ? 'border-(--sel) bg-(--panel2)' : ''}`}>
+            <UsersIcon aria-hidden="true" className="size-[18px]" />
+          </button>
+        ) : null}
         <button type="button" disabled={busy || !comms.engine} onClick={() => comms.startCall(conversation, 'audio')} aria-label={t('callAudio')} title={t('callAudio')} className={callButton}>
           <PhoneIcon aria-hidden="true" className="size-[18px]" />
         </button>
@@ -274,9 +290,65 @@ function ConversationPane({ conversation, onBack }: { conversation: Conversation
         </div>
       ) : null}
 
-      <MessageList conversation={conversation} />
-      <Composer conversation={conversation} />
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <MessageList conversation={conversation} />
+          <Composer conversation={conversation} />
+        </div>
+        {members && conversation.kind === 'GROUP' ? <MembersPanel conversation={conversation} onClose={() => setMembers(false)} onSelect={onSelect} /> : null}
+      </div>
     </section>
+  );
+}
+
+/** Group members with online state; "write" opens a direct chat with anyone I may contact. */
+function MembersPanel({ conversation, onClose, onSelect }: { conversation: ConversationSummary; onClose: () => void; onSelect: (id: string) => void }) {
+  const t = useTranslations('Comms');
+  const locale = useLocale() as Locale;
+  const comms = useComms();
+  const queryClient = useQueryClient();
+  const meKey = comms.overview?.me.key;
+  const reachable = new Set(comms.overview?.contacts.map((c) => c.key));
+  const write = async (key: string) => {
+    const { id } = await commsApi.openDirect(locale, key);
+    await queryClient.invalidateQueries({ queryKey: overviewKey(locale) });
+    onSelect(id);
+  };
+  return (
+    <aside aria-label={t('membersTitle')} className="fz-call-in flex w-[280px] shrink-0 flex-col border-l border-(--line) bg-(--panel) max-[1100px]:absolute max-[1100px]:inset-y-0 max-[1100px]:right-0 max-[1100px]:z-10 max-[1100px]:w-[min(300px,100%)] max-[1100px]:shadow-(--card-glow-hover)">
+      <div className="flex items-center gap-2 border-b border-(--line) px-4 py-3">
+        <p className="m-0 min-w-0 flex-1 truncate font-brand text-sm font-bold">
+          {t('membersTitle')} · {conversation.members.length}
+        </p>
+        <button type="button" onClick={onClose} aria-label={t('closePanel')} className="grid size-9 place-items-center rounded-lg text-(--muted) hover:bg-(--panel2)">
+          <XIcon aria-hidden="true" className="size-4" />
+        </button>
+      </div>
+      <ul className="m-0 grid min-h-0 list-none grid-cols-[minmax(0,1fr)] content-start gap-0.5 overflow-y-auto p-2">
+        {conversation.members.map((m) => {
+          const me = m.key === meKey;
+          return (
+            <li key={m.key} className="flex min-w-0 items-center gap-3 rounded-xl p-2">
+              <Avatar name={m.name} size={36} online={m.online} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-(--text)">
+                  {m.name}
+                  {me ? <span className="font-normal text-(--faint)"> · {t('you')}</span> : null}
+                </span>
+                <span className="block truncate text-xs text-(--faint)">
+                  {m.role === 'TEACHER' ? t('roleTeacher') : t('roleLearner')} · {m.online ? t('online') : t('offline')}
+                </span>
+              </span>
+              {!me && reachable.has(m.key) ? (
+                <button type="button" onClick={() => void write(m.key)} aria-label={`${t('write')}: ${m.name}`} title={t('write')} className="grid size-9 shrink-0 place-items-center rounded-lg border border-(--line2) text-(--text) hover:border-(--blue) hover:bg-(--panel2)">
+                  <MessageSquareIcon aria-hidden="true" className="size-4" />
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </aside>
   );
 }
 
@@ -557,7 +629,7 @@ function RecordingClock({ startedAt, label }: { startedAt: number; label: string
     return () => clearInterval(id);
   }, []);
   return (
-    <span className="font-brand text-sm font-bold text-(--mag-ink) tabular-nums" aria-label={label}>
+    <span role="timer" aria-label={label} className="font-brand text-sm font-bold text-(--mag-ink) tabular-nums">
       {clock((now - startedAt) / 1000)}
     </span>
   );

@@ -858,6 +858,12 @@
     "screen": "{name} · screen",
     "callEnded": "Call ended",
     "callBusy": "Call already in progress",
-    "me": "You"
+    "me": "You",
+    "membersTitle": "Members",
+    "showMembers": "Show members",
+    "closePanel": "Close",
+    "write": "Write",
+    "roleTeacher": "Teacher",
+    "roleLearner": "Learner"
   }
 }
