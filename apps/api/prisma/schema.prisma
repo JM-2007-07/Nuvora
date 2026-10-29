@@ -576,3 +576,80 @@ model CenterPermissions {
 
   @@map("center_permissions")
 }
+
+// ---------- Communications: chat, voice messages, calls (Faroz, 2026-10-29, owner-approved) ----------
+// Participants are referenced by key, like the rest of the staff data: a learner is "user:<userId>",
+// a staff member "staff:<slug>" (demo staff slug, or "acct:<accountId>" for password accounts).
+// Who may talk to whom is decided in code from the group rosters (comms/directory), never stored:
+// a direct conversation holds its two keys; a group conversation follows the group's live roster.
+// Centers never read conversations (privacy: group totals and participation only).
+
+enum ConversationKind {
+  DIRECT
+  GROUP
+}
+
+enum MessageKind {
+  TEXT
+  VOICE
+  /// Call log line: body is JSON {"media":"audio"|"video","event":"started"|"ended","seconds"?:n}
+  CALL
+}
+
+model Conversation {
+  id            String           @id @default(cuid())
+  /// "dm:<keyA>|<keyB>" (keys sorted) or "group:demo:<code>" / "group:db:<studyGroupId>"
+  key           String           @unique
+  kind          ConversationKind
+  /// Group name when it was created (direct conversations show the other person instead)
+  title         String?
+  lastMessageAt DateTime?
+  createdAt     DateTime         @default(now())
+
+  messages Message[]
+  reads    ConversationRead[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderKey      String
+  /// Name at sending time, so history stays readable if a demo name changes
+  senderName     String
+  kind           MessageKind
+  /// Text, or the CALL JSON; null for voice
+  body           String?
+  createdAt      DateTime     @default(now())
+
+  voice VoiceClip?
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+/// Audio of a voice message (webm/opus or mp4/aac), at most 2 MB; served only to the conversation's members.
+model VoiceClip {
+  messageId  String  @id
+  message    Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  mimeType   String
+  durationMs Int
+  data       Bytes
+
+  @@map("voice_clips")
+}
+
+/// Last time a participant read a conversation (unread counts).
+model ConversationRead {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  participantKey String
+  lastReadAt     DateTime
+
+  @@id([conversationId, participantKey])
+  @@index([participantKey])
+  @@map("conversation_reads")
+}

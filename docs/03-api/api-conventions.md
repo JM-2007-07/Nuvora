@@ -124,6 +124,57 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 
 Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`) and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
 
+## Implemented: communications API (Faroz)
+
+Chat, voice messages and calls (D-24). The contract is [`packages/shared/src/comms-api.ts`](../../packages/shared/src/comms-api.ts), shared by the web app, the API and the planned React Native app.
+
+**Auth and access**
+- On the web, the session cookie authenticates (`nv_session` for a learner, `fz_staff` for a teacher).
+- On mobile, `Authorization: Bearer <signed session value>` for REST, or `auth.token` for the socket.
+- Teachers reach the learners of their groups; learners reach their teachers. Group chats follow the group roster.
+- Centers (admins, coordinators) get `403 COMMS_NOT_AVAILABLE`.
+- Someone outside a conversation gets `404`, as if it did not exist.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /comms` | `CommsOverview`: me, contacts (with online state), conversations (groups always, direct ones once used; newest first, unread counts, active call), WebRTC ICE servers | `401`, `403 COMMS_NOT_AVAILABLE` |
+| `POST /comms/direct` | Body `{ participantKey }` → `{ id }`. Opens or creates the direct conversation | `404 CONVERSATION_NOT_FOUND` (not a contact) |
+| `GET /comms/conversations/:id/messages?before=&limit=` | `MessagesPage`: oldest first, `hasMore` for older pages | `404` |
+| `POST /comms/conversations/:id/messages` | Body `{ text }` (1–4000 characters) → `201 Message`, also pushed live | `400`, `404` |
+| `POST /comms/conversations/:id/voice` | multipart: `audio` (webm/ogg/mp4/aac, ≤ 2 MB) and `durationMs` (0.3 s – 3 min) → `201 Message` | `400 VOICE_*`, `404` |
+| `GET /comms/messages/:id/voice` | The audio bytes (members only) | `404` |
+| `POST /comms/conversations/:id/read` | `204`; my unread count drops to 0 on all my devices | `404` |
+
+**Live connection:** Socket.IO namespace `/comms`, path `/realtime`, on the API port. The browser connects to the API directly, because Next rewrites do not carry WebSockets. CORS allows the web origin and local ports.
+
+Server → client events:
+- `message:new`
+- `conversation:read`
+- `typing`
+- `presence`
+- `call:incoming`, `call:updated`, `call:ended`, `call:dismissed`
+- `call:peer-joined`, `call:peer-left`
+- `call:signal`, `call:media`
+
+Client → server events take acknowledgements `{ ok, ... }`:
+- `typing`
+- `call:start` (it returns the running call if there is one), `call:join`, `call:decline`, `call:leave`
+- `call:signal`: SDP and ICE, relayed only between peers of the same call.
+- `call:media`: mic, camera and screen flags.
+
+**Calls**
+- Calls are peer to peer (WebRTC mesh).
+- Whoever joins sends the offer to each peer already in the call.
+- Each connection carries one audio and one video transceiver, so the camera and screen sharing are switched with `replaceTrack`.
+- An unanswered call stops ringing after 45 s and is logged as missed.
+- A direct call ends when either side leaves; a group call ends when the last person leaves.
+- Optional STUN/TURN for calls across networks: `COMMS_ICE_SERVERS` (JSON) in the API environment.
+
+**React Native**
+- The same REST and socket contract: `socket.io-client` and `react-native-webrtc` (the same `RTCPeerConnection` API).
+- Authenticate with the token.
+- Set `COMMS_ICE_SERVERS` (TURN), because phones are rarely on the same network.
+
 ## Draft resource outline (not a contract)
 
 Listed to plan the work and check that the data model supports the journeys. Exact shapes are defined in `packages/shared` per feature.

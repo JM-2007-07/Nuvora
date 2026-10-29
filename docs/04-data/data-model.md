@@ -91,6 +91,17 @@ The learner session is a signed cookie holding the `User.id`. There is no sessio
 
 **Demo data:** the seed creates the demo learners' attempts by running scripted answers through the real scoring and mastery functions, then stores the resulting `QuizAttempt`, `AttemptAnswer`, `TopicMastery`, and `LessonProgress` rows. Reseeding deletes all `GUEST` users and resets `DEMO` users.
 
+### Communications (migration `20261030100000_communications`, owner-approved 2026-10-29, D-24)
+
+Four additive tables. Participants are keys, like the rest of the staff data: a learner is `user:<userId>`, a teacher `staff:<slug>` (demo slug or `acct:<accountId>`).
+
+- `conversations`: `key` is unique, either `dm:<keyA>|<keyB>` (sorted) or `group:demo:<code>` / `group:db:<studyGroupId>`. It also holds `kind` (DIRECT, GROUP), a title snapshot and `lastMessageAt`.
+- `messages`: kind TEXT, VOICE or CALL (the body of a CALL message is the JSON call log); `senderKey` and `senderName` are a snapshot at sending time. Index on `(conversationId, createdAt)`.
+- `voice_clips`: one row per voice message, holding `mimeType`, `durationMs` and the audio bytes (at most 2 MB, served only to members).
+- `conversation_reads`: `lastReadAt` per participant, used for unread counts.
+
+Who may talk to whom is **not stored**. It is derived from the live rosters: the demo groups in code and `study_groups` / `group_members`. A group conversation follows its group's roster. Live calls exist only in API memory; only the call log line is stored. Deleting a conversation cascades to its messages, clips and reads.
+
 ## Later entities
 
 Sketched so the MVP schema doesn't block them. **Do not create these tables in the MVP.**

@@ -14,6 +14,8 @@ export interface NavItem {
   label: string;
   Icon: LucideIcon;
   active: boolean;
+  /** Unread count shown as a badge (messages) */
+  badge?: number;
 }
 
 /**
@@ -31,7 +33,7 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
 
   const nav = (
     <nav aria-label={t('label')} className="grid gap-1">
-      {items.map(({ href, label, Icon, active }) => (
+      {items.map(({ href, label, Icon, active, badge }) => (
         <Link
           key={href}
           href={href}
@@ -41,7 +43,13 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
           }`}
         >
           <Icon aria-hidden="true" className="size-[18px]" />
-          {label}
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          {badge ? (
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-(--mint) px-1.5 text-[11px] font-bold text-(--btn-ink)">
+              <span aria-hidden="true">{badge > 99 ? '99+' : badge}</span>
+              <span className="sr-only">({badge})</span>
+            </span>
+          ) : null}
         </Link>
       ))}
     </nav>

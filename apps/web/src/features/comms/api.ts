@@ -1,0 +1,50 @@
+'use client';
+
+import {
+  COMMS_NAMESPACE,
+  COMMS_SOCKET_PATH,
+  CommsOverviewSchema,
+  type Locale,
+  MessageSchema,
+  MessagesPageSchema,
+} from '@nuvora/shared';
+import { io, type Socket } from 'socket.io-client';
+import { z } from 'zod';
+import { ApiRequestError, clientFetch } from '@/lib/client-api';
+
+/** REST side of comms (history, sending, uploads), through the same-origin /api/v1 rewrite. */
+export const commsApi = {
+  overview: (locale: Locale) => clientFetch('/comms', CommsOverviewSchema, { locale }),
+  openDirect: (locale: Locale, participantKey: string) => clientFetch('/comms/direct', z.object({ id: z.string() }), { locale, method: 'POST', body: { participantKey } }),
+  messages: (locale: Locale, id: string, before?: string) =>
+    clientFetch(`/comms/conversations/${id}/messages?limit=40${before ? `&before=${encodeURIComponent(before)}` : ''}`, MessagesPageSchema, { locale }),
+  sendText: (locale: Locale, id: string, text: string) => clientFetch(`/comms/conversations/${id}/messages`, MessageSchema, { locale, method: 'POST', body: { text } }),
+  markRead: (locale: Locale, id: string) => clientFetch(`/comms/conversations/${id}/read`, z.unknown(), { locale, method: 'POST' }),
+  async sendVoice(id: string, blob: Blob, durationMs: number) {
+    const form = new FormData();
+    form.append('durationMs', String(Math.round(durationMs)));
+    form.append('audio', blob, blob.type.includes('mp4') ? 'voice.m4a' : 'voice.webm');
+    const response = await fetch(`/api/v1/comms/conversations/${id}/voice`, { method: 'POST', body: form, credentials: 'same-origin' });
+    if (!response.ok) throw new ApiRequestError(response.status, 'VOICE_FAILED');
+    return MessageSchema.parse(await response.json());
+  },
+};
+
+/**
+ * The API origin for the live connection. Sockets go straight to the API (Next rewrites do not
+ * carry WebSocket upgrades); the session cookie still travels (same site, another port).
+ */
+function apiOrigin(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+  if (configured) return new URL(configured).origin;
+  return `${window.location.protocol}//${window.location.hostname}:4000`;
+}
+
+export function connectComms(): Socket {
+  return io(`${apiOrigin()}${COMMS_NAMESPACE}`, {
+    path: COMMS_SOCKET_PATH,
+    withCredentials: true,
+    transports: ['websocket', 'polling'],
+    reconnectionDelayMax: 4000,
+  });
+}

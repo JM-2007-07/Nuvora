@@ -9,3 +9,4 @@ export * from './account-api.js';
 export * from './assessment-api.js';
 export * from './invitation-api.js';
 export * from './group-wizard-api.js';
+export * from './comms-api.js';
