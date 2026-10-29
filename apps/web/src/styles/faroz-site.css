@@ -374,10 +374,10 @@ button:focus-visible,
   }
   /* Route / section entrance. --fz-delay staggers siblings: style={{ '--fz-delay': '80ms' }}. */
   .fz-page-in {
-    animation: fz-rise 0.32s ease-out backwards;
+    animation: fz-rise 0.22s ease-out backwards;
   }
   .fz-rise {
-    animation: fz-rise 0.45s ease-out backwards;
+    animation: fz-rise 0.32s ease-out backwards;
     animation-delay: var(--fz-delay, 0ms);
   }
   /* Progress / score bars: put on the fill element that has an inline width (or height). */

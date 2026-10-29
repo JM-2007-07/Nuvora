@@ -27,7 +27,7 @@ function Body() {
   if (overview.isPending) return <LoadingState label={tStates('loading')} />;
   if (overview.isError) return isDenied(overview.error) ? <DeniedState error={overview.error} need={['TEACHER']} /> : <ErrorState error={overview.error} onRetry={() => overview.refetch()} />;
   if (!recorded) return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHead title={t('title')} />
       <EmptyState title={t('emptyTitle')} body={t('emptyBody')} action={<Link href="/teach/classes" className="fz-btn fz-btn-ghost">{t('toClasses')}</Link>} />
     </div>
@@ -59,7 +59,7 @@ function Loaded({ g }: { g: GroupAnalytics }) {
     .sort((a, b) => (sort === 'hard' ? (a.answered ? a.correct / a.answered : 1) - (b.answered ? b.correct / b.answered : 1) || a.number - b.number : a.number - b.number));
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHead
         title={t('title')}
         subtitle={t('subtitle', { group: g.group.code, quiz: g.diagnostic.quiz.title, count: total, submitted: g.group.submitted, students: g.group.studentCount })}

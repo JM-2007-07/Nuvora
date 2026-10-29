@@ -31,7 +31,7 @@ export function TopicView({ slug }: { slug: string }) {
   const lesson = d.lessons[0];
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div className="fz-rise">
         <nav aria-label={t('breadcrumb')} className="text-sm text-(--faint)">
           <Link href="/app" className="text-(--muted) no-underline hover:underline">{t('home')}</Link> /{' '}

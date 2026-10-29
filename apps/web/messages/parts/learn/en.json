@@ -74,17 +74,18 @@
     "kindRetest": "retest",
     "evidenceNone": "Not scanned yet",
     "buildsOn": "Builds on",
-    "nothing": "Nothing: start here",
+    "nothing": "Nothing: a starting topic",
     "unlocks": "Unlocks",
     "whyNext": "Why next:",
-    "whyWeak": "only {correct} of {total} {topic} questions were correct, and {topic} unlocks {count, plural, one {# later topic} other {# later topics}}.",
+    "whyWeak": "only {correct} of {total} {topic} questions were right; {topic} unlocks {count, plural, =0 {— nothing yet} one {# later topic} other {# later topics}}.",
     "whyNotStarted": "take the scan to see where you stand on this topic.",
     "whyDeveloping": "you are close; a lesson and a retest can lift this topic to strong.",
     "whyStrong": "this topic is strong. Review it later or move on.",
     "startScan": "Start scan",
     "startQuest": "Start {topic} quest",
     "startLesson": "Open the lesson",
-    "openTopic": "Open topic"
+    "openTopic": "Open topic",
+    "nothingUnlocks": "No later topics in this subject yet"
   },
   "Learn": {
     "join": {

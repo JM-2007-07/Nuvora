@@ -10,7 +10,7 @@ export async function LegalPage({ doc, sections }: { doc: 'privacy' | 'terms'; s
       <div className="fz-wrap">
         <article className="fz-rise mx-auto flex max-w-[760px] flex-col gap-8">
           <header className="flex flex-col gap-3.5">
-            <h1 className="m-0 text-[44px] leading-[1.1] font-bold max-[640px]:text-[30px]">{t(`${doc}.title`)}</h1>
+            <h1 className="m-0 text-[44px] leading-[1.1] font-bold break-words hyphens-auto max-[640px]:text-[24px]">{t(`${doc}.title`)}</h1>
             <p className="m-0 text-[17px] leading-relaxed text-(--muted)">{t(`${doc}.intro`)}</p>
             <p className="m-0 w-fit rounded-xl border border-dashed border-(--line2) px-3.5 py-2.5 text-[13px] font-semibold text-(--faint)">{t('demoNote')}</p>
           </header>

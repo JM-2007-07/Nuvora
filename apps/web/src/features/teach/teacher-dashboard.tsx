@@ -31,7 +31,7 @@ function Body({ staff }: { staff: Staff }) {
   const active = overview.data.groups.filter((g) => g.status === 'active');
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <h1 className="text-3xl font-bold sm:text-4xl">{t('hello', { name: staff.name.split(' ')[0] })}</h1>
         <p className="mt-1.5 text-(--muted)">{t('subtitle', { count: active.length })}</p>

@@ -37,7 +37,7 @@ function Body({ attemptId }: { attemptId: string }) {
   const weakest = [...r.topics].filter((x) => x.status === 'WEAK').sort((a, b) => a.scorePercent - b.scorePercent)[0];
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <nav aria-label={t('breadcrumb')} className="text-sm text-(--faint)">
           <Link href="/app" className="text-(--muted) no-underline hover:underline">{t('home')}</Link> / <Link href="/app/results" className="text-(--muted) no-underline hover:underline">{t('allResults')}</Link>

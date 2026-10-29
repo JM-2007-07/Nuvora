@@ -27,7 +27,7 @@ function Body({ group, slug }: { group: string; slug: string }) {
   }
   const s = data.data;
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <nav aria-label={t('breadcrumb')} className="text-sm text-(--faint)">
           <Link href="/teach" className="text-(--muted) no-underline hover:underline">{t('back')}</Link> / {s.group.code}

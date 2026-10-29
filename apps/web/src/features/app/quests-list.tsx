@@ -50,7 +50,7 @@ function Body() {
     ),
   ];
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div className="fz-rise">
         <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
         <p className="mt-1.5 text-(--muted)">{t('subtitle')}</p>

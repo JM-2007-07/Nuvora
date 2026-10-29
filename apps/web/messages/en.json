@@ -25,7 +25,8 @@
     "cta": "Start",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "primaryNav": "Primary"
+    "primaryNav": "Primary",
+    "openWorkspace": "Open my workspace"
   },
   "Learner": {
     "menu": "Learner",
@@ -582,7 +583,10 @@
       "pending": "Invitation pending",
       "expired": "Invitation expired",
       "synthetic": "synthetic",
-      "note": "Inviting and removing staff is not available in this demo: there is no storage for it yet."
+      "note": "Inviting and removing staff is not available in this demo: there is no storage for it yet.",
+      "lastActive": "Last active {date}",
+      "invited": "Invited {date} · expires {until}",
+      "expiredOn": "Invited {date} · expired {until}"
     },
     "settings": {
       "title": "Organization settings",

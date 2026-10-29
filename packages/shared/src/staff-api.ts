@@ -181,7 +181,8 @@ export const CenterStaffSchema = z.strictObject({
       role: z.enum(STAFF_ROLES),
       subject: z.string(),
       status: z.enum(['active', 'pending', 'expired']),
-      note: z.string(),
+      /** Dates as YYYY-MM-DD (the UI formats them per locale): last activity, or invitation sent/expiry. */
+      activity: z.strictObject({ kind: z.enum(['LAST_ACTIVE', 'INVITED', 'EXPIRED', 'NONE']), date: z.string().nullable(), until: z.string().nullable() }),
       synthetic: z.boolean(),
     }),
   ),

@@ -44,7 +44,7 @@ function Body() {
   const scanned = p.checkpoints.some((c) => c.latestAttempt);
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div className="fz-rise flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-3xl font-bold sm:text-4xl">{t('title', { subject: subject.data.title })}</h1>
@@ -287,7 +287,7 @@ function SidePanel({ topic, topics, progress, scanHref, scanned }: { topic: Topi
         </div>
         <div className="rounded-[14px] bg-(--panel2) px-3.5 py-2.5">
           <dt className="text-xs text-(--faint)">{t('unlocks')}</dt>
-          <dd className="text-sm font-bold text-(--text)">{unlocks.length ? unlocks.join(', ') : t('nothing')}</dd>
+          <dd className="text-sm font-bold text-(--text)">{unlocks.length ? unlocks.join(', ') : t('nothingUnlocks')}</dd>
         </div>
       </dl>
       <p className="mt-4 rounded-[14px] border border-(--hud-border) [background:var(--hud)] p-3.5 text-sm text-(--hud-text)">

@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { CenterGroup, CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, GroupAnalytics, Locale } from '@nuvora/shared';
 import { GroupsService } from '../groups/groups.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { DEMO_GROUPS, type DemoGroup, type DemoStaff, findGroup, PERMISSION_DEFAULTS, STAFF_DIRECTORY } from '../staff/demo-org.js';
+import { DEMO_GROUPS, type DemoStaff, findGroup, PERMISSION_DEFAULTS, STAFF_DIRECTORY } from '../staff/demo-org.js';
 import { toStaff } from '../staff/staff.controller.js';
 import { TeachingService } from '../teaching/teaching.service.js';
 import { type GroupAggregate, toCenterGroup } from './center-view.js';
@@ -30,7 +30,7 @@ export class CenterService {
 
   async overview(staff: DemoStaff, locale: Locale): Promise<CenterOverview> {
     if (staff.accountId) return this.accountOverview(staff, locale);
-    const groups = await Promise.all(DEMO_GROUPS.map((g) => this.view(g, locale)));
+    const groups = await this.views(locale);
     const active = groups.filter((g) => g.status === 'active');
     return {
       viewer: toStaff(staff),
@@ -50,7 +50,10 @@ export class CenterService {
   async group(code: string, locale: Locale): Promise<CenterGroupDetail> {
     const group = findGroup(code);
     if (!group) throw new NotFoundException({ code: 'GROUP_NOT_FOUND', message: `Group ${code} not found` });
-    if (!group.roster?.length || !group.diagnosticQuiz) return { group: toCenterGroup(group, null), participation: null };
+    if (!group.roster?.length || !group.diagnosticQuiz) {
+      const view = (await this.views(locale)).find((g) => g.code === group.code)!;
+      return { group: view, participation: null };
+    }
     const full = await this.teaching.analyse(group, locale);
     return {
       group: toCenterGroup(group, aggregate(full)),
@@ -63,7 +66,14 @@ export class CenterService {
     if (!staff.organizationId) return { items: STAFF_DIRECTORY.map((s) => ({ ...s })) };
     const accounts = await this.prisma.account.findMany({ where: { organizationId: staff.organizationId }, orderBy: { createdAt: 'asc' }, select: { name: true, role: true } });
     return {
-      items: accounts.map((a) => ({ name: a.name, role: a.role === 'CENTER_ADMIN' ? ('ADMIN' as const) : ('TEACHER' as const), subject: '', status: 'active' as const, note: '', synthetic: false })),
+      items: accounts.map((a) => ({
+        name: a.name,
+        role: a.role === 'CENTER_ADMIN' ? ('ADMIN' as const) : ('TEACHER' as const),
+        subject: '',
+        status: 'active' as const,
+        activity: { kind: 'NONE' as const, date: null, until: null },
+        synthetic: false,
+      })),
     };
   }
 
@@ -105,8 +115,11 @@ export class CenterService {
     return { organization: staff.accountId ? staff.title : ORGANIZATION, permissions: { ...PERMISSION_DEFAULTS }, editable: false };
   }
 
-  private async view(group: DemoGroup, locale: Locale) {
-    if (!group.roster?.length || !group.diagnosticQuiz) return toCenterGroup(group, null);
-    return toCenterGroup(group, aggregate(await this.teaching.analyse(group, locale)));
+  /** Recorded groups first; their localized topic titles also name the reference figures of the others. */
+  private async views(locale: Locale): Promise<CenterGroup[]> {
+    const recorded = new Map<string, GroupAggregate>();
+    for (const g of DEMO_GROUPS) if (g.roster?.length && g.diagnosticQuiz) recorded.set(g.code, aggregate(await this.teaching.analyse(g, locale)));
+    const titles = [...recorded.values()][0]?.topics.map((t) => t.title);
+    return DEMO_GROUPS.map((g) => toCenterGroup(g, recorded.get(g.code) ?? null, titles));
   }
 }

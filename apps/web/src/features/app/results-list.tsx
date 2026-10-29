@@ -22,7 +22,7 @@ function Body() {
   if (progress.isError) return <ErrorState error={progress.error} onRetry={() => progress.refetch()} />;
   const { attempts } = progress.data;
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <h1 className="text-3xl font-bold sm:text-4xl">{t('listTitle')}</h1>
       {attempts.length === 0 ? (
         <EmptyState title={t('listEmpty')} body={t('listEmptyBody')} action={<Link href="/app" className="fz-btn fz-btn-primary">{t('home')}</Link>} />

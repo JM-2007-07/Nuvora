@@ -26,7 +26,7 @@ function StudentsBody() {
       {(o) => {
         const recorded = o.groups.find((g) => g.recorded);
         return (
-          <div className="grid gap-5">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
             <PageHead title={t('title')} subtitle={t('subtitle')} />
             {recorded ? <Directory code={recorded.code} /> : <EmptyState title={t('emptyTitle')} body={t('emptyBody')} />}
             <PrivacyNote />
@@ -93,7 +93,7 @@ function AnalyticsBody() {
         const groups = o.groups.filter((g) => g.topics && g.name.includes('JavaScript') && g.status !== 'upcoming');
         const topics = groups[0]?.topics?.map((x) => x.title) ?? [];
         return (
-          <div className="grid gap-5">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
             <PageHead title={t('title')} subtitle={t('subtitle', { count: groups.length })} />
             {groups.length === 0 ? <EmptyState title={t('emptyTitle')} body={t('emptyBody')} /> : null}
             {groups.length ? (

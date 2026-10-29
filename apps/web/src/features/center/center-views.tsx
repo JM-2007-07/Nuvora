@@ -83,7 +83,7 @@ function DashboardBody({ staff }: { staff: Staff }) {
           ...(staff.role === 'COORDINATOR' ? [] : [{ href: '/center/settings', label: tw('settings'), Icon: SettingsIcon }]),
         ];
         return (
-          <div className="grid gap-5">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
             <PageHead title={o.organization} subtitle={t('subtitle', { name: o.viewer.name })} action={account && staff.role === 'ADMIN' ? <CreateGroupButton scope="center" /> : undefined} />
             <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
@@ -217,7 +217,7 @@ function GroupsBody({ staff }: { staff: Staff }) {
         const shown = o.groups.filter((g) => (filter === 'all' || g.status === filter) && (!needle || `${g.code} ${g.name} ${g.teacher}`.toLowerCase().includes(needle)));
         const count = (s: GroupStatus) => o.groups.filter((g) => g.status === s).length;
         return (
-          <div className="grid gap-5">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
             <PageHead title={t('title')} subtitle={t('subtitle')} action={account ? <CreateGroupButton scope="center" /> : undefined} />
             <div className="fz-rise flex flex-wrap gap-3" style={{ ['--fz-delay' as string]: '60ms' }}>
               <SearchBox value={q} onChange={setQ} label={tw('search')} />
@@ -283,7 +283,7 @@ function GroupDetailBody({ code }: { code: string }) {
   return (
     <Loaded query={detail}>
       {({ group: g, participation }) => (
-        <div className="grid gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
           <div>
             <Link href="/center/groups" className="text-sm text-(--muted) no-underline hover:underline">{t('back')}</Link>
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{g.code} · {g.name}</h1>
@@ -341,10 +341,14 @@ function StaffBody() {
   const t = useTranslations('Center.staff');
   const tRole = useTranslations('Teach.role');
   const staff = useCenterStaff();
+  // Dates come as YYYY-MM-DD from the API; dd.mm.yyyy reads the same in ru, tg and en (D-19).
+  const day = (iso: string | null) => (iso ? iso.split('-').reverse().join('.') : '');
+  const activityText = (a: { kind: string; date: string | null; until: string | null }) =>
+    a.kind === 'LAST_ACTIVE' ? t('lastActive', { date: day(a.date) }) : a.kind === 'INVITED' ? t('invited', { date: day(a.date), until: day(a.until) }) : a.kind === 'EXPIRED' ? t('expiredOn', { date: day(a.date), until: day(a.until) }) : '';
   return (
     <Loaded query={staff}>
       {(s) => (
-        <div className="grid gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
           <div>
             <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
             <p className="mt-1.5 text-(--muted)">{t('subtitle')}</p>
@@ -355,7 +359,9 @@ function StaffBody() {
                 <li key={p.name} className="flex flex-wrap items-center gap-3 px-5 py-3.5 sm:px-6">
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">{p.name}</span>
-                    <span className="block text-sm text-(--faint)">{tRole(p.role)} · {p.subject} · {p.note}</span>
+                    <span className="block text-sm text-(--faint)">
+                      {[tRole(p.role), p.subject, activityText(p.activity)].filter(Boolean).join(' · ')}
+                    </span>
                   </span>
                   {p.synthetic ? <span className="rounded-full bg-(--panel2) px-2 py-0.5 text-xs text-(--faint)">{t('synthetic')}</span> : null}
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${p.status === 'active' ? 'bg-(--mint-tint) text-(--mint-ink)' : p.status === 'pending' ? 'bg-(--gold-tint) text-(--gold-ink)' : 'bg-(--mag-tint) text-(--mag-ink)'}`}>{t(p.status)}</span>
@@ -380,7 +386,7 @@ function SettingsBody({ staff }: { staff: Staff }) {
   return (
     <Loaded query={settings} need={['ADMIN']}>
       {(s) => (
-        <div className="grid gap-5">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
           <div>
             <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
             <p className="mt-1.5 text-(--muted)">{s.organization}</p>

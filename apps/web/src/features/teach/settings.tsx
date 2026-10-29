@@ -27,7 +27,7 @@ type StaffInfo = { slug: string; name: string; role: string; title: string };
 function Body({ staff, scope }: { staff: StaffInfo; scope: 'teach' | 'center' }) {
   const t = useTranslations('TSettings');
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHead title={t('title')} subtitle={t(scope === 'teach' ? 'subtitleTeach' : 'subtitleCenter')} />
       <AccountPanels staff={staff} />
     </div>

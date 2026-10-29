@@ -1,5 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { Logo } from '@/components/brand/logo';
+import { HeaderCta } from '@/components/header-cta';
 import { LearnerMenu } from '@/components/learner-menu';
 import { LocaleButtons } from '@/components/locale-buttons';
 import { SiteHeaderShell } from '@/components/site-header-shell';
@@ -11,7 +12,6 @@ export async function SiteHeader() {
   const t = await getTranslations('Header');
   const tBrand = await getTranslations('Brand');
   // The CTA opens the role chooser (learner, teacher, center); sign-in sits next to it in the menu.
-  const startHref = '/start';
 
   const links = [
     { href: '/#how', label: t('navHow') },
@@ -41,9 +41,7 @@ export async function SiteHeader() {
         <div className="hidden min-[1181px]:block">
           <LearnerMenu />
         </div>
-        <Link href={startHref} className="fz-btn fz-btn-primary hidden min-h-11 px-[18px] whitespace-nowrap min-[1181px]:inline-flex">
-          {t('cta')}
-        </Link>
+        <HeaderCta className="fz-btn fz-btn-primary hidden min-h-11 px-[18px] whitespace-nowrap min-[1181px]:inline-flex" />
       </div>
     </>
   );
@@ -59,9 +57,7 @@ export async function SiteHeader() {
         <LocaleButtons />
       </div>
       <LearnerMenu layout="list" />
-      <Link href={startHref} className="fz-btn fz-btn-primary mt-2">
-        {t('cta')}
-      </Link>
+      <HeaderCta className="fz-btn fz-btn-primary mt-2" />
     </>
   );
 

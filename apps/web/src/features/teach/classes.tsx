@@ -42,7 +42,7 @@ function ClassesBody({ staff }: { staff: Staff }) {
   const total = demo.length + own.length;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHead title={t('title')} subtitle={t('subtitle')} action={<CreateGroupButton scope="teach" />} />
       <div className="fz-rise flex flex-wrap gap-3" style={{ ['--fz-delay' as string]: '60ms' }}>
         <SearchBox value={q} onChange={setQ} label={t('search')} />
@@ -63,7 +63,14 @@ function ClassesBody({ staff }: { staff: Staff }) {
         <h2 id="mine-title" className="text-lg font-bold">{t('mine')}</h2>
         {mine.isPending ? <LoadingState label={tStates('loading')} /> : null}
         {mine.isError && !isDenied(mine.error) ? <ErrorState error={mine.error} onRetry={() => mine.refetch()} /> : null}
-        {mine.isSuccess && own.length === 0 ? <EmptyState title={t('noneTitle')} body={t('noneBody')} action={<CreateGroupButton scope="teach" />} /> : null}
+        {mine.isSuccess && own.length === 0 ? (
+          isAccountStaff(staff.slug) ? (
+            <EmptyState title={t('noneTitle')} body={t('noneBody')} action={<CreateGroupButton scope="teach" />} />
+          ) : (
+            // Demo staff can't create groups (the server answers 403): offer a real account instead.
+            <EmptyState title={t('demoOwnTitle')} body={t('demoOwnBody')} action={<Link href="/signup?role=teacher" className="fz-btn fz-btn-ghost">{t('demoOwnCta')}</Link>} />
+          )
+        ) : null}
         {ownShown.length ? (
           <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {ownShown.map((g, i) => (
@@ -171,7 +178,7 @@ function DetailBody({ id }: { id: string }) {
   }
   const { group: g, members } = detail.data;
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <Link href="/teach/classes" className="text-sm text-(--muted) no-underline hover:underline">{t('back')}</Link>
         <h1 className="mt-2 text-3xl font-bold sm:text-4xl">{g.name}</h1>

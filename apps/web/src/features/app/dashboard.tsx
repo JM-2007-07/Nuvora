@@ -30,7 +30,7 @@ function DashboardBody({ name }: { name: string | null }) {
   const scanned = p.checkpoints.some((c) => c.latestAttempt);
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div className="fz-rise">
         <h1 className="text-3xl font-bold sm:text-4xl">{name ? t('hello', { name: name.split(' ')[0] }) : t('helloGuest')}</h1>
         <p className="mt-1.5 text-(--muted)">{scanned ? t('subtitleScanned') : t('subtitleNew')}</p>

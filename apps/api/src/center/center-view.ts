@@ -14,12 +14,16 @@ export interface GroupAggregate {
   topics: { title: string; percent: number }[];
 }
 
-export function toCenterGroup(group: DemoGroup, recorded: GroupAggregate | null): CenterGroup {
+/**
+ * @param topicTitles localized topic titles in subject order, used to name reference figures so
+ *   they line up with recorded groups (the handoff stores them in the same order)
+ */
+export function toCenterGroup(group: DemoGroup, recorded: GroupAggregate | null, topicTitles: string[] = REFERENCE_TOPIC_TITLES): CenterGroup {
   const reference = group.reference;
   const students = recorded?.students ?? reference?.students ?? group.roster?.length ?? 0;
   const submitted = recorded?.submitted ?? reference?.submitted ?? 0;
   const answers = recorded?.answers ?? reference?.answers ?? null;
-  const topics = recorded?.topics ?? (reference?.topics ? reference.topics.map((p, i) => ({ title: REFERENCE_TOPIC_TITLES[i], percent: p })) : null);
+  const topics = recorded?.topics ?? (reference?.topics ? reference.topics.map((p, i) => ({ title: topicTitles[i] ?? REFERENCE_TOPIC_TITLES[i], percent: p })) : null);
   const active = group.status === 'active';
   const participationPercent = active && students > 0 ? percent(submitted, students) : null;
 

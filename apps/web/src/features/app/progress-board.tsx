@@ -42,7 +42,8 @@ function Body() {
   const checkpoint = p.checkpoints[0];
 
   return (
-    <div className="grid gap-5">
+    // minmax(0,1fr): wide children (topics table, calendar) scroll inside their cards instead of widening the page at 390 px.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div className="fz-rise">
         <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
         <p className="mt-1.5 text-(--muted)">{t('subtitle', { subject: p.subject.title })}</p>

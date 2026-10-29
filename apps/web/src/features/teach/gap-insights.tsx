@@ -36,7 +36,7 @@ function Insights({ g, title }: { g: GroupAnalytics; title: string }) {
   const topWrong = question ? [...question.options].filter((o) => !o.isCorrect).sort((a, b) => b.chosen - a.chosen)[0] : undefined;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <div>
         <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
         <p className="mt-1.5 text-(--muted)">{t('subtitle', { group: g.group.code, quiz: g.diagnostic.quiz.title, submitted: g.group.submitted, students: g.group.studentCount })}</p>

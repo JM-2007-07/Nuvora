@@ -130,12 +130,12 @@ export const findGroup = (code: string) => DEMO_GROUPS.find((g) => g.code === co
 
 /** Center staff directory (handoff demo-center.json `teachers`), shown to center staff. */
 export const STAFF_DIRECTORY = [
-  { name: 'Dilshod Karimov', role: 'TEACHER', subject: 'JavaScript', status: 'active', note: 'Last active Oct 14', synthetic: false },
-  { name: 'Mavluda Sharifova', role: 'TEACHER', subject: 'JavaScript', status: 'active', note: 'Last active Oct 13', synthetic: true },
-  { name: 'Nodira Alieva', role: 'TEACHER', subject: 'Algebra', status: 'active', note: 'Last active Oct 12', synthetic: true },
-  { name: 'Komila Rasulova', role: 'COORDINATOR', subject: 'All subjects', status: 'active', note: 'Last active Oct 14', synthetic: true },
-  { name: 'Bakhtiyor Nazriev', role: 'TEACHER', subject: 'Python', status: 'pending', note: 'Invited Oct 12 · expires Oct 19', synthetic: true },
-  { name: 'Shirin Ahmedova', role: 'TEACHER', subject: 'Web basics', status: 'expired', note: 'Invited Sep 28 · expired Oct 5', synthetic: true },
+  { name: 'Dilshod Karimov', role: 'TEACHER', subject: 'JavaScript', status: 'active', activity: { kind: 'LAST_ACTIVE', date: '2026-10-14', until: null }, synthetic: false },
+  { name: 'Mavluda Sharifova', role: 'TEACHER', subject: 'JavaScript', status: 'active', activity: { kind: 'LAST_ACTIVE', date: '2026-10-13', until: null }, synthetic: true },
+  { name: 'Nodira Alieva', role: 'TEACHER', subject: 'Algebra', status: 'active', activity: { kind: 'LAST_ACTIVE', date: '2026-10-12', until: null }, synthetic: true },
+  { name: 'Komila Rasulova', role: 'COORDINATOR', subject: 'All subjects', status: 'active', activity: { kind: 'LAST_ACTIVE', date: '2026-10-14', until: null }, synthetic: true },
+  { name: 'Bakhtiyor Nazriev', role: 'TEACHER', subject: 'Python', status: 'pending', activity: { kind: 'INVITED', date: '2026-10-12', until: '2026-10-19' }, synthetic: true },
+  { name: 'Shirin Ahmedova', role: 'TEACHER', subject: 'Web basics', status: 'expired', activity: { kind: 'EXPIRED', date: '2026-09-28', until: '2026-10-05' }, synthetic: true },
 ] as const;
 
 /** Teacher names by staff slug, incl. teachers who only exist in the directory. */

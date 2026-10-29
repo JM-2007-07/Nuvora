@@ -38,7 +38,7 @@ function Body() {
   const nothing = !recorded && own.length === 0 && mine.isSuccess;
 
   return (
-    <div className="grid gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHead title={t('title')} subtitle={t('subtitle')} />
       <div className="fz-rise" style={{ ['--fz-delay' as string]: '60ms' }}>
         <div className="flex"><SearchBox value={q} onChange={setQ} label={t('search')} /></div>
