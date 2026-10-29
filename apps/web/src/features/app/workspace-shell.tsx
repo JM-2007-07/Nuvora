@@ -60,7 +60,8 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
           {chipEl}
         </div>
         {nav}
-        <div className="mt-auto grid gap-3">
+        {/* minmax(0,1fr): the column never grows past the sidebar to fit a card's content. */}
+        <div className="mt-auto grid grid-cols-[minmax(0,1fr)] gap-3">
           {person}
           <div className="flex items-center justify-between gap-2">
             <LocaleButtons compact />
