@@ -1,8 +1,10 @@
 import { PrismaPg } from '@prisma/adapter-pg';
+import { bankDraft, defaultSchedule, questionData } from '../../assessments/assessment-rules.js';
 import { loadDotEnvFile, loadEnv } from '../../config/env.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { recordAttempt } from '../../quizzes/record-attempt.js';
 import { answersFromChoices, B12_DIAGNOSTIC_QUIZ, B12_GROUP, B12_RETEST_QUIZ, B12_STUDENTS } from './b12-cohort.js';
+import { DEMO_TEACHER, FUNCTIONS_CHECK, FUNCTIONS_CHECK_NEW_QUESTIONS } from './demo-assessments.js';
 import { DEMO_LEARNERS } from './demo-learners.js';
 
 /**
@@ -14,6 +16,7 @@ import { DEMO_LEARNERS } from './demo-learners.js';
  *      recordAttempt(), the same scoring and mastery code as real submissions.
  *   3. resets group B-12 (Faroz handoff) and replays its JavaScript diagnostic and
  *      Arrays retest answers through the same recordAttempt().
+ *   4. removes teacher Dilshod's assessments and recreates the design's Functions draft.
  * Content is never touched. Learner rows other than guests and demo learners are untouched.
  */
 async function main(): Promise<number> {
@@ -93,6 +96,39 @@ async function main(): Promise<number> {
             lines.push(`${student.name}: Arrays retest ${score.correctCount}/${score.totalCount}`);
           }
         }
+        // Teacher Dilshod's assessments: removed and the design's Functions draft recreated.
+        const removed = await tx.assessment.deleteMany({ where: { ownerKey: DEMO_TEACHER } });
+        const bankQuiz = await tx.quiz.findUnique({
+          where: { slug: FUNCTIONS_CHECK.bank.quiz },
+          select: {
+            questions: {
+              where: { key: { in: [...FUNCTIONS_CHECK.bank.keys] } },
+              select: { key: true, prompt: true, explanation: true, topic: { select: { slug: true } }, options: { orderBy: [{ order: 'asc' }, { key: 'asc' }], select: { text: true, isCorrect: true } } },
+            },
+          },
+        });
+        const bank = FUNCTIONS_CHECK.bank.keys.map((key) => {
+          const q = bankQuiz?.questions.find((x) => x.key === key);
+          if (!q) throw new Error(`Demo script: question "${key}" of "${FUNCTIONS_CHECK.bank.quiz}" not found. Run pnpm db:seed first.`);
+          return bankDraft(q, FUNCTIONS_CHECK.bank.quiz);
+        });
+        const schedule = defaultSchedule(new Date());
+        await tx.assessment.create({
+          data: {
+            ownerKey: DEMO_TEACHER,
+            groupCode: FUNCTIONS_CHECK.groupCode,
+            subjectSlug: FUNCTIONS_CHECK.subjectSlug,
+            topicSlug: FUNCTIONS_CHECK.topicSlug,
+            title: FUNCTIONS_CHECK.title,
+            description: FUNCTIONS_CHECK.description,
+            purpose: FUNCTIONS_CHECK.purpose,
+            languages: ['en', 'ru', 'tg'],
+            opensAt: schedule.opensAt,
+            closesAt: schedule.closesAt,
+            questions: { create: [...bank, ...FUNCTIONS_CHECK_NEW_QUESTIONS].map(questionData) },
+          },
+        });
+        lines.push(`teacher ${DEMO_TEACHER}: removed ${removed.count} assessment(s), recreated draft "${FUNCTIONS_CHECK.title}" (5 questions)`);
         return lines;
       },
       { maxWait: 10_000, timeout: 120_000 },

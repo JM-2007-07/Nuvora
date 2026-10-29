@@ -63,6 +63,15 @@ erDiagram
 
 Recommendations are **computed on request** from the tables above. They are not stored in the MVP.
 
+### Teacher assessments (Faroz, migration `20261029120000_teacher_assessments`, owner-approved 2026-10-29)
+
+| Entity | Key fields | Notes |
+| --- | --- | --- |
+| **Assessment** | `ownerKey` (staff slug or `acct:<accountId>`), `groupCode`, `subjectSlug`, `topicSlug?`, `title`, `purpose` (`CHECK` \| `RETEST` \| `DIAGNOSTIC`), `languages`, `audience` (`CLASS` \| `UNDER_60`), `opensAt?`, `closesAt?`, `timeLimitMinutes?`, `attemptsAllowed`, `revealAnswers`, `xp`, shuffle/notify flags, `publishedAt?` | Built by a teacher for one of their groups. Status is **derived**, not stored: draft (`publishedAt` null) → scheduled → live → closed by the real clock. Owners and groups are referenced by key because demo staff and groups are defined in code |
+| **AssessmentQuestion** | `assessmentId` (cascade), `order` (unique per assessment), `topicSlug`, `sourceQuiz?`/`sourceKey?`, `prompt`, `code?`, `options`, `correctIndex`, `explanation` | A **snapshot**: bank questions are copied, so content edits never change a saved assessment. Text is jsonb `{ en, ru?, tg? }` (empty = not translated; students see English) |
+
+These tables are separate from `quizzes` on purpose: the seed loader treats any quiz missing from the seed files as a blocking error. Learners cannot take teacher assessments yet (no attempt table for them). `pnpm db:seed:demo` removes demo teacher Dilshod's assessments and recreates the design's draft "Functions — return vs console.log".
+
 Theme preference is stored client-side (next-themes). Locale preference is stored in a cookie and optionally in `User.preferredLocale`.
 
 The learner session is a signed cookie holding the `User.id`. There is no session table in the MVP.

@@ -71,11 +71,12 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-(--line) bg-(--bar-bg) px-[18px] py-3 backdrop-blur-[10px] min-[900px]:hidden">
-          <Link href="/" aria-label={t('website')} className="rounded-md">
+          <Link href="/" aria-label={t('website')} className="shrink-0 rounded-md">
             <Logo name={tBrand('name')} size={28} textClass="text-base" />
           </Link>
-          {chipEl}
-          <div className="ml-auto flex items-center gap-2">
+          {/* Long chips (Tajik) truncate instead of covering the name at 390 px. */}
+          {chip ? <span title={chip} className="min-w-0 truncate rounded-full bg-(--gold-tint) px-2.5 py-1 text-xs font-bold text-(--gold-ink)">{chip}</span> : null}
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <ThemeSwitcher />
             <button
               type="button"

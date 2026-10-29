@@ -429,3 +429,87 @@ model GroupMember {
   @@index([userId])
   @@map("group_members")
 }
+
+// ---------- Teacher assessments (Faroz, 2026-10-29, owner-approved migration) ----------
+// Checks, retests and diagnostics a teacher builds for one of their groups.
+// Kept apart from the seeded `quizzes` tables on purpose: the seed loader treats any
+// quiz missing from the seed files as a blocking error. Owners and groups are
+// referenced by key (demo staff and demo groups are defined in code, staff/demo-org.ts).
+// Status is derived, never stored: draft (publishedAt null), scheduled, live, closed.
+
+enum AssessmentPurpose {
+  CHECK
+  RETEST
+  DIAGNOSTIC
+}
+
+enum AnswerReveal {
+  AFTER_CLOSE
+  AFTER_SUBMIT
+  NEVER
+}
+
+/// Who takes it: the whole group, or only students under 60% on the topic in the latest diagnostic
+enum AssessmentAudience {
+  CLASS
+  UNDER_60
+}
+
+model Assessment {
+  id               String             @id @default(cuid())
+  /// The owning teacher: staff slug ("dilshod-karimov") or "acct:<accountId>"
+  ownerKey         String
+  /// Demo group code ("B-12") or a StudyGroup joinCode
+  groupCode        String
+  subjectSlug      String
+  topicSlug        String?
+  title            String
+  description      String?
+  purpose          AssessmentPurpose
+  languages        Locale[]
+  audience         AssessmentAudience @default(CLASS)
+  opensAt          DateTime?
+  closesAt         DateTime?
+  /// Null = no time limit
+  timeLimitMinutes Int?
+  attemptsAllowed  Int                @default(1)
+  revealAnswers    AnswerReveal       @default(AFTER_CLOSE)
+  xp               Int                @default(40)
+  shuffleQuestions Boolean            @default(true)
+  shuffleOptions   Boolean            @default(true)
+  notifyStudents   Boolean            @default(true)
+  /// Null while it is a draft
+  publishedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  questions AssessmentQuestion[]
+
+  @@index([ownerKey])
+  @@map("assessments")
+}
+
+/// A question snapshot: bank questions are copied, so later content edits never change a published assessment.
+model AssessmentQuestion {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  order        Int
+  topicSlug    String
+  /// Set when copied from the question bank: quiz slug and question key
+  sourceQuiz   String?
+  sourceKey    String?
+  /// Markdown per locale: { en, ru?, tg? }
+  prompt       Json
+  code         String?
+  /// [{ text: { en, ru?, tg? } }]
+  options      Json
+  correctIndex Int
+  /// Markdown per locale
+  explanation  Json
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([assessmentId, order])
+  @@map("assessment_questions")
+}

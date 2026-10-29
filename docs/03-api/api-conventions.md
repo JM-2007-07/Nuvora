@@ -100,6 +100,14 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `GET /teach/overview` 🧑‍🏫 | `TeacherOverview`: the teacher's own groups; `recorded: false` marks handoff reference figures (no stored attempts) | `401`, `403` |
 | `GET /teach/groups/:code` 🧑‍🏫 | `GroupAnalytics` from stored attempts: topic totals, per-question correctness and option counts, students × topics, retest before/after | `403` (not your group), `404 GROUP_NOT_FOUND`, `404 GROUP_HAS_NO_RECORDS`, `400` |
 | `GET /teach/groups/:code/students/:slug` 🧑‍🏫 | `StudentAnswers`: the student's attempts answer by answer (option texts) | `403`, `404 STUDENT_NOT_FOUND` |
+| `GET /teach/assessments` 🧑‍🏫 | `AssessmentList`: the teacher's own assessments (`stored`), the group's diagnostic and retest computed from stored attempts (`recorded`), design figures for groups without stored answers (`reference`, read-only); the "suggested from your gaps" draft and the retest question most students missed; the groups the teacher can assign to | `401`, `403` |
+| `POST /teach/assessments` 🧑‍🏫 | Body `AssessmentDraft` (may be incomplete); `201 Assessment` | `403` (not your group), `400 VALIDATION_FAILED` |
+| `GET` / `PUT /teach/assessments/:id` 🧑‍🏫 | `Assessment` (with correct options: owner only). `PUT` saves a draft, or edits a scheduled one before it opens (it must stay publishable) | `404 ASSESSMENT_NOT_FOUND` (missing or someone else's), `409 ASSESSMENT_LOCKED` (live or closed), `422 PUBLISH_CHECKS_FAILED` |
+| `POST /teach/assessments/:id/publish` 🧑‍🏫 | Runs `assessmentChecks()` (shared with the builder) on the server; `200 Assessment` scheduled or live | `422 PUBLISH_CHECKS_FAILED` (`details`: failing checks), `409 ALREADY_PUBLISHED` |
+| `POST /teach/assessments/:id/unschedule` 🧑‍🏫 | Back to a draft, only before it opens | `409 NOT_SCHEDULED` |
+| `POST /teach/assessments/:id/duplicate` 🧑‍🏫 | New draft from a stored assessment or from a recorded row (`rec-<group>-diagnostic\|retest`); `201 Assessment` | `404`, `403` |
+| `DELETE /teach/assessments/:id` 🧑‍🏫 | `204`; drafts only | `409 NOT_A_DRAFT` |
+| `GET /teach/bank?group=&topic=` 🧑‍🏫 | `{ items: BankQuestion[] }`: seeded diagnostic and topic-quiz questions as builder questions (code split out), with how the group answered them | `403`, `400` |
 | `GET /center/overview` 🏢 | `CenterOverview`: org totals and every group as aggregates (`CenterGroup`: totals, participation, topic %, flags, `recorded`/`synthetic`) | `401`, `403` (teacher) |
 | `GET /center/groups/:code` 🏢 | `CenterGroupDetail`: group totals + participation (name, took the diagnostic yes/no). Never scores, answers, retest or practice membership | `403`, `404 GROUP_NOT_FOUND`, `400` |
 | `GET /center/staff` 🏢 | `CenterStaff`: directory incl. pending/expired invitations (coordinator needs `coordStaff`) | `401`, `403` |

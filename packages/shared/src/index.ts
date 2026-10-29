@@ -6,3 +6,4 @@ export * from './content-api.js';
 export * from './learning-api.js';
 export * from './staff-api.js';
 export * from './account-api.js';
+export * from './assessment-api.js';
