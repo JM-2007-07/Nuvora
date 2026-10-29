@@ -17,7 +17,7 @@ import type { LearnerRecord } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { percent } from '../quizzes/scoring.js';
 import { isUniqueViolation } from '../accounts/accounts.service.js';
-import type { DemoStaff } from '../staff/demo-org.js';
+import { centerOrganizationId, type DemoStaff } from '../staff/demo-org.js';
 
 /** The subject new groups study (the Faroz demo subject). */
 const DEFAULT_SUBJECT = 'javascript';
@@ -41,6 +41,11 @@ const groupSelect = {
   organizationId: true,
   teacherAccountId: true,
   teacher: { select: { name: true } },
+  displayCode: true,
+  startsOn: true,
+  languages: true,
+  teacherKey: true,
+  teacherName: true,
   members: {
     select: {
       userId: true,
@@ -61,6 +66,11 @@ type GroupRow = {
   organizationId: string;
   teacherAccountId: string | null;
   teacher: { name: string } | null;
+  displayCode: string | null;
+  startsOn: Date | null;
+  languages: ('tg' | 'ru' | 'en')[];
+  teacherKey: string | null;
+  teacherName: string | null;
   members: { userId: string; joinedAt: Date; user: { displayName: string } }[];
 };
 
@@ -78,9 +88,9 @@ export class GroupsService {
     staff: DemoStaff,
     locale: Locale,
   ): Promise<StudyGroupView[]> {
-    if (!staff.accountId) return []; // demo staff have code-defined groups only
+    // Own groups (accounts) and groups a center assigned with the wizard (demo staff and accounts, by key).
     const rows = await this.prisma.studyGroup.findMany({
-      where: { teacherAccountId: staff.accountId },
+      where: { OR: [{ teacherKey: staff.slug }, ...(staff.accountId ? [{ teacherAccountId: staff.accountId }] : [])] },
       orderBy: { createdAt: 'desc' },
       select: groupSelect,
     });
@@ -114,7 +124,8 @@ export class GroupsService {
       where: { id },
       select: groupSelect,
     });
-    if (!row || !staff.accountId || row.teacherAccountId !== staff.accountId)
+    const teaches = row && (row.teacherKey === staff.slug || (!!staff.accountId && row.teacherAccountId === staff.accountId));
+    if (!row || !teaches)
       throw new NotFoundException({
         code: 'GROUP_NOT_FOUND',
         message: 'Group not found',
@@ -150,13 +161,41 @@ export class GroupsService {
     staff: DemoStaff,
     locale: Locale,
   ): Promise<StudyGroupView[]> {
-    if (!staff.organizationId) return [];
+    const organizationId = centerOrganizationId(staff);
+    if (!organizationId) return [];
     const rows = await this.prisma.studyGroup.findMany({
-      where: { organizationId: staff.organizationId },
+      where: { organizationId },
       orderBy: { createdAt: 'desc' },
       select: groupSelect,
     });
     return this.views(rows, locale);
+  }
+
+  /** A center's database group by its code: the totals view plus who took the diagnostic (yes/no only, never scores). */
+  async centerGroupParticipation(
+    staff: DemoStaff,
+    displayCode: string,
+    locale: Locale,
+  ): Promise<{ group: StudyGroupView; participation: { name: string; tookDiagnostic: boolean }[] } | null> {
+    const organizationId = centerOrganizationId(staff);
+    if (!organizationId) return null;
+    const row = await this.prisma.studyGroup.findUnique({
+      where: { organizationId_displayCode: { organizationId, displayCode } },
+      select: groupSelect,
+    });
+    if (!row) return null;
+    const [group] = await this.views([row], locale);
+    const diagnostics = await this.firstDiagnostics(
+      row.members.map((m) => m.userId),
+      row.subjectSlug,
+    );
+    return {
+      group,
+      participation: row.members.map((m) => ({
+        name: m.user.displayName,
+        tookDiagnostic: diagnostics.has(m.userId),
+      })),
+    };
   }
 
   async createForCenter(
@@ -297,6 +336,7 @@ export class GroupsService {
     rows: GroupRow[],
     locale: Locale,
   ): Promise<StudyGroupView[]> {
+    if (!rows.length) return [];
     const subjects = new Map(
       (
         await this.prisma.subject.findMany({
@@ -326,7 +366,7 @@ export class GroupsService {
             : { slug: r.subjectSlug, title: r.subjectSlug, fallbackFields: [] },
           capacity: r.capacity,
           schedule: r.schedule,
-          teacher: r.teacher?.name ?? null,
+          teacher: r.teacherName ?? r.teacher?.name ?? null,
           memberCount: r.members.length,
           submitted: scores.length,
           diagnosticPercent: total
@@ -336,6 +376,9 @@ export class GroupsService {
               )
             : null,
           createdAt: r.createdAt.toISOString(),
+          displayCode: r.displayCode,
+          startsOn: r.startsOn ? r.startsOn.toISOString().slice(0, 10) : null,
+          languages: r.languages,
         };
       }),
     );

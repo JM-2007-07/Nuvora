@@ -2,14 +2,14 @@
 
 import type { CenterGroup, Staff, StaffRole } from '@nuvora/shared';
 import type { UseQueryResult } from '@tanstack/react-query';
-import { ArrowRightIcon, BarChart3Icon, CheckIcon, MinusIcon, SettingsIcon, ShieldCheckIcon, UsersIcon, UsersRoundIcon } from 'lucide-react';
+import { ArrowRightIcon, BarChart3Icon, CheckIcon, MinusIcon, PlusIcon, SettingsIcon, ShieldCheckIcon, UsersIcon, UsersRoundIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Reveal } from '@/components/motion/reveal';
 import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
 import { isAccountStaff, useMyGroups } from '@/features/teach/hooks';
 import { DeniedState, isDenied, StaffGate } from '@/features/teach/staff-gate';
-import { CopyButton, CreateGroupButton, PageHead, PercentBar, SearchBox, StatusPill, Tabs, useSchedule, type GroupStatus } from '@/features/teach/work-ui';
+import { CopyButton, PageHead, PercentBar, SearchBox, StatusPill, Tabs, useSchedule, type GroupStatus } from '@/features/teach/work-ui';
 import { Link } from '@/i18n/navigation';
 import { ApiRequestError } from '@/lib/client-api';
 import { useCenterGroup, useCenterOverview } from './hooks';
@@ -83,7 +83,7 @@ function DashboardBody({ staff }: { staff: Staff }) {
         ];
         return (
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-            <PageHead title={o.organization} subtitle={t('subtitle', { name: o.viewer.name })} action={account && staff.role === 'ADMIN' ? <CreateGroupButton scope="center" /> : undefined} />
+            <PageHead title={o.organization} subtitle={t('subtitle', { name: o.viewer.name })} action={<CreateGroupLink />} />
             <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { label: t('enrollments'), value: o.totals.enrollments, sub: t('enrollmentsSub') },
@@ -183,6 +183,17 @@ function DashboardBody({ staff }: { staff: Staff }) {
   );
 }
 
+/** Opens the group wizard. Coordinators see it too; the server checks the admin's "manage groups" permission. */
+function CreateGroupLink() {
+  const t = useTranslations('GroupWizard');
+  return (
+    <Link href="/center/groups/new" className="fz-btn fz-btn-primary">
+      <PlusIcon aria-hidden="true" className="size-4" />
+      {t('open')}
+    </Link>
+  );
+}
+
 export function Stat({ label, value, sub }: { label: string; value: number; sub: string }) {
   return (
     <div className="fz-card-hover h-full rounded-[22px] border border-(--line) bg-(--panel) p-5">
@@ -196,19 +207,18 @@ export function Stat({ label, value, sub }: { label: string; value: number; sub:
 // ---------- Groups ----------
 
 export function CenterGroups() {
-  return <StaffGate>{(staff) => <GroupsBody staff={staff} />}</StaffGate>;
+  return <StaffGate>{() => <GroupsBody />}</StaffGate>;
 }
 
 const GROUP_GRID = 'lg:grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,0.7fr)_minmax(0,1.2fr)_minmax(0,0.8fr)]';
 
-function GroupsBody({ staff }: { staff: Staff }) {
+function GroupsBody() {
   const t = useTranslations('Center.groups');
   const tw = useTranslations('Work.centerGroups');
   const schedule = useSchedule();
   const overview = useCenterOverview();
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<'all' | GroupStatus>('all');
-  const account = isAccountStaff(staff.slug) && staff.role === 'ADMIN';
   return (
     <Loaded query={overview}>
       {(o) => {
@@ -217,7 +227,7 @@ function GroupsBody({ staff }: { staff: Staff }) {
         const count = (s: GroupStatus) => o.groups.filter((g) => g.status === s).length;
         return (
           <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-            <PageHead title={t('title')} subtitle={t('subtitle')} action={account ? <CreateGroupButton scope="center" /> : undefined} />
+            <PageHead title={t('title')} subtitle={t('subtitle')} action={<CreateGroupLink />} />
             <div className="fz-rise flex flex-wrap gap-3" style={{ ['--fz-delay' as string]: '60ms' }}>
               <SearchBox value={q} onChange={setQ} label={tw('search')} />
               <Tabs

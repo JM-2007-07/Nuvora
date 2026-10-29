@@ -38,6 +38,7 @@ Run from the root as `pnpm <script>` (pnpm, [D-17](docs/01-architecture/decision
 | `db:seed:dry-run` | Preview what `db:seed` would change ([seed loader](docs/04-data/data-model.md#seed-loader)) | Reads |
 | `db:migrate` | Apply migrations | **Writes: owner approval** |
 | `db:seed` | Load seed content (creates/updates only, never deletes) | **Writes: owner approval** |
+| `db:seed:center` | Prepare the demo center for the group wizard: creates its organization row and the 4 unassigned students if missing; changes or deletes nothing | **Writes: owner approval** |
 | `db:seed:demo` | Reset demo learners and B-12, remove guests, recreate demo teacher Dilshod's draft assessment, clear the demo center's invitations and permissions | **Writes: owner approval** |
 | `pnpm --filter @nuvora/web test:e2e` | Playwright smoke test on the installed Edge | Through the app |
 

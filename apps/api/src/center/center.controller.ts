@@ -35,7 +35,7 @@ export class CenterController {
     await this.permissions.require(staff, 'coordGroups');
     // Demo-org groups belong to the demo center only; an account admin's own groups are under /center/my-groups.
     if (staff.accountId) throw new NotFoundException({ code: 'GROUP_NOT_FOUND', message: `Group ${code} not found` });
-    return this.center.group(code, locale);
+    return this.center.group(staff, code, locale);
   }
 
   @Get('staff')

@@ -145,3 +145,23 @@ export const TEACHER_NAMES: Record<string, string> = {
   'nodira-alieva': 'Nodira Alieva',
 };
 
+
+/** Database organization of the code-defined Faroz Demo Center (row created by `pnpm db:seed:demo`), so wizard groups can be stored. */
+export const DEMO_CENTER_ORG_ID = 'demo-center';
+
+/**
+ * Students of the demo center not in any group yet (handoff demo-center.json `unassignedStudents`).
+ * `pnpm db:seed:demo` creates them as demo learners without history; the group wizard enrolls them.
+ */
+export const DEMO_UNASSIGNED_STUDENTS = [
+  { slug: 'laziz-karimzoda', name: 'Laziz Karimzoda', joinedOn: '2026-10-12', wants: 'Web basics' },
+  { slug: 'dilorom-usmonova', name: 'Dilorom Usmonova', joinedOn: '2026-10-12', wants: 'Web basics' },
+  { slug: 'ismoil-yusufzoda', name: 'Ismoil Yusufzoda', joinedOn: '2026-10-13', wants: 'Web basics' },
+  { slug: 'nigina-hasanova', name: 'Nigina Hasanova', joinedOn: '2026-10-13', wants: 'JavaScript' },
+] as const;
+
+/** The organization whose database groups a staff member manages: a center admin account's, or the demo center for demo center staff. */
+export function centerOrganizationId(staff: DemoStaff): string | null {
+  if (staff.accountId) return staff.role === 'ADMIN' ? (staff.organizationId ?? null) : null;
+  return staff.role === 'ADMIN' || staff.role === 'COORDINATOR' ? DEMO_CENTER_ORG_ID : null;
+}

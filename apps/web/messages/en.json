@@ -692,5 +692,96 @@
     "notFoundBody": "It may have been replaced by a newer link. Ask the center admin for the latest one.",
     "languages": "Language",
     "note": "This demo sends no email: the center admin shares this link directly."
+  },
+  "GroupWizard": {
+    "open": "Create group",
+    "title": "Create a group",
+    "subtitle": "Set it up, choose who teaches it, and enroll students. The teacher then plans lessons and assessments.",
+    "steps": "Wizard steps",
+    "step": {
+      "details": "Details",
+      "teacher": "Teacher",
+      "students": "Students",
+      "review": "Review"
+    },
+    "note": {
+      "codeMissing": "Code missing",
+      "needsFixes": "Needs fixes",
+      "noTeacher": "No teacher yet",
+      "selected": "{count} selected",
+      "ready": "Ready to create"
+    },
+    "details": {
+      "title": "Group details",
+      "code": "Group code",
+      "codePlaceholder": "e.g. B-18",
+      "codeMissing": "Add a group code.",
+      "codeTaken": "{code} is already used in this center.",
+      "codeFormat": "Use a letter, a hyphen and two digits, e.g. B-18.",
+      "subject": "Subject",
+      "schedule": "Schedule",
+      "schedulePlaceholder": "e.g. Tue, Thu · 16:00",
+      "scheduleMissing": "Add the schedule.",
+      "starts": "Starts",
+      "startsMissing": "Pick a start date.",
+      "capacity": "Capacity",
+      "capacityRange": "Use {min} to {max} seats.",
+      "languages": "Teaching languages",
+      "languagesMissing": "Pick at least one language."
+    },
+    "teacher": {
+      "title": "Who teaches {code}?",
+      "later": "Assign later",
+      "laterBody": "You can assign a teacher after the group is created.",
+      "reference": "reference · no workspace",
+      "none": "No teachers on your staff yet. Invite one first.",
+      "toStaff": "Go to Staff"
+    },
+    "students": {
+      "title": "Enroll students",
+      "seats": "{count} of {capacity} seats",
+      "empty": "No unassigned students right now.",
+      "joined": "Joined {date}",
+      "wants": "wants {subject}",
+      "tooMany": "More students than seats: raise the capacity or unselect some.",
+      "joinLater": "Other learners can join later with the group’s join code."
+    },
+    "review": {
+      "title": "Review",
+      "code": "Group code",
+      "subject": "Subject",
+      "schedule": "Schedule",
+      "starts": "Starts",
+      "capacity": "Capacity",
+      "languages": "Languages",
+      "teacher": "Teacher",
+      "students": "Students",
+      "detailsOk": "Details complete",
+      "detailsFix": "Details need fixes",
+      "teacherOk": "Teacher chosen (or assign later)",
+      "teacherFix": "Choose a teacher or “Assign later”",
+      "seatsOk": "Enough seats",
+      "fix": "Fix",
+      "create": "Create {code}",
+      "creating": "Creating…",
+      "confirmTitle": "Create {code}?",
+      "confirmBody": "The group is created now, with a join code for learners who join later.",
+      "confirm": "Create group"
+    },
+    "error": {
+      "TEACHER_NOT_IN_CENTER": "This teacher is no longer on your staff. Pick another one.",
+      "STUDENT_NOT_AVAILABLE": "A selected student is already in a group. Reload the page and pick again.",
+      "CENTER_NOT_READY": "The demo center isn’t set up yet. Run pnpm db:seed:demo.",
+      "generic": "Couldn’t create the group. Check that the server is running and try again."
+    },
+    "cancel": "Cancel",
+    "next": "Next: {step}",
+    "done": {
+      "title": "{code} is ready",
+      "body": "Teacher: {teacher}. Students enrolled: {count}. Learners who join later use this code:",
+      "copy": "Copy join code",
+      "open": "Open group",
+      "toGroups": "All groups"
+    }
   }
 }

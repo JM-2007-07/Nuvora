@@ -81,6 +81,10 @@ These tables are separate from `quizzes` on purpose: the seed loader treats any 
 
 `pnpm db:seed:demo` deletes the demo center's invitations and its permissions row (back to the defaults). Teacher accounts created while accepting are not removed.
 
+### Center group wizard (migration `20261029220000_center_group_wizard`, owner-approved 2026-10-29)
+
+`study_groups` gains nullable `displayCode` (unique per organization, e.g. `B-18`), `startsOn`, `languages`, `teacherKey` (staff slug or `acct:<id>`) and `teacherName`; older groups keep them empty. The code-defined demo center has a real `organizations` row with id `demo-center`, and the design's four unassigned students are demo learners without history. Both are created by `pnpm db:seed:center` (additive: creates only what is missing, changes and deletes nothing) and by `pnpm db:seed:demo` (which also removes the demo center's wizard groups).
+
 Theme preference is stored client-side (next-themes). Locale preference is stored in a cookie and optionally in `User.preferredLocale`.
 
 The learner session is a signed cookie holding the `User.id`. There is no session table in the MVP.

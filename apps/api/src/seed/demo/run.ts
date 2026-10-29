@@ -2,6 +2,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { bankDraft, defaultSchedule, questionData } from '../../assessments/assessment-rules.js';
 import { loadDotEnvFile, loadEnv } from '../../config/env.js';
 import { DEMO_CENTER_KEY } from '../../invitations/invitation-rules.js';
+import { DEMO_CENTER_ORG_ID, DEMO_UNASSIGNED_STUDENTS } from '../../staff/demo-org.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { recordAttempt } from '../../quizzes/record-attempt.js';
 import { answersFromChoices, B12_DIAGNOSTIC_QUIZ, B12_GROUP, B12_RETEST_QUIZ, B12_STUDENTS } from './b12-cohort.js';
@@ -19,6 +20,8 @@ import { DEMO_LEARNERS } from './demo-learners.js';
  *      Arrays retest answers through the same recordAttempt().
  *   4. removes teacher Dilshod's assessments and recreates the design's Functions draft.
  *   5. removes the demo center's invitations and resets its permissions (no row = handoff defaults).
+ *   6. group wizard: upserts the demo center's organization row, removes its wizard groups,
+ *      and creates the design's unassigned students as demo learners without history.
  * Content is never touched. Learner rows other than guests and demo learners are untouched.
  */
 async function main(): Promise<number> {
@@ -136,6 +139,13 @@ async function main(): Promise<number> {
         const invitations = await tx.staffInvitation.deleteMany({ where: { orgKey: DEMO_CENTER_KEY } });
         await tx.centerPermissions.deleteMany({ where: { orgKey: DEMO_CENTER_KEY } });
         lines.push(`demo center: removed ${invitations.count} invitation(s), permissions reset to the handoff defaults`);
+
+        // Group wizard: the demo center as an organization row, its wizard groups removed
+        // (members cascade), and the design's unassigned students ready to enroll.
+        await tx.organization.upsert({ where: { id: DEMO_CENTER_ORG_ID }, create: { id: DEMO_CENTER_ORG_ID, name: 'Faroz Demo Center' }, update: { name: 'Faroz Demo Center' } });
+        const wizardGroups = await tx.studyGroup.deleteMany({ where: { organizationId: DEMO_CENTER_ORG_ID } });
+        for (const s of DEMO_UNASSIGNED_STUDENTS) await resetDemoLearner(s.slug, s.name);
+        lines.push(`demo center: removed ${wizardGroups.count} wizard group(s); ${DEMO_UNASSIGNED_STUDENTS.length} unassigned students ready`);
         return lines;
       },
       { maxWait: 10_000, timeout: 120_000 },

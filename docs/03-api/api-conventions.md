@@ -117,6 +117,8 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `GET /invitations/:token` | Public: `PublicInvitation` (center, invitee name, role, subject, inviter, expiry, status). Never the email | `404 INVITATION_NOT_FOUND`, `400` |
 | `POST /invitations/:token/decline` | Public, pending only; `200 PublicInvitation` | `404`, `409 INVITATION_<STATUS>` |
 | `POST /invitations/:token/accept` 🧑‍🏫 account | A signed-in **teacher account** whose email matches; conditional update (no double accept); `200 PublicInvitation` | `401`, `403 ACCOUNT_REQUIRED` / `EMAIL_MISMATCH`, `409 INVITATION_<STATUS>` / `INVITATION_CHANGED` |
+| `GET /center/group-wizard` 🏢 | `GroupWizardOptions`: subjects, the center's teachers (`available: false` for reference teachers), unassigned students, taken codes. Coordinator needs `coordGroups` | `401`, `403` |
+| `POST /center/groups` 🏢 | Body `CreateCenterGroupRequest` (code `B-18`, subject, schedule, start date, capacity 4–40, languages, teacher key or null, student ids ≤ capacity); one transaction; `201 StudyGroupView` with a join code. The teacher sees it in `/teach/my-groups` | `403`, `400`, `409 CODE_TAKEN` / `CENTER_NOT_READY`, `422 TEACHER_NOT_IN_CENTER` / `STUDENT_NOT_AVAILABLE` / `SUBJECT_NOT_FOUND` |
 | `GET /center/settings` 🏢 admin | `CenterSettings`: permissions from `center_permissions` (handoff defaults when no row), `editable`, `updatedAt` | `403` for coordinator and teacher |
 | `PUT /center/settings/permissions` 🏢 admin | Body `CenterPermissions`; read by every center handler on the next request | `403`, `400` |
 

@@ -87,6 +87,10 @@ export const StudyGroupViewSchema = z.strictObject({
   /** % of diagnostic answers correct across members (null until someone submits). */
   diagnosticPercent: z.number().int().nullable(),
   createdAt: z.string(),
+  /** Set by the center group wizard: the center's code ("B-18"), start date (YYYY-MM-DD) and teaching languages. */
+  displayCode: z.string().nullable(),
+  startsOn: z.string().nullable(),
+  languages: z.array(z.enum(['tg', 'ru', 'en'])),
 });
 export type StudyGroupView = z.infer<typeof StudyGroupViewSchema>;
 export const StudyGroupListSchema = z.strictObject({ items: z.array(StudyGroupViewSchema) });

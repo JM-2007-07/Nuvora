@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { CenterGroup, CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, GroupAnalytics, Locale } from '@nuvora/shared';
+import type { CenterGroup, CenterGroupDetail, CenterOverview, CenterSettings, CenterStaff, GroupAnalytics, Locale, StudyGroupView } from '@nuvora/shared';
 import { GroupsService } from '../groups/groups.service.js';
 import { orgKeyOf } from '../invitations/invitation-rules.js';
 import { InvitationsService } from '../invitations/invitations.service.js';
@@ -22,6 +22,32 @@ function aggregate(full: GroupAnalytics): GroupAggregate {
   };
 }
 
+/** A database group (wizard or account center) as the center sees it: totals only. A future start date means upcoming. */
+export function studyGroupToCenter(g: StudyGroupView): CenterGroup {
+  const participationPercent = g.memberCount ? Math.round((g.submitted / g.memberCount) * 100) : null;
+  const upcoming = !!g.startsOn && g.startsOn > new Date().toISOString().slice(0, 10);
+  const flags: CenterGroup['flags'] = [];
+  if (g.memberCount === 0) flags.push('SETUP_INCOMPLETE');
+  // Participation is only a concern once the group has started.
+  else if (!upcoming && participationPercent !== null && participationPercent < 95) flags.push('PARTICIPATION_UNDER_95');
+  return {
+    code: g.displayCode ?? g.joinCode,
+    name: g.name,
+    teacher: g.teacher ?? '—',
+    status: upcoming ? 'upcoming' : 'active',
+    schedule: g.schedule ?? '',
+    capacity: g.capacity,
+    students: g.memberCount,
+    submitted: g.submitted,
+    participationPercent,
+    diagnosticPercent: g.diagnosticPercent,
+    topics: null,
+    flags,
+    recorded: true,
+    synthetic: false,
+  };
+}
+
 /** Center workspace (handoff CDashboard, CGroups, CStaff, CSettings): group totals and participation only. */
 @Injectable()
 export class CenterService {
@@ -35,7 +61,9 @@ export class CenterService {
 
   async overview(staff: DemoStaff, locale: Locale): Promise<CenterOverview> {
     if (staff.accountId) return this.accountOverview(staff, locale);
-    const groups = await this.views(locale);
+    // Groups made with the wizard (database) first, then the code-defined demo groups.
+    const created = (await this.groups.centerGroups(staff, locale)).map(studyGroupToCenter);
+    const groups = [...created, ...(await this.views(locale))];
     const stored = await this.invitations.list(staff);
     const active = groups.filter((g) => g.status === 'active');
     return {
@@ -53,9 +81,14 @@ export class CenterService {
     };
   }
 
-  async group(code: string, locale: Locale): Promise<CenterGroupDetail> {
+  async group(staff: DemoStaff, code: string, locale: Locale): Promise<CenterGroupDetail> {
     const group = findGroup(code);
-    if (!group) throw new NotFoundException({ code: 'GROUP_NOT_FOUND', message: `Group ${code} not found` });
+    if (!group) {
+      // A group made with the wizard: totals and participation only, like the demo groups.
+      const stored = await this.groups.centerGroupParticipation(staff, code, locale);
+      if (!stored) throw new NotFoundException({ code: 'GROUP_NOT_FOUND', message: `Group ${code} not found` });
+      return { group: studyGroupToCenter(stored.group), participation: stored.participation };
+    }
     if (!group.roster?.length || !group.diagnosticQuiz) {
       const view = (await this.views(locale)).find((g) => g.code === group.code)!;
       return { group: view, participation: null };
@@ -89,29 +122,7 @@ export class CenterService {
 
   /** A center admin account: its own organization and groups from the database (totals only). */
   private async accountOverview(staff: DemoStaff, locale: Locale): Promise<CenterOverview> {
-    const own = await this.groups.centerGroups(staff, locale);
-    const groups = own.map((g): CenterGroup => {
-      const participationPercent = g.memberCount ? Math.round((g.submitted / g.memberCount) * 100) : null;
-      const flags: CenterGroup['flags'] = [];
-      if (g.memberCount === 0) flags.push('SETUP_INCOMPLETE');
-      else if (participationPercent !== null && participationPercent < 95) flags.push('PARTICIPATION_UNDER_95');
-      return {
-        code: g.joinCode,
-        name: g.name,
-        teacher: g.teacher ?? '—',
-        status: 'active',
-        schedule: g.schedule ?? '',
-        capacity: g.capacity,
-        students: g.memberCount,
-        submitted: g.submitted,
-        participationPercent,
-        diagnosticPercent: g.diagnosticPercent,
-        topics: null,
-        flags,
-        recorded: true,
-        synthetic: false,
-      };
-    });
+    const groups = (await this.groups.centerGroups(staff, locale)).map(studyGroupToCenter);
     const teachers = staff.organizationId ? await this.prisma.account.count({ where: { organizationId: staff.organizationId, role: 'TEACHER' } }) : 0;
     return {
       viewer: toStaff(staff),

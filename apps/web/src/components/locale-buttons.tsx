@@ -32,7 +32,7 @@ export function LocaleButtons({ compact = false }: { compact?: boolean }) {
   }
 
   return (
-    <div role="group" aria-label={t('language')} className={compact ? 'flex gap-0.5 rounded-xl border border-(--line) p-[3px]' : 'flex gap-2'}>
+    <div role="group" aria-label={t('language')} className={compact ? 'flex gap-0.5 rounded-[9px] border border-(--line) p-[3px]' : 'flex gap-2'}>
       {routing.locales.map((option) => {
         const on = option === locale;
         return (

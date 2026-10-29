@@ -411,11 +411,22 @@ model StudyGroup {
   teacherAccountId String?
   teacher          Account?     @relation(fields: [teacherAccountId], references: [id], onDelete: SetNull)
   createdAt        DateTime     @default(now())
+  // ----- Center group wizard (2026-10-29, owner-approved migration); empty for older groups -----
+  /// The center's own code, e.g. "B-18" (unique within the organization)
+  displayCode      String?
+  startsOn         DateTime?
+  /// Teaching languages
+  languages        Locale[]
+  /// Who teaches it: demo staff slug ("dilshod-karimov") or "acct:<accountId>"; null = assign later
+  teacherKey       String?
+  teacherName      String?
 
   members GroupMember[]
 
+  @@unique([organizationId, displayCode])
   @@index([organizationId])
   @@index([teacherAccountId])
+  @@index([teacherKey])
   @@map("study_groups")
 }
 

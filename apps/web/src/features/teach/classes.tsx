@@ -143,7 +143,7 @@ function OwnCard({ g, schedule }: { g: StudyGroupView; schedule: (s: string) => 
         <StatusPill status="active" />
       </div>
       <div>
-        <h3 className="text-xl font-bold">{g.name}</h3>
+        <h3 className="text-xl font-bold">{g.displayCode ? `${g.displayCode} · ${g.name}` : g.name}</h3>
         <p className="mt-1 text-sm text-(--faint)">{g.schedule ? schedule(g.schedule) : g.subject.title}</p>
       </div>
       <dl className="grid grid-cols-3 gap-2">

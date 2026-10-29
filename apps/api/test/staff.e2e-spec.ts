@@ -17,7 +17,7 @@ const staffCookie = (slug: string) => `${STAFF_COOKIE}=${encodeURIComponent(sign
 /**
  * Staff access checks (no PostgreSQL). Every teacher case here is decided before any
  * database query, so the fake Prisma serves nothing but empty lookups (the learner guard,
- * center permissions and invitations): any other query would fail the test.
+ * center permissions, invitations and wizard groups): any other query would fail the test.
  */
 describe('Staff sessions and teacher access (e2e)', () => {
   let app: INestApplication<App>;
@@ -25,7 +25,7 @@ describe('Staff sessions and teacher access (e2e)', () => {
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
       .overrideProvider(PrismaService)
-      .useValue({ user: { findUnique: async () => null }, centerPermissions: { findUnique: async () => null }, staffInvitation: { findMany: async () => [] }, $queryRaw: async () => [{ server_version: '18.6' }], $disconnect: async () => {} })
+      .useValue({ user: { findUnique: async () => null }, centerPermissions: { findUnique: async () => null }, staffInvitation: { findMany: async () => [] }, studyGroup: { findUnique: async () => null, findMany: async () => [] }, $queryRaw: async () => [{ server_version: '18.6' }], $disconnect: async () => {} })
       .compile();
     app = moduleRef.createNestApplication<INestApplication<App>>();
     configureApp(app, env);

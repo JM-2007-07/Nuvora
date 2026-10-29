@@ -27,6 +27,7 @@
     "db:seed": "nest build && node dist/seed/load/run.js",
     "db:seed:dry-run": "nest build && node dist/seed/load/run.js --dry-run",
     "db:seed:demo": "nest build && node dist/seed/demo/run.js",
+    "db:seed:center": "nest build && node dist/seed/demo/prepare-center.js",
     "seed:check": "nest build && node dist/seed/check.js"
   },
   "dependencies": {
