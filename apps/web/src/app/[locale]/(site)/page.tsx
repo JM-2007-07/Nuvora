@@ -271,13 +271,13 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               <strong className="font-brand text-base tracking-[-0.02em]">{t('treeTitle')}</strong>
               <span className="text-sm leading-normal text-(--muted)">{t('treeBody')}</span>
             </div>
-            <div className="fz-glow-blue fz-card-hover col-span-2 flex flex-col gap-3 rounded-[22px] border border-(--hud-border) p-[22px] text-(--hud-text) max-[640px]:col-auto" style={HUD}>
-              <div className="flex justify-between text-xs font-bold text-(--hud-muted)">
+            <div className="fz-card-hover col-span-2 flex flex-col gap-3 rounded-[22px] border border-(--line) bg-(--panel) p-[22px] max-[640px]:col-auto">
+              <div className="flex justify-between text-xs font-bold text-(--muted)">
                 <span>{t('xpLabel')}</span>
-                <span className="text-(--hud-text)">340 / 500</span>
+                <span className="text-(--text)">340 / 500</span>
               </div>
-              <XpSegments on={7} total={10} onClass="bg-(--xp-on)" offClass="bg-(--xp-off)" />
-              <span className="text-sm text-(--hud-muted)">{t('xpNote')}</span>
+              <XpSegments on={7} total={10} onClass="bg-(--xp-on)" offClass="bg-(--line2)" />
+              <span className="text-sm text-(--muted)">{t('xpNote')}</span>
             </div>
           </div>
         </Reveal>
@@ -415,18 +415,18 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               <span className="font-brand text-lg font-semibold">{t('planLearner')}</span>
               <span className="font-brand text-[38px] font-bold">{t('planFree')}</span>
               <span className="text-sm leading-relaxed text-(--muted)">{t('planLearnerBody')}</span>
-              <Link href="/signup?role=learner" className="fz-btn fz-btn-ghost mt-auto">
+              <Link href="/signup?role=learner" className="fz-btn fz-btn-ghost fz-card-cta mt-auto">
                 {t('planLearnerCta')}
               </Link>
             </div>
-            <div className="fz-glow-blue fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--hud-border) p-[26px] text-(--hud-text)" style={HUD}>
+            <div className="fz-card-hover flex flex-col gap-3.5 rounded-3xl border border-(--line) bg-(--panel) p-[26px]">
               <div className="flex justify-between">
                 <span className="font-brand text-lg font-semibold">{t('planTeacher')}</span>
-                <span className="text-xs font-bold text-(--hud-btn)">{t('planMostUseful')}</span>
+                <span className="text-xs font-bold text-(--mint-ink)">{t('planMostUseful')}</span>
               </div>
               <span className="font-brand text-[24px] leading-tight font-bold">{t('planPrice')}</span>
-              <span className="text-sm leading-relaxed text-(--hud-muted)">{t('planTeacherBody')}</span>
-              <Link href="/signup?role=teacher" className="fz-btn fz-btn-hud mt-auto">
+              <span className="text-sm leading-relaxed text-(--muted)">{t('planTeacherBody')}</span>
+              <Link href="/signup?role=teacher" className="fz-btn fz-btn-ghost fz-card-cta mt-auto">
                 {t('planTeacherCta')}
               </Link>
             </div>
@@ -435,7 +435,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
               {/* "Custom" / "Индивидуально" is longer than a price: smaller size and wrapping keep it inside the card. */}
               <span className="font-brand text-[30px] leading-tight font-bold [overflow-wrap:anywhere]">{t('planCustom')}</span>
               <span className="text-sm leading-relaxed text-(--muted)">{t('planCenterBody')}</span>
-              <Link href="/signup?role=center" className="fz-btn fz-btn-ghost mt-auto">
+              <Link href="/signup?role=center" className="fz-btn fz-btn-ghost fz-card-cta mt-auto">
                 {t('planCenterCta')}
               </Link>
             </div>

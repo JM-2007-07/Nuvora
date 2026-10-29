@@ -170,7 +170,7 @@ function Body() {
                         {href ? <span className="inline-flex items-center gap-1 text-sm font-bold text-(--mag-ink)">{t('practise')} <ArrowRightIcon aria-hidden="true" className="size-4" /></span> : null}
                       </>
                     );
-                    const cls = 'fz-card-hover flex min-h-12 items-center gap-3 rounded-[14px] border border-(--mag) bg-(--mag-tint) px-3.5 py-2 text-(--text) no-underline';
+                    const cls = 'fz-card-hover fz-card-tint flex min-h-12 items-center gap-3 rounded-[14px] border border-(--mag) bg-(--mag-tint) px-3.5 py-2 text-(--text) no-underline';
                     return <li key={x.topic.slug}>{href ? <Link href={href} className={cls}>{body}</Link> : <div className={cls}>{body}</div>}</li>;
                   })}
                 </ul>

@@ -126,7 +126,7 @@ export function BadgesRow({ stats }: { stats: LearnerStats }) {
           return (
             <li
               key={b.code}
-              className={`fz-card-hover flex min-h-16 items-center gap-3 rounded-[16px] border px-3.5 py-2.5 ${b.earned ? 'border-(--gold) bg-(--gold-tint)' : 'border-dashed border-(--line2) bg-(--panel2)'}`}
+              className={`fz-card-hover fz-card-tint flex min-h-16 items-center gap-3 rounded-[16px] border px-3.5 py-2.5 ${b.earned ? 'border-(--gold) bg-(--gold-tint)' : 'border-dashed border-(--line2) bg-(--panel2)'}`}
             >
               <span className={`grid size-10 shrink-0 place-items-center rounded-[11px] ${b.earned ? 'bg-(--gold) text-(--xp-chip-ink)' : 'bg-(--track) text-(--faint)'}`}>
                 {b.earned ? <Icon aria-hidden="true" className="size-5" /> : <LockIcon aria-hidden="true" className="size-4" />}

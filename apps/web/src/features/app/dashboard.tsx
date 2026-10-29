@@ -171,7 +171,7 @@ function Skills({ progress, scanned }: { progress: Progress; scanned: boolean })
           <li key={topic.topic.slug}>
             <Link
               href={`/app/topics/${topic.topic.slug}`}
-              className={`fz-card-hover grid h-full min-h-[116px] content-start justify-items-center gap-2 rounded-[16px] border p-3 text-center no-underline ${TONE[topic.status].border} ${TONE[topic.status].bg}`}
+              className={`fz-card-hover fz-card-tint grid h-full min-h-[116px] content-start justify-items-center gap-2 rounded-[16px] border p-3 text-center no-underline ${TONE[topic.status].border} ${TONE[topic.status].bg}`}
             >
               <span className={`font-brand text-xl font-bold tabular-nums ${TONE[topic.status].ink}`}>{scoreText(topic)}</span>
               <span className="text-sm font-semibold text-(--text)">{topic.topic.title}</span>
