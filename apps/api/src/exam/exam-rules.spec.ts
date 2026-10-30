@@ -1,5 +1,5 @@
 import { DEFAULT_EXAM_POLICY } from '@nuvora/shared';
-import { examWindow, initialDeadline, revealState, scoreAnswers, shuffled, violationOutcome } from './exam-rules.js';
+import { examWindow, initialDeadline, revealState, scoreAnswers, shuffled, teacherText, violationOutcome } from './exam-rules.js';
 
 const at = (iso: string) => new Date(iso);
 
@@ -45,5 +45,12 @@ describe('exam rules', () => {
     const r = scoreAnswers([{ id: 'q1', correctIndex: 0 }, { id: 'q2', correctIndex: 2 }, { id: 'q3', correctIndex: 1 }], new Map([['q1', 0], ['q2', 1]]));
     expect(r).toMatchObject({ correct: 1, total: 3, percent: 33 });
     expect([...r.perQuestion.values()]).toEqual([true, false, false]);
+  });
+
+  it('teacher text: empty translations fall back like missing ones (builder stores "")', () => {
+    const stored = { en: 'What is returned?', ru: '', tg: '   ' };
+    expect(teacherText(stored, 'tg')).toEqual({ text: 'What is returned?', fallback: true });
+    expect(teacherText({ en: 'x', ru: 'Что вернёт?' }, 'tg')).toEqual({ text: 'Что вернёт?', fallback: true });
+    expect(teacherText({ en: 'x', ru: 'y', tg: 'з' }, 'tg')).toEqual({ text: 'з', fallback: false });
   });
 });

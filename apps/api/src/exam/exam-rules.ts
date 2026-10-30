@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import type { ExamPolicy } from '@nuvora/shared';
+import { CONTENT_FALLBACK, type ExamPolicy, type Locale } from '@nuvora/shared';
 
 /**
  * Pure rules for Standard Exam Mode (no Nest or Prisma imports, unit-tested).
@@ -74,3 +74,17 @@ export function scoreAnswers(questions: ScorableQuestion[], answers: Map<string,
 
 /** Repeated identical events from a flaky device within this window count once. */
 export const EVENT_DEBOUNCE_MS = 2000;
+
+/**
+ * Text of a teacher-written question in one language. The builder stores untranslated fields as
+ * empty strings ({ en: "…", ru: "", tg: "" }), so empty counts as missing and the usual content
+ * fallback order applies (tg → ru → en, ru → en → tg, en → ru → tg).
+ */
+export function teacherText(stored: unknown, locale: Locale): { text: string; fallback: boolean } {
+  const map = (stored && typeof stored === 'object' ? stored : {}) as Partial<Record<Locale, unknown>>;
+  for (const candidate of CONTENT_FALLBACK[locale]) {
+    const value = map[candidate];
+    if (typeof value === 'string' && value.trim()) return { text: value, fallback: candidate !== locale };
+  }
+  return { text: '', fallback: true };
+}

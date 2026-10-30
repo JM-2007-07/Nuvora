@@ -13,13 +13,13 @@ import {
   VIOLATION_EVENTS,
 } from '@nuvora/shared';
 import { AuditService } from '../common/audit/audit.service.js';
-import { localizeFields, resolveText } from '../common/i18n/locale.js';
+import { localizeFields } from '../common/i18n/locale.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { LearnerRecord } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type DemoStaff, DEMO_GROUPS, findGroup } from '../staff/demo-org.js';
 import { ExamHub } from './exam-hub.js';
-import { EVENT_DEBOUNCE_MS, examWindow, initialDeadline, revealState, scoreAnswers, shuffled, violationOutcome } from './exam-rules.js';
+import { EVENT_DEBOUNCE_MS, examWindow, teacherText, initialDeadline, revealState, scoreAnswers, shuffled, violationOutcome } from './exam-rules.js';
 
 type Tx = Prisma.TransactionClient;
 type AttemptRow = Prisma.AssessmentAttemptGetPayload<{ include: { assessment: { include: { questions: true } }; answers: true } }>;
@@ -164,7 +164,7 @@ export class ExamService {
     const questions = (attempt.questionOrder as string[]).flatMap((id, i) => {
       const q = byId.get(id);
       if (!q) return [];
-      const prompt = resolveText(q.prompt, locale);
+      const prompt = teacherText(q.prompt, locale);
       const options = q.options as { text: unknown }[];
       return [
         {
@@ -172,7 +172,7 @@ export class ExamService {
           number: i + 1,
           prompt: prompt.text,
           code: q.code,
-          options: (optionOrder[q.id] ?? options.map((_, k) => k)).map((key) => ({ key, text: resolveText(options[key]!.text, locale).text })),
+          options: (optionOrder[q.id] ?? options.map((_, k) => k)).map((key) => ({ key, text: teacherText(options[key]!.text, locale).text })),
           fallback: prompt.fallback,
         },
       ];
@@ -286,7 +286,7 @@ export class ExamService {
     const { revealed, revealAt } = revealState(attempt.assessment.revealAnswers, attempt.assessment.closesAt, this.now());
     const answers = new Map(attempt.answers.map((a) => [a.questionId, a.optionKey]));
     const byId = new Map(attempt.assessment.questions.map((q) => [q.id, q]));
-    const text = (value: unknown) => resolveText(value, locale).text;
+    const text = (value: unknown) => teacherText(value, locale).text;
     return {
       attemptId: attempt.id,
       status: attempt.status,
