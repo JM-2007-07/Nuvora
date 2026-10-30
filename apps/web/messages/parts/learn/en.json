@@ -1,0 +1,159 @@
+{
+  "Stats": {
+    "level": "Level",
+    "levelN": "Level {level}",
+    "xpOf": "{xp} / {end} XP",
+    "toNext": "{count} XP to level {level}",
+    "levelNote": "level {level} · {count} to go",
+    "levelCaption": "XP comes from correct answers and lessons.",
+    "streak": "Streak",
+    "days": "{count, plural, one {<num>#</num> day} other {<num>#</num> days}}",
+    "thisWeek": "This week",
+    "activeDay": "{day}: active",
+    "quietDay": "{day}: no activity",
+    "streakCaption": "A test or a finished lesson each day keeps it going.",
+    "weekday": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    },
+    "weekdayShort": {
+      "mon": "M",
+      "tue": "T",
+      "wed": "W",
+      "thu": "T",
+      "fri": "F",
+      "sat": "S",
+      "sun": "S"
+    },
+    "badges": "Badges",
+    "unlocked": "unlocked {date}",
+    "earned": "Earned",
+    "locked": "Locked",
+    "badge": {
+      "FIRST_SCAN": {
+        "name": "First scan",
+        "hint": "finish your diagnostic"
+      },
+      "GAP_CLOSER": {
+        "name": "Gap closer",
+        "hint": "retest a weak topic to 80%+"
+      },
+      "BOOKWORM": {
+        "name": "Bookworm",
+        "hint": "finish lessons"
+      },
+      "STREAK_3": {
+        "name": "3-day streak",
+        "hint": "be active 3 days in a row"
+      }
+    }
+  },
+  "Skills": {
+    "title": "Skill tree · {subject}",
+    "subtitle": "Arrows go from a topic to what it unlocks. Pick a topic to see why it is next.",
+    "view": "View",
+    "map": "Map",
+    "list": "List",
+    "legendSelected": "Selected",
+    "legendWeak": "Needs practice",
+    "legendDeveloping": "Getting there",
+    "legendStrong": "Strong",
+    "legendNotStarted": "Not scanned",
+    "nodeLabel": "{topic}, {status}, {score}",
+    "requires": "Builds on {topics}",
+    "startHere": "Start here",
+    "panel": "Selected topic",
+    "evidence": "Evidence",
+    "evidenceValue": "{correct} of {total} · {kind}, {date}",
+    "kindScan": "scan",
+    "kindRetest": "retest",
+    "evidenceNone": "Not scanned yet",
+    "buildsOn": "Builds on",
+    "nothing": "Nothing: a starting topic",
+    "unlocks": "Unlocks",
+    "whyNext": "Why next:",
+    "whyWeak": "only {correct} of {total} {topic} questions were right; {topic} unlocks {count, plural, =0 {— nothing yet} one {# later topic} other {# later topics}}.",
+    "whyNotStarted": "take the scan to see where you stand on this topic.",
+    "whyDeveloping": "you are close; a lesson and a retest can lift this topic to strong.",
+    "whyStrong": "this topic is strong. Review it later or move on.",
+    "startScan": "Start scan",
+    "startQuest": "Start {topic} quest",
+    "startLesson": "Open the lesson",
+    "openTopic": "Open topic",
+    "nothingUnlocks": "No later topics in this subject yet"
+  },
+  "Learn": {
+    "join": {
+      "title": "Join a group",
+      "body": "Your teacher gives you a code. Enter it to join their group.",
+      "label": "Group code",
+      "placeholder": "e.g. B12-A1B2",
+      "invalid": "That does not look like a group code.",
+      "notFound": "No group has this code.",
+      "full": "This group is full.",
+      "signIn": "Your session ended. Choose a learner again.",
+      "failed": "Could not join. Try again.",
+      "join": "Join",
+      "joining": "Joining…",
+      "joined": "You joined the group.",
+      "mine": "My groups",
+      "mineUnavailable": "Groups are not available right now.",
+      "none": "You are not in a group yet."
+    },
+    "focus": {
+      "home": "Faroz home",
+      "groupTeacher": "{group} · {teacher}",
+      "saveExit": "Save & exit"
+    },
+    "topic": {
+      "notFound": "Topic not found",
+      "toSkills": "To the skill tree",
+      "breadcrumb": "Breadcrumb",
+      "home": "Home",
+      "skills": "Skill tree",
+      "prerequisites": "Builds on",
+      "lesson": "Lesson",
+      "minutes": "{count, plural, one {# min} other {# min}}",
+      "done": "done",
+      "quest": "Quest",
+      "questions": "{count, plural, one {# question} other {# questions}}",
+      "noQuiz": "No quest for this topic yet.",
+      "resources": "Recommended reading",
+      "availableIn": "Available in: {languages}",
+      "open": "Open"
+    },
+    "lesson": {
+      "notFound": "Lesson not found",
+      "toSkills": "To the skill tree",
+      "breadcrumb": "Breadcrumb",
+      "home": "Home",
+      "skills": "Skill tree",
+      "minutes": "{count, plural, one {# min read} other {# min read}}",
+      "notTranslated": "Part of this lesson is not translated yet.",
+      "next": "Next step",
+      "completed": "Completed",
+      "saving": "Saving…",
+      "markComplete": "Mark complete",
+      "takeQuest": "Start the retest",
+      "backToTopic": "Back to the topic",
+      "saveFailed": "Could not save. Try again."
+    },
+    "quests": {
+      "title": "Quests & tests",
+      "subtitle": "The skill scan and one quest per topic. Answers are checked after you submit.",
+      "scan": "Skill scan",
+      "quest": "Quest",
+      "questions": "{count, plural, one {# question} other {# questions}}",
+      "last": "last {score} on {date}",
+      "notTaken": "not taken yet",
+      "again": "Take again",
+      "start": "Start",
+      "empty": "No quests available yet."
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, Put, Query, UseGuards, UseInterceptors } from '@nestjs/common';
-import { type LessonCompletion, type Locale, type Progress, ProgressQuerySchema, SlugSchema } from '@nuvora/shared';
+import { type LearnerStats, type LessonCompletion, type Locale, type Progress, ProgressQuerySchema, SlugSchema } from '@nuvora/shared';
 import { ContentLanguageInterceptor, ContentLocale } from '../common/i18n/content-locale.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import type { LearnerRecord } from '../identity/identity.service.js';
@@ -20,6 +20,11 @@ export class ProgressController {
     @ContentLocale() locale: Locale,
   ): Promise<Progress> {
     return this.progress.getProgress(learner, query.subject, locale);
+  }
+
+  @Get('stats')
+  stats(@Query(new ZodValidationPipe(ProgressQuerySchema)) query: { subject: string }, @CurrentLearner() learner: LearnerRecord): Promise<LearnerStats> {
+    return this.progress.stats(learner, query.subject);
   }
 
   @Put('lessons/:lessonSlug/completion')

@@ -4,8 +4,6 @@ import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { QueryProvider } from '@/components/providers';
-import { SiteFooter } from '@/components/site-footer';
-import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from '@/components/theme-provider';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
@@ -39,9 +37,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <NextIntlClientProvider>
           <ThemeProvider>
             <QueryProvider>
-              <SiteHeader />
               {children}
-              <SiteFooter />
             </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

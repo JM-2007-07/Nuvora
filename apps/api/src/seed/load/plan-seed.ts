@@ -1,4 +1,4 @@
-import type { SubjectContent, TopicContent } from '@nuvora/shared';
+import type { CheckpointContent, QuestionContent, SubjectContent, TopicContent } from '@nuvora/shared';
 import type {
   ContentSnapshot,
   LessonData,
@@ -39,7 +39,7 @@ export type SeedOperation =
   | Update<'lesson', LessonData>
   | Create<'resource', { key: string; topicSlug: string }, ResourceData>
   | Update<'resource', ResourceData>
-  | Create<'quiz', { slug: string; subjectSlug: string; topicSlug: string }, QuizData>
+  | Create<'quiz', { slug: string; subjectSlug: string; topicSlug: string | null }, QuizData>
   | Update<'quiz', QuizData>
   | Create<'question', { key: string; quizSlug: string; topicSlug: string }, QuestionData>
   | Update<'question', QuestionData>
@@ -62,6 +62,7 @@ export interface SeedPlan {
 export interface ParsedContent {
   subjects: SubjectContent[];
   topics: TopicContent[];
+  checkpoints?: CheckpointContent[];
 }
 
 const NEVER_DELETES =
@@ -128,13 +129,80 @@ export function planSeed(content: ParsedContent, snapshot: ContentSnapshot): See
   const seen = { subjects: new Set<string>(), topics: new Set<string>(), lessons: new Set<string>(), resources: new Set<string>(), quizzes: new Set<string>(), questions: new Set<string>(), options: new Set<string>(), prerequisites: new Set<string>() };
 
   // A record that already exists under a different parent cannot be re-homed.
-  const checkParent = (where: string, kind: string, actual: string | null | undefined, expected: string | undefined) => {
-    if (expected !== undefined && actual !== expected) {
+  const checkParent = (where: string, kind: string, actual: string | null | undefined, expected: string | null | undefined) => {
+    if (expected !== undefined && (actual ?? null) !== expected) {
       error(where, `This ${kind} already exists under a different parent in the database. Moving content between parents is not supported; use a new slug/key.`);
       return false;
     }
     return true;
   };
+
+  /** Quiz, questions and options. A TOPIC quiz belongs to one topic; a CHECKPOINT quiz has none and each question names its topic. */
+  function planQuiz<Q extends QuestionContent>(
+    quiz: { slug: string; title: QuizData['title']; questions: Q[] },
+    subjectSlug: string,
+    topicSlug: string | null,
+    kind: QuizData['kind'],
+    topicOf: (question: Q) => string,
+  ): void {
+    const quizWhere = `quiz "${quiz.slug}"`;
+    const existingQuiz = quizBySlug.get(quiz.slug);
+    if (existingQuiz) {
+      seen.quizzes.add(existingQuiz.id);
+      checkParent(quizWhere, 'quiz', existingQuiz.topicId ? topicSlugById.get(existingQuiz.topicId) : null, topicSlug);
+    }
+    upsert('quiz', quizWhere, existingQuiz, { slug: quiz.slug, subjectSlug, topicSlug }, { title: quiz.title, kind } satisfies QuizData);
+
+    quiz.questions.forEach((question, order) => {
+      const qWhere = `${quizWhere} › question "${question.key}"`;
+      const questionTopicSlug = topicOf(question);
+      const existing = existingQuiz ? questionByRef.get(`${existingQuiz.id}/${question.key}`) : undefined;
+      const existingOptions = existing ? (optionsByQuestionId.get(existing.id) ?? []) : [];
+
+      if (existing) {
+        seen.questions.add(existing.id);
+        checkParent(qWhere, 'question', topicSlugById.get(existing.topicId), questionTopicSlug);
+
+        if (existing.answerCount > 0) {
+          const meaning = `It has ${existing.answerCount} recorded answer(s), so its meaning is frozen: give the changed question a new key (data-model.md#published-questions-keep-their-meaning).`;
+          const newKeys = question.options.map((o) => o.key).sort().join(',');
+          const oldKeys = existingOptions.map((o) => o.key).sort().join(',');
+          const newCorrect = question.options.find((o) => o.correct)?.key;
+          const oldCorrect = existingOptions.find((o) => o.isCorrect)?.key;
+          if (existing.type !== question.type) error(qWhere, `Question type would change. ${meaning}`);
+          if (newKeys !== oldKeys) error(qWhere, `Answer options would change (${oldKeys} → ${newKeys}). ${meaning}`);
+          else if (newCorrect !== oldCorrect) error(qWhere, `The correct option would change (${oldCorrect} → ${newCorrect}). ${meaning}`);
+          if (stable(existing.prompt) !== stable(question.prompt) || stable(existing.explanation) !== stable(question.explanation)) {
+            warn(qWhere, `Text changed on a question with ${existing.answerCount} recorded answer(s). Allowed only for typo or translation fixes, never a change of meaning.`);
+          }
+        }
+      }
+
+      upsert('question', qWhere, existing, { key: question.key, quizSlug: quiz.slug, topicSlug: questionTopicSlug }, {
+        type: question.type,
+        prompt: question.prompt,
+        explanation: question.explanation,
+        order,
+      } satisfies QuestionData);
+
+      const optionByKey = new Map(existingOptions.map((o) => [o.key, o]));
+      question.options.forEach((option, optionOrder) => {
+        const oWhere = `${qWhere} › option "${option.key}"`;
+        const existingOption = optionByKey.get(option.key);
+        if (existingOption) {
+          seen.options.add(existingOption.id);
+          if (existingOption.selectedCount > 0 && stable(existingOption.text) !== stable(option.text)) {
+            warn(oWhere, `Text changed on an option chosen in ${existingOption.selectedCount} recorded answer(s). Allowed only for typo or translation fixes.`);
+          }
+        }
+        upsert('option', oWhere, existingOption, { key: option.key, quizSlug: quiz.slug, questionKey: question.key }, {
+          text: option.text,
+          isCorrect: option.correct,
+          order: optionOrder,
+        } satisfies OptionData);
+      });
+    });
+  }
 
   // ---- Subjects ----
   for (const subject of content.subjects) {
@@ -212,66 +280,12 @@ export function planSeed(content: ParsedContent, snapshot: ContentSnapshot): See
       } satisfies ResourceData);
     });
 
-    const quiz = topic.quiz;
-    const quizWhere = `quiz "${quiz.slug}"`;
-    const existingQuiz = quizBySlug.get(quiz.slug);
-    if (existingQuiz) {
-      seen.quizzes.add(existingQuiz.id);
-      checkParent(quizWhere, 'quiz', existingQuiz.topicId ? topicSlugById.get(existingQuiz.topicId) : null, topic.slug);
-    }
-    upsert('quiz', quizWhere, existingQuiz, { slug: quiz.slug, subjectSlug: topic.subject, topicSlug: topic.slug }, {
-      title: quiz.title,
-      kind: 'TOPIC',
-    } satisfies QuizData);
+    planQuiz(topic.quiz, topic.subject, topic.slug, 'TOPIC', () => topic.slug);
+  }
 
-    quiz.questions.forEach((question, order) => {
-      const qWhere = `${quizWhere} › question "${question.key}"`;
-      const existing = existingQuiz ? questionByRef.get(`${existingQuiz.id}/${question.key}`) : undefined;
-      const existingOptions = existing ? (optionsByQuestionId.get(existing.id) ?? []) : [];
-
-      if (existing) {
-        seen.questions.add(existing.id);
-        checkParent(qWhere, 'question', topicSlugById.get(existing.topicId), topic.slug);
-
-        if (existing.answerCount > 0) {
-          const meaning = `It has ${existing.answerCount} recorded answer(s), so its meaning is frozen: give the changed question a new key (data-model.md#published-questions-keep-their-meaning).`;
-          const newKeys = question.options.map((o) => o.key).sort().join(',');
-          const oldKeys = existingOptions.map((o) => o.key).sort().join(',');
-          const newCorrect = question.options.find((o) => o.correct)?.key;
-          const oldCorrect = existingOptions.find((o) => o.isCorrect)?.key;
-          if (existing.type !== question.type) error(qWhere, `Question type would change. ${meaning}`);
-          if (newKeys !== oldKeys) error(qWhere, `Answer options would change (${oldKeys} → ${newKeys}). ${meaning}`);
-          else if (newCorrect !== oldCorrect) error(qWhere, `The correct option would change (${oldCorrect} → ${newCorrect}). ${meaning}`);
-          if (stable(existing.prompt) !== stable(question.prompt) || stable(existing.explanation) !== stable(question.explanation)) {
-            warn(qWhere, `Text changed on a question with ${existing.answerCount} recorded answer(s). Allowed only for typo or translation fixes, never a change of meaning.`);
-          }
-        }
-      }
-
-      upsert('question', qWhere, existing, { key: question.key, quizSlug: quiz.slug, topicSlug: topic.slug }, {
-        type: question.type,
-        prompt: question.prompt,
-        explanation: question.explanation,
-        order,
-      } satisfies QuestionData);
-
-      const optionByKey = new Map(existingOptions.map((o) => [o.key, o]));
-      question.options.forEach((option, optionOrder) => {
-        const oWhere = `${qWhere} › option "${option.key}"`;
-        const existingOption = optionByKey.get(option.key);
-        if (existingOption) {
-          seen.options.add(existingOption.id);
-          if (existingOption.selectedCount > 0 && stable(existingOption.text) !== stable(option.text)) {
-            warn(oWhere, `Text changed on an option chosen in ${existingOption.selectedCount} recorded answer(s). Allowed only for typo or translation fixes.`);
-          }
-        }
-        upsert('option', oWhere, existingOption, { key: option.key, quizSlug: quiz.slug, questionKey: question.key }, {
-          text: option.text,
-          isCorrect: option.correct,
-          order: optionOrder,
-        } satisfies OptionData);
-      });
-    });
+  // ---- Subject-level CHECKPOINT quizzes: no topic of their own; each question names its topic ----
+  for (const checkpoint of content.checkpoints ?? []) {
+    planQuiz(checkpoint, checkpoint.subject, null, 'CHECKPOINT', (question) => question.topic);
   }
 
   // ---- Database content that the seed files no longer contain: never deleted, always reported ----

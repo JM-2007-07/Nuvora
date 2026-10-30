@@ -92,7 +92,7 @@ class PrismaSeedTransaction implements SeedTransaction {
   async updateResource(id: string, data: ResourceData) {
     await this.tx.resource.update({ where: { id }, data });
   }
-  async createQuiz(input: { slug: string; subjectId: string; topicId: string } & QuizData) {
+  async createQuiz(input: { slug: string; subjectId: string; topicId: string | null } & QuizData) {
     return (await this.tx.quiz.create({ data: input, select: { id: true } })).id;
   }
   async updateQuiz(id: string, data: QuizData) {

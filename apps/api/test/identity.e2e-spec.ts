@@ -70,6 +70,7 @@ describe('Identity and access checks (e2e, in-memory data)', () => {
     ['get', '/api/v1/me/progress?subject=informatics'],
     ['put', '/api/v1/me/lessons/variables-intro/completion'],
     ['post', '/api/v1/quizzes/variables-quiz/attempts'],
+    ['get', '/api/v1/me/attempts/cm0attempt00000000000001'],
   ] as const)('%s %s → 401 UNAUTHENTICATED without a session', async (method, path) => {
     const res = await request(app.getHttpServer())[method](path).send({ answers: [{ questionKey: 'q1', optionKey: 'a' }] }).expect(401);
     expect(ApiErrorSchema.parse(res.body).error.code).toBe('UNAUTHENTICATED');
@@ -111,6 +112,11 @@ describe('Identity and access checks (e2e, in-memory data)', () => {
 
   it.each([{}, { profile: 'farzona', guest: true }, { guest: false }, { userId: 'u_farzona' }])('rejects session body %j with 400', async (body) => {
     const res = await request(app.getHttpServer()).post('/api/v1/session').send(body).expect(400);
+    expect(ApiErrorSchema.parse(res.body).error.code).toBe('VALIDATION_FAILED');
+  });
+
+  it('GET /me/attempts/:id rejects a malformed id with 400 before any lookup', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/me/attempts/..%2Fsecrets').set('Cookie', cookieFor('u_farzona')).expect(400);
     expect(ApiErrorSchema.parse(res.body).error.code).toBe('VALIDATION_FAILED');
   });
 

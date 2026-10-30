@@ -158,17 +158,51 @@ describe('db:seed loader (in-memory store, no PostgreSQL)', () => {
     });
   });
 
-  it('loads the full six-topic Informatics content with its prerequisite graph, idempotently', async () => {
+  it('loads the full content (Informatics, JavaScript and its diagnostic) with the prerequisite graph, idempotently', async () => {
     const result = await seedContent(store, fullContent);
     expect(result.status).toBe('applied');
+    // Pinned on purpose (2026-10-28: JavaScript subject added). Change only together with the content.
     expect(store.counts()).toEqual({
-      subjects: 1, topics: 6, prerequisites: 6, lessons: 6, resources: 11, quizzes: 6, questions: 24, options: 96,
+      subjects: 2, topics: 11, prerequisites: 10, lessons: 11, resources: 21, quizzes: 12, questions: 69, options: 276,
     });
     const slugById = new Map(store.state.topics.map((t) => [t.id, t.slug]));
     expect(store.state.prerequisites.map((p) => `${slugById.get(p.topicId)}->${slugById.get(p.prerequisiteId)}`).sort()).toEqual([
-      'algorithms->functions', 'algorithms->lists', 'conditions->variables', 'functions->variables', 'lists->loops', 'loops->conditions',
+      'algorithms->functions', 'algorithms->lists', 'conditions->variables', 'functions->variables',
+      'js-arrays->js-variables', 'js-conditions->js-variables', 'js-functions->js-variables', 'js-objects->js-variables',
+      'lists->loops', 'loops->conditions',
     ]);
     expect((await seedContent(store, fullContent)).status).toBe('unchanged');
+  });
+
+  describe('CHECKPOINT quizzes (subject-level diagnostic)', () => {
+    it('are stored without a topic; each question keeps the topic it measures', async () => {
+      await seedContent(store, fullContent);
+      const quiz = store.state.quizzes.find((q) => q.slug === 'javascript-diagnostic')!;
+      expect(quiz).toMatchObject({ kind: 'CHECKPOINT', topicId: null, subjectId: store.state.subjects.find((s) => s.slug === 'javascript')!.id });
+      const slugById = new Map(store.state.topics.map((t) => [t.id, t.slug]));
+      const questions = store.state.questions.filter((q) => q.quizId === quiz.id).sort((a, b) => a.order - b.order);
+      expect(questions).toHaveLength(20);
+      // Handoff topic order: V V V C C V A C F F C F O A O F A C O A.
+      expect(questions.map((q) => slugById.get(q.topicId)!.replace('js-', '')[0].toUpperCase()).join('')).toBe('VVVCCVACFFCFOAOFACOA');
+    });
+
+    it('moving an answered diagnostic question to another topic is refused', async () => {
+      await seedContent(store, fullContent);
+      store.recordAnswers('javascript-diagnostic', 'q7', 'b', 24);
+      const moved = structuredClone(fullContent);
+      moved.checkpoints![0].questions[6].topic = 'js-objects';
+      const result = await seedContent(store, moved);
+      expect(result.status).toBe('blocked');
+      expect(result.plan!.issues).toContainEqual(expect.objectContaining({ level: 'error', where: 'quiz "javascript-diagnostic" › question "q7"', message: expect.stringMatching(/different parent/) }));
+    });
+
+    it('a checkpoint missing from the files is reported, not deleted', async () => {
+      await seedContent(store, fullContent);
+      const result = await seedContent(store, { ...fullContent, checkpoints: [] });
+      expect(result.status).toBe('blocked');
+      expect(result.plan!.issues.map((i) => i.where)).toContain('quiz "javascript-diagnostic"');
+      expect(store.counts().quizzes).toBe(12);
+    });
   });
 
   it('validation runs first: invalid content never opens a transaction', async () => {

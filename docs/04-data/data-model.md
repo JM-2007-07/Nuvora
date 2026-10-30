@@ -47,7 +47,7 @@ erDiagram
 | **TopicPrerequisite** | `topicId`, `prerequisiteId` (both → Topic) | Composite PK. Same subject only, no cycles (seed check) |
 | **Lesson** | `topicId`, `slug`, `title: LocalizedText`, `body: LocalizedText` (Markdown, D-12), `estimatedMinutes`, `order` | Worked examples and takeaways are sections inside `body` |
 | **Resource** | `topicId`, `key` (unique per topic), `type` (`BOOK` \| `ARTICLE` \| `VIDEO` \| `EXERCISE`), `title: LocalizedText`, `author`, `url?`, `languages: Locale[]`, `whyUseful: LocalizedText`, `order` | "Recommended books and materials" |
-| **Quiz** | `subjectId`, `topicId?`, `slug`, `title: LocalizedText`, `kind` (`TOPIC` \| `CHECKPOINT`) | A topic quiz has `topicId`. The checkpoint quiz (MVP-Should) spans several topics |
+| **Quiz** | `subjectId`, `topicId?`, `slug`, `title: LocalizedText`, `kind` (`TOPIC` \| `CHECKPOINT`) | A topic quiz has `topicId`. A checkpoint quiz (e.g. the JavaScript diagnostic) has no `topicId` and spans several topics; each question keeps its own `topicId`. Seed format: `checkpoints` in the content set (`defineCheckpoint`, one `topic` per question), loaded by the same create/update-only loader |
 | **Question** | `quizId`, `topicId`, `key` (unique per quiz), `type` (`SINGLE_CHOICE`), `prompt: LocalizedText` (Markdown, may contain a Python code block), `explanation: LocalizedText` (Markdown), `order` | `topicId` drives weak-topic analysis. Multi-select etc. are Later |
 | **AnswerOption** | `questionId`, `key` (unique per question), `text: LocalizedText`, `isCorrect`, `order` | Exactly one correct option per single-choice question (seed check). `isCorrect` is never sent before submission (FR-QUIZ-06) |
 
@@ -63,11 +63,67 @@ erDiagram
 
 Recommendations are **computed on request** from the tables above. They are not stored in the MVP.
 
+### Teacher assessments (Faroz, migration `20261029120000_teacher_assessments`, owner-approved 2026-10-29)
+
+| Entity | Key fields | Notes |
+| --- | --- | --- |
+| **Assessment** | `ownerKey` (staff slug or `acct:<accountId>`), `groupCode`, `subjectSlug`, `topicSlug?`, `title`, `purpose` (`CHECK` \| `RETEST` \| `DIAGNOSTIC`), `languages`, `audience` (`CLASS` \| `UNDER_60`), `opensAt?`, `closesAt?`, `timeLimitMinutes?`, `attemptsAllowed`, `revealAnswers`, `xp`, shuffle/notify flags, `publishedAt?` | Built by a teacher for one of their groups. Status is **derived**, not stored: draft (`publishedAt` null) → scheduled → live → closed by the real clock. Owners and groups are referenced by key because demo staff and groups are defined in code |
+| **AssessmentQuestion** | `assessmentId` (cascade), `order` (unique per assessment), `topicSlug`, `sourceQuiz?`/`sourceKey?`, `prompt`, `code?`, `options`, `correctIndex`, `explanation` | A **snapshot**: bank questions are copied, so content edits never change a saved assessment. Text is jsonb `{ en, ru?, tg? }` (empty = not translated; students see English) |
+
+These tables are separate from `quizzes` on purpose: the seed loader treats any quiz missing from the seed files as a blocking error. Learners cannot take teacher assessments yet (no attempt table for them). `pnpm db:seed:demo` removes demo teacher Dilshod's assessments and recreates the design's draft "Functions — return vs console.log".
+
+### Center staff invitations and permissions (migration `20261029180000_staff_invitations_permissions`, owner-approved 2026-10-29)
+
+| Entity | Key fields | Notes |
+| --- | --- | --- |
+| **StaffInvitation** | `orgKey` (`demo-center` or `org:<organizationId>`), `orgName`, `tokenHash` (unique), `name`, `email` (lower-case), `role` (TEACHER only for now), `subject`, `locale`, `invitedByKey`/`invitedByName`, `expiresAt`, `acceptedAt?`, `acceptedAccountId?` (→ Account, set null), `declinedAt?`, `revokedAt?` | Only the SHA-256 of the link token is stored. Status is derived: revoked → accepted → declined → expired → pending. Accepting records the account; the teacher keeps their own organization and groups |
+| **CenterPermissions** | `orgKey` (PK), `coordGroups`, `coordStaff`, `teachCreate`, `teachShare`, `updatedByKey` | No row = handoff defaults. `coordGroups` and `coordStaff` are enforced by the center endpoints; the two teacher flags are stored only for now |
+
+`pnpm db:seed:demo` deletes the demo center's invitations and its permissions row (back to the defaults). Teacher accounts created while accepting are not removed.
+
+### Center group wizard (migration `20261029220000_center_group_wizard`, owner-approved 2026-10-29)
+
+`study_groups` gains nullable `displayCode` (unique per organization, e.g. `B-18`), `startsOn`, `languages`, `teacherKey` (staff slug or `acct:<id>`) and `teacherName`; older groups keep them empty. The code-defined demo center has a real `organizations` row with id `demo-center`, and the design's four unassigned students are demo learners without history. Both are created by `pnpm db:seed:center` (additive: creates only what is missing, changes and deletes nothing) and by `pnpm db:seed:demo` (which also removes the demo center's wizard groups).
+
 Theme preference is stored client-side (next-themes). Locale preference is stored in a cookie and optionally in `User.preferredLocale`.
 
 The learner session is a signed cookie holding the `User.id`. There is no session table in the MVP.
 
 **Demo data:** the seed creates the demo learners' attempts by running scripted answers through the real scoring and mastery functions, then stores the resulting `QuizAttempt`, `AttemptAnswer`, `TopicMastery`, and `LessonProgress` rows. Reseeding deletes all `GUEST` users and resets `DEMO` users.
+
+### Communications (migration `20261030100000_communications`, owner-approved 2026-10-29, D-24)
+
+Four additive tables. Participants are keys, like the rest of the staff data: a learner is `user:<userId>`, a teacher `staff:<slug>` (demo slug or `acct:<accountId>`).
+
+- `conversations`: `key` is unique, either `dm:<keyA>|<keyB>` (sorted) or `group:demo:<code>` / `group:db:<studyGroupId>`. It also holds `kind` (DIRECT, GROUP), a title snapshot and `lastMessageAt`.
+- `messages`: kind TEXT, VOICE or CALL (the body of a CALL message is the JSON call log); `senderKey` and `senderName` are a snapshot at sending time. Index on `(conversationId, createdAt)`.
+- `voice_clips`: one row per voice message, holding `mimeType`, `durationMs` and the audio bytes (at most 2 MB, served only to members).
+- `conversation_reads`: `lastReadAt` per participant, used for unread counts.
+
+Who may talk to whom is **not stored**. It is derived from the live rosters: the demo groups in code and `study_groups` / `group_members`. A group conversation follows its group's roster. Live calls exist only in API memory; only the call log line is stored. Deleting a conversation cascades to its messages, clips and reads.
+
+### Chat members and custom groups (migration `20261030110000_chat_members`, owner-approved 2026-10-30, D-24)
+
+The migration only adds:
+- `conversations.createdByKey`: the teacher who created a custom group chat (key `group:custom:<uuid>`).
+- `conversation_reads.clearedAt`: "delete chat for me". Messages up to that moment are hidden for this person only.
+- `conversation_members`: membership changes made by a group's teacher. A row is either an added person or a roster member taken out (`removed = true`). A custom group chat's members are all rows here.
+
+Study group rosters are never changed by chat membership. Contacts (whom I may write to directly) still come from the class rosters.
+
+### Profiles (migration `20261030140000_profiles`, owner-approved 2026-10-30, D-25)
+
+Two additive tables, keyed by participant key (`user:<id>`, `staff:<slug>`):
+- `profiles` holds:
+  - `handle` (unique);
+  - `headline`, `bio`, `city`, `languages`, `interests`;
+  - `links` (JSON, at most 4 https links);
+  - the teacher-only `subject`, `experienceYears`, `officeHours`;
+  - the presets `cover` and `accent`;
+  - `visibility` (JSON per block) and `showOnline`.
+- `profile_avatars` holds the cropped photo (mime type and bytes, at most 1 MB).
+
+A profile row exists once the owner saves or uploads a photo. Until then the API shows a default view built from the account.
 
 ## Later entities
 

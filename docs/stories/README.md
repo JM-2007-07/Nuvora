@@ -59,3 +59,13 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-26 | [Russian becomes the default interface language](2026-10-26-default-locale-russian.md) | implemented and verified |
 | 2026-10-28 | [Faroz foundation (rebrand phase 1)](2026-10-28-faroz-foundation.md) | implemented and verified |
 | 2026-10-28 | [Faroz homepage (rebrand phase 2)](2026-10-28-faroz-homepage.md) | implemented and verified |
+| 2026-10-28 | [Defense audit, plan, and the learner slice](2026-10-28-defense-audit-and-plan.md) | learner slice implemented and verified; teacher, center, PWA planned |
+| 2026-10-28 | [Teacher workspace (Faroz phase 4)](2026-10-28-teacher-workspace.md) | core implemented and verified; assessments, builder, assign practice not built |
+| 2026-10-28 | [Center workspace (Faroz phase 5)](2026-10-28-center-workspace.md) | core implemented and verified; group wizard, invitations, permission editing not built |
+| 2026-10-28 | [Defense readiness: PWA, QA, real vs prototype](2026-10-28-defense-readiness.md) | PWA implemented and verified; release QA partly run |
+| 2026-10-29 | [Full site pass: accounts, every page wired, motion and hover](2026-10-29-full-site-pass.md) | implemented and verified |
+| 2026-10-29 | [Teacher assessments list and builder](2026-10-29-teacher-assessments.md) | implemented and verified; learners taking them not built |
+| 2026-10-29 | [Center teacher invitations and editable permissions](2026-10-29-center-invitations.md) | implemented and verified; group wizard not built |
+| 2026-10-29 | [Center group wizard](2026-10-29-center-group-wizard.md) | implemented and verified; no group created in the real DB |
+| 2026-10-29 | [Faroz Orbit hero](2026-10-29-faroz-orbit-hero.md) | implemented and verified |
+| 2026-10-29 | [Handover for the next session](2026-10-29-handover.md) | handover (read first) |

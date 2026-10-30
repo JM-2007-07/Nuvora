@@ -85,10 +85,120 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `DELETE /session` | `204`, clears the cookie | — |
 | `GET /me` 🔒 | `Learner` | `401` |
 | `POST /quizzes/:quizSlug/attempts` 🔒 | `201 AttemptResult`: score, per-question correctness and explanations, per-topic breakdown with updated mastery, up to 3 recommendations. Scored on the server in one transaction | `404 QUIZ_NOT_FOUND`, `422 QUIZ_INCOMPLETE` / `UNKNOWN_QUESTION` / `DUPLICATE_ANSWER` / `OPTION_NOT_IN_QUESTION` |
-| `GET /me/progress?subject=` 🔒 | `Progress`: mastery and lesson completion per topic, attempt history, current recommendations | `404 SUBJECT_NOT_FOUND` |
+| `GET /me/progress?subject=` 🔒 | `Progress`: mastery and lesson completion per topic, each topic's first lesson and topic quiz, **before/after** per topic (the topic in the first CHECKPOINT attempt vs the latest later attempt, computed from stored answers), the subject's CHECKPOINT quizzes with the latest attempt, attempt history (kind, correct/total), current recommendations | `404 SUBJECT_NOT_FOUND` |
+| `GET /me/attempts/:attemptId` 🔒 | `AttemptResult` of one of the current learner's own attempts, rebuilt from the stored answers (the same builder as `POST …/attempts`). Another learner's id answers `404` like an unknown id | `400 VALIDATION_FAILED` (not a cuid), `404 ATTEMPT_NOT_FOUND` |
 | `PUT /me/lessons/:lessonSlug/completion` 🔒 | `LessonCompletion`, idempotent | `404 LESSON_NOT_FOUND` |
 
-Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`), `GET /me/attempts/:attemptId`, and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
+**Staff (teacher) endpoints** (Faroz, 2026-10-28). Demo staff are defined in code (`apps/api/src/staff/demo-org.ts`, no migration). The role comes only from the signed httpOnly cookie `fz_staff` (`staff:<slug>` signed with the session key; a learner cookie never passes). `StaffGuard` + `@Roles` enforce access on the server: no or invalid cookie → `401 UNAUTHENTICATED`, wrong role → `403 FORBIDDEN`. Contracts: `packages/shared/src/staff-api.ts`.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /staff-profiles` | `{ items: Staff[] }` (demo staff for the chooser) | — |
+| `GET /staff/session` | `{ staff: Staff \| null }`, always `200` | — |
+| `POST /staff/session` | Body `{ "staff": "<slug>" }`; sets `fz_staff`, returns `Staff` | `404 STAFF_NOT_FOUND`, `400 VALIDATION_FAILED` |
+| `DELETE /staff/session` | `204`, clears the cookie | — |
+| `GET /teach/overview` 🧑‍🏫 | `TeacherOverview`: the teacher's own groups; `recorded: false` marks handoff reference figures (no stored attempts) | `401`, `403` |
+| `GET /teach/groups/:code` 🧑‍🏫 | `GroupAnalytics` from stored attempts: topic totals, per-question correctness and option counts, students × topics, retest before/after | `403` (not your group), `404 GROUP_NOT_FOUND`, `404 GROUP_HAS_NO_RECORDS`, `400` |
+| `GET /teach/groups/:code/students/:slug` 🧑‍🏫 | `StudentAnswers`: the student's attempts answer by answer (option texts) | `403`, `404 STUDENT_NOT_FOUND` |
+| `GET /teach/assessments` 🧑‍🏫 | `AssessmentList`: the teacher's own assessments (`stored`), the group's diagnostic and retest computed from stored attempts (`recorded`), design figures for groups without stored answers (`reference`, read-only); the "suggested from your gaps" draft and the retest question most students missed; the groups the teacher can assign to | `401`, `403` |
+| `POST /teach/assessments` 🧑‍🏫 | Body `AssessmentDraft` (may be incomplete); `201 Assessment` | `403` (not your group), `400 VALIDATION_FAILED` |
+| `GET` / `PUT /teach/assessments/:id` 🧑‍🏫 | `Assessment` (with correct options: owner only). `PUT` saves a draft, or edits a scheduled one before it opens (it must stay publishable) | `404 ASSESSMENT_NOT_FOUND` (missing or someone else's), `409 ASSESSMENT_LOCKED` (live or closed), `422 PUBLISH_CHECKS_FAILED` |
+| `POST /teach/assessments/:id/publish` 🧑‍🏫 | Runs `assessmentChecks()` (shared with the builder) on the server; `200 Assessment` scheduled or live | `422 PUBLISH_CHECKS_FAILED` (`details`: failing checks), `409 ALREADY_PUBLISHED` |
+| `POST /teach/assessments/:id/unschedule` 🧑‍🏫 | Back to a draft, only before it opens | `409 NOT_SCHEDULED` |
+| `POST /teach/assessments/:id/duplicate` 🧑‍🏫 | New draft from a stored assessment or from a recorded row (`rec-<group>-diagnostic\|retest`); `201 Assessment` | `404`, `403` |
+| `DELETE /teach/assessments/:id` 🧑‍🏫 | `204`; drafts only | `409 NOT_A_DRAFT` |
+| `GET /teach/bank?group=&topic=` 🧑‍🏫 | `{ items: BankQuestion[] }`: seeded diagnostic and topic-quiz questions as builder questions (code split out), with how the group answered them | `403`, `400` |
+| `GET /center/overview` 🏢 | `CenterOverview`: org totals and every group as aggregates (`CenterGroup`: totals, participation, topic %, flags, `recorded`/`synthetic`) | `401`, `403` (teacher) |
+| `GET /center/groups/:code` 🏢 | `CenterGroupDetail`: group totals + participation (name, took the diagnostic yes/no). Never scores, answers, retest or practice membership | `403`, `404 GROUP_NOT_FOUND`, `400` |
+| `GET /center/staff` 🏢 | `CenterStaff`: the demo directory, the center's stored `invitations` (status derived: pending, accepted, declined, expired, revoked) and `canInvite` (admin only). Coordinator needs `coordStaff` | `401`, `403` |
+| `POST /center/invitations` 🏢 admin | Body `InviteRequest` (name, email, subject, locale; teacher role only); `201 InvitationLink`: the invitation and the link token, shown once (only its SHA-256 is stored). Expires in 7 days. No email is sent | `403`, `400`, `409 INVITATION_EXISTS` (open invitation for that email) |
+| `POST /center/invitations/:id/resend` 🏢 admin | New token (the old link stops working), new 7-day expiry; `200 InvitationLink` | `404 INVITATION_NOT_FOUND` (missing or another center's), `409 INVITATION_ACCEPTED` / `INVITATION_REVOKED` |
+| `POST /center/invitations/:id/revoke` 🏢 admin | Pending or expired only; `200 Invitation` | `404`, `409` |
+| `GET /invitations/:token` | Public: `PublicInvitation` (center, invitee name, role, subject, inviter, expiry, status). Never the email | `404 INVITATION_NOT_FOUND`, `400` |
+| `POST /invitations/:token/decline` | Public, pending only; `200 PublicInvitation` | `404`, `409 INVITATION_<STATUS>` |
+| `POST /invitations/:token/accept` 🧑‍🏫 account | A signed-in **teacher account** whose email matches; conditional update (no double accept); `200 PublicInvitation` | `401`, `403 ACCOUNT_REQUIRED` / `EMAIL_MISMATCH`, `409 INVITATION_<STATUS>` / `INVITATION_CHANGED` |
+| `GET /center/group-wizard` 🏢 | `GroupWizardOptions`: subjects, the center's teachers (`available: false` for reference teachers), unassigned students, taken codes. Coordinator needs `coordGroups` | `401`, `403` |
+| `POST /center/groups` 🏢 | Body `CreateCenterGroupRequest` (code `B-18`, subject, schedule, start date, capacity 4–40, languages, teacher key or null, student ids ≤ capacity); one transaction; `201 StudyGroupView` with a join code. The teacher sees it in `/teach/my-groups` | `403`, `400`, `409 CODE_TAKEN` / `CENTER_NOT_READY`, `422 TEACHER_NOT_IN_CENTER` / `STUDENT_NOT_AVAILABLE` / `SUBJECT_NOT_FOUND` |
+| `GET /center/settings` 🏢 admin | `CenterSettings`: permissions from `center_permissions` (handoff defaults when no row), `editable`, `updatedAt` | `403` for coordinator and teacher |
+| `PUT /center/settings/permissions` 🏢 admin | Body `CenterPermissions`; read by every center handler on the next request | `403`, `400` |
+
+Not implemented from the outline below: `GET /subjects/:subjectSlug/map` (the topic graph is served by `GET /subjects/:subjectSlug` and `GET /me/progress`) and `GET /me/recommendations` (recommendations are part of the attempt result and of `/me/progress`).
+
+## Implemented: communications API (Faroz)
+
+Chat, voice messages and calls (D-24). The contract is [`packages/shared/src/comms-api.ts`](../../packages/shared/src/comms-api.ts), shared by the web app, the API and the planned React Native app.
+
+**Auth and access**
+- On the web, the session cookie authenticates (`nv_session` for a learner, `fz_staff` for a teacher).
+- On mobile, `Authorization: Bearer <signed session value>` for REST, or `auth.token` for the socket.
+- Teachers reach the learners of their groups; learners reach their teachers. Group chats follow the group roster.
+- Centers (admins, coordinators) get `403 COMMS_NOT_AVAILABLE`.
+- Someone outside a conversation gets `404`, as if it did not exist.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /comms` | `CommsOverview`: me, contacts (with online state), conversations (groups always, direct ones once used; newest first, unread counts, active call), WebRTC ICE servers | `401`, `403 COMMS_NOT_AVAILABLE` |
+| `POST /comms/direct` | Body `{ participantKey }` → `{ id }`. Opens or creates the direct conversation | `404 CONVERSATION_NOT_FOUND` (not a contact) |
+| `GET /comms/conversations/:id/messages?before=&limit=` | `MessagesPage`: oldest first, `hasMore` for older pages | `404` |
+| `POST /comms/conversations/:id/messages` | Body `{ text }` (1–4000 characters) → `201 Message`, also pushed live | `400`, `404` |
+| `POST /comms/conversations/:id/voice` | multipart: `audio` (webm/ogg/mp4/aac, ≤ 2 MB) and `durationMs` (0.3 s – 3 min) → `201 Message` | `400 VOICE_*`, `404` |
+| `GET /comms/messages/:id/voice` | The audio bytes (members only) | `404` |
+| `POST /comms/conversations/:id/read` | `204`; my unread count drops to 0 on all my devices | `404` |
+| `DELETE /comms/conversations/:id?forEveryone=` | `204`. Default: history hidden for me only (a direct chat leaves my list until someone writes). `forEveryone=true`: a direct chat's messages are erased for both; my own custom group is deleted | `403` (not the creator), `404` |
+| `POST /comms/groups` | Teacher only. Body `{ title, memberKeys }` (learners from my contacts) → `{ id }` of a custom group chat | `400 NOT_A_CONTACT`, `403` |
+| `POST /comms/conversations/:id/members` | The group's teacher adds one of their learners → `204` | `400 NOT_A_CONTACT`, `403`, `404` |
+| `DELETE /comms/conversations/:id/members/:key` | The teacher removes a learner, or a learner leaves a custom group → `204`. The teacher cannot be removed; class groups cannot be left | `403`, `404` |
+
+**Live connection:** Socket.IO namespace `/comms`, path `/realtime`, on the API port. The browser connects to the API directly, because Next rewrites do not carry WebSockets. CORS allows the web origin and local ports.
+
+Server → client events:
+- `message:new`
+- `conversations:changed` (I was added or removed, or a chat was deleted: refetch)
+- `conversation:read`
+- `typing`
+- `presence`
+- `call:incoming`, `call:updated`, `call:ended`, `call:dismissed`
+- `call:peer-joined`, `call:peer-left`
+- `call:signal`, `call:media`
+
+Client → server events take acknowledgements `{ ok, ... }`:
+- `typing`
+- `call:start` (it returns the running call if there is one), `call:join`, `call:decline`, `call:leave`
+- `call:signal`: SDP and ICE, relayed only between peers of the same call.
+- `call:media`: mic, camera and screen flags.
+
+**Calls**
+- Calls are peer to peer (WebRTC mesh).
+- Whoever joins sends the offer to each peer already in the call.
+- Each connection carries one audio and one video transceiver, so the camera and screen sharing are switched with `replaceTrack`.
+- An unanswered call stops ringing after 45 s and is logged as missed.
+- A direct call ends when either side leaves; a group call ends when the last person leaves.
+- Optional STUN/TURN for calls across networks: `COMMS_ICE_SERVERS` (JSON) in the API environment.
+
+**React Native**
+- The same REST and socket contract: `socket.io-client` and `react-native-webrtc` (the same `RTCPeerConnection` API).
+- Authenticate with the token.
+- Set `COMMS_ICE_SERVERS` (TURN), because phones are rarely on the same network.
+
+## Implemented: profiles API (Faroz)
+
+Profiles (D-25). The contract is [`packages/shared/src/profile-api.ts`](../../packages/shared/src/profile-api.ts).
+
+**Who:** any signed-in person (learner, guest, or staff of any role) from the session cookie. Without one the answer is `401`. Guests cannot own a profile.
+
+**Visibility:** decided on the server for each viewer with `canSeeBlock`, the same rule the editor's preview uses.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /me/profile` | `MyProfile`: settings plus key, name, role and photo URL. `saved: false` with a suggested handle until the first save | `403 PROFILE_NOT_AVAILABLE` (guest) |
+| `PUT /me/profile` | Body `ProfileSettings` (unknown fields refused) → `MyProfile`. Teacher-only fields are stored empty for others | `400`, `409 HANDLE_TAKEN` |
+| `GET /me/profile/handle-available?handle=` | `{ available }` | `400` |
+| `PUT /me/profile/avatar` | multipart `image` (WebP/JPEG/PNG, ≤ 1 MB, magic bytes checked) → `MyProfile` | `400 AVATAR_*` |
+| `DELETE /me/profile/avatar` | `MyProfile` | — |
+| `GET /profiles/avatar/:key` | The photo; immutable cache, because the URL carries `?v=` | `404` |
+| `GET /profiles/:ref` | `PublicProfile` by handle or participant key: hidden blocks are `null`, plus `relation` (me/group/other) and `canMessage` | `404 PROFILE_NOT_FOUND` |
+
+**Communications:** contacts, peers and group members carry `avatarUrl`, so chats show the same photos.
 
 ## Draft resource outline (not a contract)
 

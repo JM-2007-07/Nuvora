@@ -31,6 +31,18 @@
   );
   --accent-word: #2ef2b5;
   --xp-on: #3d7bff;
+  /* Faroz Orbit (hero atom): cyan and violet are the logo gradient's ends; the rest alias the brand tokens. */
+  --orbit-cyan: #16e4fa;
+  --orbit-violet: #b27dff;
+  --orbit-blue: var(--blue);
+  --orbit-mag: var(--mag);
+  --orbit-mint: var(--mint);
+  --orbit-halo-opacity: 0.16;
+  --orbit-card-bg: var(--panel);
+  --orbit-core-rim: rgba(61, 123, 255, 0.55);
+  --orbit-core-aura: radial-gradient(circle, rgba(61, 123, 255, 0.34), rgba(124, 92, 255, 0.12) 45%, transparent 68%);
+  --orbit-logo-glow: rgba(46, 140, 255, 0.55);
+  --orbit-star: rgba(180, 185, 222, 0.55);
 }
 
 [data-theme='light'] {
@@ -56,6 +68,17 @@
   );
   --accent-word: #2f5bea;
   --xp-on: #2ef2b5;
+  --orbit-cyan: #0cb4d6;
+  --orbit-violet: #9a62f2;
+  --orbit-blue: var(--blue);
+  --orbit-mag: var(--mag);
+  --orbit-mint: var(--mint);
+  --orbit-halo-opacity: 0.09;
+  --orbit-card-bg: var(--panel);
+  --orbit-core-rim: rgba(47, 91, 234, 0.45);
+  --orbit-core-aura: radial-gradient(circle, rgba(47, 91, 234, 0.16), transparent 66%);
+  --orbit-logo-glow: rgba(46, 140, 255, 0.35);
+  --orbit-star: rgba(90, 95, 122, 0.3);
 }
 
 /* Same in both themes (the artboard uses them as fixed colours). */
@@ -114,7 +137,13 @@ button:focus-visible,
     text-align: center;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: transform 0.12s ease;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      color 0.18s ease,
+      box-shadow 0.18s ease,
+      filter 0.18s ease,
+      transform 0.18s ease;
   }
   .fz-btn:active {
     transform: scale(0.97);
@@ -155,35 +184,16 @@ button:focus-visible,
   }
 }
 
-/* Orbit hero motion: transform/opacity only; paused on hover; off for reduced motion. */
+/* Hero motion: transform/opacity only; off for reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
-  .fz-rot {
-    animation: fz-rot 46s linear infinite;
-  }
-  .fz-rot2 {
-    animation: fz-rot 22s linear infinite reverse;
-  }
-  .fz-tin {
-    animation: fz-rot 46s linear infinite reverse;
-  }
   .fz-pulse {
     animation: fz-pulse 3.2s ease-in-out infinite;
-  }
-  .fz-orb:hover .fz-rot,
-  .fz-orb:hover .fz-rot2,
-  .fz-orb:hover .fz-tin {
-    animation-play-state: paused;
   }
   .fz-lift {
     transition: transform 0.2s ease;
   }
   .fz-lift:hover {
     transform: translateY(-6px) rotate(-1deg);
-  }
-}
-@keyframes fz-rot {
-  to {
-    transform: rotate(360deg);
   }
 }
 @keyframes fz-pulse {
@@ -195,5 +205,712 @@ button:focus-visible,
   50% {
     opacity: 1;
     transform: scale(1.08);
+  }
+}
+
+/* Skeleton shimmer (handoff §3: "Skeleton loading uses the shimmer gradient"). */
+@keyframes fz-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Buttons on the HUD card (next quest): their own tokens so they read in both themes. */
+@layer components {
+  .fz-btn-hud {
+    background: var(--hud-btn);
+    color: var(--hud-btn-ink);
+  }
+  .fz-btn-hud-ghost {
+    background: transparent;
+    color: var(--hud-text);
+    border-color: var(--hud-muted);
+  }
+}
+
+/*
+ * Motion and hover system. Colour/shadow hovers are always on; lifts and entrance animations
+ * are gated by prefers-reduced-motion below.
+ */
+:root,
+[data-theme='dark'] {
+  --btn-glow-hover: 0 0 36px -2px rgba(46, 242, 181, 0.95);
+  /* Hovered card: the highlighted HUD look (handoff pricing "Teacher" card). */
+  --card-glow-hover: var(--hud-glow);
+  --card-bg-hover: var(--hud);
+  --row-hover: rgba(143, 149, 194, 0.08);
+  --ghost-hover: rgba(143, 149, 194, 0.1);
+}
+[data-theme='light'] {
+  --btn-glow-hover: 0 8px 20px -10px rgba(18, 20, 42, 0.55);
+  --card-glow-hover: 0 0 36px -12px rgba(47, 91, 234, 0.6);
+  /* The light HUD is solid navy: page text would not read on it, so light cards keep their fill. */
+  --card-bg-hover: transparent;
+  --row-hover: rgba(18, 20, 42, 0.045);
+  --ghost-hover: rgba(18, 20, 42, 0.05);
+}
+
+@layer components {
+  .fz-btn-primary:hover {
+    box-shadow: var(--btn-glow-hover);
+    filter: brightness(1.06);
+  }
+  .fz-btn-ghost:hover {
+    background: var(--ghost-hover);
+    border-color: var(--blue);
+  }
+  .fz-btn-hud:hover {
+    box-shadow: var(--btn-glow-hover);
+    filter: brightness(1.06);
+  }
+  .fz-btn-hud-ghost:hover {
+    background: var(--ghost-hover);
+    border-color: var(--hud-text);
+  }
+  .fz-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    filter: none;
+  }
+
+  /*
+   * Interactive card: plain at rest; on hover or keyboard focus a blue border, a blue glow and
+   * (dark theme) the HUD gradient faded in underneath the content. The lift is added without
+   * reduced motion.
+   */
+  .fz-card-hover {
+    position: relative;
+    isolation: isolate;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+  }
+  .fz-card-hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--card-bg-hover);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .fz-card-hover:hover,
+  .fz-card-hover:focus-within {
+    border-color: var(--blue);
+    box-shadow: var(--card-glow-hover);
+  }
+  .fz-card-hover:hover::before,
+  .fz-card-hover:focus-within::before {
+    opacity: 1;
+  }
+  /* Cards whose fill carries meaning (topic status, badges) keep it: border and glow only. */
+  .fz-card-tint::before {
+    display: none;
+  }
+  /* A card's ghost call to action turns into the main button while the card is hovered. */
+  .fz-card-hover:hover .fz-card-cta,
+  .fz-card-hover:focus-within .fz-card-cta {
+    background: var(--btn);
+    color: var(--btn-ink);
+    border-color: transparent;
+  }
+  /* Highlighted card (e.g. the next quest): constant soft glow. */
+  .fz-glow-blue {
+    box-shadow: var(--hud-glow);
+  }
+  .fz-glow-mint {
+    box-shadow: var(--glow);
+  }
+
+  /* Table / list row: background tint. */
+  .fz-row-hover {
+    transition: background-color 0.15s ease;
+  }
+  .fz-row-hover:hover {
+    background: var(--row-hover);
+  }
+
+  /* Website header link: underline grows from the start on hover and for the current item. */
+  .fz-nav-link {
+    position: relative;
+    transition: color 0.15s ease;
+  }
+  .fz-nav-link::after {
+    content: '';
+    position: absolute;
+    inset-inline: 12px;
+    bottom: 5px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--mint);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
+  }
+  .fz-nav-link:hover,
+  .fz-nav-link[aria-current] {
+    color: var(--text);
+  }
+  .fz-nav-link:hover::after,
+  .fz-nav-link[aria-current]::after {
+    transform: scaleX(1);
+  }
+
+  /* Skeleton wrapper that appears only after 200 ms (no grey flash on fast loads). */
+  .fz-delayed {
+    animation: fz-fade-in 0.2s ease 0.2s backwards;
+  }
+}
+
+@keyframes fz-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fz-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fz-bar-w {
+  from {
+    width: 0;
+  }
+}
+@keyframes fz-bar-h {
+  from {
+    height: 0;
+  }
+}
+@keyframes fz-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fz-card-hover:hover {
+    transform: translateY(-2px);
+  }
+  /* Section entrance. --fz-delay staggers siblings: style={{ '--fz-delay': '80ms' }}. */
+  .fz-rise {
+    animation: fz-rise 0.32s ease-out backwards;
+    animation-delay: var(--fz-delay, 0ms);
+  }
+  /* Progress / score bars: put on the fill element that has an inline width (or height). */
+  .fz-bar-grow {
+    animation: fz-bar-w 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--fz-delay, 0.1s);
+  }
+  .fz-bar-grow-y {
+    animation: fz-bar-h 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--fz-delay, 0.1s);
+  }
+  .fz-menu-in {
+    animation: fz-menu-in 0.2s ease-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fz-btn,
+  .fz-card-hover,
+  .fz-row-hover,
+  .fz-nav-link,
+  .fz-nav-link::after {
+    transition-duration: 0.01ms;
+  }
+  .fz-btn:active {
+    transform: none;
+  }
+  .fz-delayed {
+    animation: none;
+  }
+}
+
+/* Faroz Orbit (features/home/faroz-orbit.tsx): positions come from the component's animation loop;
+   these classes only paint. No blur filters: glows are wide low-opacity strokes and shadows. */
+@layer components {
+  .fz-orbit-halo {
+    opacity: var(--orbit-halo-opacity);
+  }
+  .fz-orbit-electron {
+    fill: var(--gold);
+    stroke: var(--gold);
+    stroke-opacity: 0.28;
+    stroke-width: 12px;
+  }
+  .fz-orbit-star {
+    background: var(--orbit-star);
+  }
+  .fz-orbit-core {
+    background: var(--core-bg);
+    box-shadow:
+      var(--core-glow),
+      inset 0 0 0 1.5px var(--orbit-core-rim),
+      inset 0 -22px 44px -16px rgba(0, 0, 0, 0.55),
+      inset 0 18px 34px -18px rgba(255, 255, 255, 0.22);
+  }
+  .fz-orbit-aura {
+    border-radius: 9999px;
+    background: var(--orbit-core-aura);
+  }
+  /* Specular highlight on the sphere; it drifts slowly with the light (see animations below). */
+  .fz-orbit-core-shine {
+    /* The light sits where the cursor is (--shine-x/y, written by the orbit loop). */
+    background: radial-gradient(42% 30% at var(--shine-x, 34%) var(--shine-y, 22%), rgba(255, 255, 255, 0.24), transparent 70%);
+    mix-blend-mode: screen;
+  }
+  .fz-orbit-core-react {
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  /* Halo that grows while the core is "charged" (hover, drag, focus) or pulsed by a click. */
+  .fz-orbit-core-halo {
+    background: radial-gradient(circle, color-mix(in srgb, var(--orbit-cyan) 34%, transparent) 0%, color-mix(in srgb, var(--orbit-blue) 26%, transparent) 38%, transparent 68%);
+  }
+  .fz-orbit-core-ripple {
+    border: 2px solid color-mix(in srgb, var(--orbit-cyan) 80%, transparent);
+    opacity: 0;
+  }
+  .fz-ripple-go {
+    animation: fz-core-ripple 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .fz-orbit-mark {
+    filter: drop-shadow(0 0 18px var(--orbit-logo-glow));
+  }
+  .fz-orbit-card {
+    background: var(--orbit-card-bg);
+    border: 1px solid color-mix(in srgb, var(--tone) 70%, transparent);
+    box-shadow:
+      0 0 24px -9px var(--tone),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    transition:
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
+  }
+  .fz-orbit-card:hover {
+    border-color: var(--tone);
+    box-shadow:
+      0 0 32px -6px var(--tone),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .fz-orbit-icon {
+    color: var(--tone);
+    background: color-mix(in srgb, var(--tone) 15%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent);
+  }
+  .fz-orbit-quest {
+    background: var(--orbit-card-bg);
+    border: 1px solid color-mix(in srgb, var(--blue) 55%, transparent);
+    box-shadow: 0 0 34px -16px var(--blue);
+  }
+  .fz-orbit:focus-visible {
+    outline: 2.4px solid var(--blue);
+    outline-offset: 4px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-orbit-aura {
+    animation: fz-orbit-breathe 7s ease-in-out infinite;
+  }
+  /*
+   * The core is alive but calm: it floats and breathes with the aura (same 7 s), the highlight
+   * drifts over the sphere (9 s), and the mark sways and glows (11 s). Different periods keep it
+   * from looking mechanical; transforms and filters only.
+   */
+  .fz-orbit-core-float {
+    animation: fz-core-float 7s ease-in-out infinite;
+  }
+  .fz-orbit-core-shine {
+    animation: fz-core-shine 9s ease-in-out infinite;
+  }
+  .fz-orbit-mark {
+    animation: fz-core-mark 11s ease-in-out infinite;
+  }
+}
+@keyframes fz-core-float {
+  0%,
+  100% {
+    transform: translateY(1.5%) scale(0.99);
+  }
+  50% {
+    transform: translateY(-2.5%) scale(1.03);
+  }
+}
+@keyframes fz-core-shine {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(14%, 6%) rotate(8deg);
+    opacity: 1;
+  }
+}
+@keyframes fz-core-ripple {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+/* Centring comes from Tailwind's `translate` property on the element; this only adds sway and scale. */
+@keyframes fz-core-mark {
+  0%,
+  100% {
+    transform: rotate(-3deg) scale(1);
+    filter: drop-shadow(0 0 14px var(--orbit-logo-glow));
+  }
+  50% {
+    transform: rotate(3deg) scale(1.04);
+    filter: drop-shadow(0 0 26px var(--orbit-logo-glow));
+  }
+}
+@keyframes fz-orbit-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+
+/* Route loader (components/faroz-loader.tsx): a mini Faroz Orbit atom. */
+@layer components {
+  .fz-loader-orbit {
+    stroke-width: 1.6px;
+    stroke-opacity: 0.6;
+  }
+  .fz-loader-cyan {
+    stroke: var(--orbit-cyan);
+  }
+  .fz-loader-blue {
+    stroke: var(--orbit-blue);
+  }
+  .fz-loader-violet {
+    stroke: var(--orbit-violet);
+  }
+  .fz-loader-electron {
+    fill: var(--gold);
+    stroke: var(--gold);
+    stroke-opacity: 0.3;
+    stroke-width: 6px;
+  }
+  .fz-loader-still {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-loader-core {
+    animation: fz-loader-breathe 2.4s ease-in-out infinite;
+  }
+  .fz-loader-aura {
+    transform-origin: center;
+    animation: fz-loader-aura 2.4s ease-in-out infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fz-loader-moving {
+    display: none;
+  }
+  .fz-loader-still {
+    display: inline;
+  }
+}
+@keyframes fz-loader-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+@keyframes fz-loader-aura {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/*
+ * Page transitions (components/page-transition.tsx, React <ViewTransition>). The old page leaves
+ * fast, the new one waits for it and rises in with a soft blur. Headers and the sidebar are
+ * anchored, and the rest of the page (root) swaps without a crossfade, so only content moves.
+ */
+::view-transition {
+  pointer-events: none; /* clicks during the animation reach the new page */
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+::view-transition-group(fz-site-header),
+::view-transition-group(fz-sidebar),
+::view-transition-group(fz-app-bar) {
+  animation: none;
+  z-index: 100;
+}
+::view-transition-old(fz-site-header),
+::view-transition-old(fz-sidebar),
+::view-transition-old(fz-app-bar) {
+  display: none;
+}
+::view-transition-new(fz-site-header),
+::view-transition-new(fz-sidebar),
+::view-transition-new(fz-app-bar) {
+  animation: none;
+}
+::view-transition-old(.fz-page-exit) {
+  animation: fz-page-out 140ms ease-in both;
+}
+::view-transition-new(.fz-page-enter) {
+  animation:
+    fz-page-fade 240ms ease-out 110ms both,
+    fz-page-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both;
+}
+@keyframes fz-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    filter: blur(2px);
+  }
+}
+@keyframes fz-page-fade {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+@keyframes fz-page-rise {
+  from {
+    transform: translateY(12px);
+  }
+}
+/* Reduced motion: no movement or blur, only a short crossfade. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.fz-page-exit) {
+    animation: fz-page-dim 120ms linear both;
+  }
+  ::view-transition-new(.fz-page-enter) {
+    animation: fz-page-dim 160ms linear reverse both;
+  }
+}
+@keyframes fz-page-dim {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Sign-in / sign-up screen (features/auth/auth-screen.tsx, auth-showcase.tsx). */
+@layer components {
+  /* Orbit-coloured light behind the large atom. */
+  .fz-auth-glow {
+    top: 50%;
+    left: 50%;
+    width: 130%;
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    transform: translate(-50%, -62%);
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--orbit-blue) 34%, transparent),
+      color-mix(in srgb, var(--orbit-violet) 14%, transparent) 40%,
+      transparent 62%
+    );
+  }
+  /* Phone strip: the same light behind the small atom. */
+  .fz-auth-glow-strip {
+    top: -60%;
+    left: -15%;
+    width: 60%;
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    background: radial-gradient(circle, color-mix(in srgb, var(--orbit-violet) 32%, transparent), transparent 65%);
+  }
+}
+
+/*
+ * Sign-in / sign-up swap (features/auth/auth-screen.tsx): the brand half and the form half swap sides;
+ * inside each, old and new content crossfade.
+ */
+::view-transition-group(.fz-auth-swap) {
+  animation-duration: 620ms;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+}
+::view-transition-old(.fz-auth-swap) {
+  animation: fz-page-dim 260ms ease-in both;
+}
+::view-transition-new(.fz-auth-swap) {
+  animation: fz-page-dim 360ms ease-out 180ms reverse both;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(.fz-auth-swap) {
+    animation-duration: 0s;
+  }
+}
+
+/* Communications (features/comms): call screen, ringing avatar, typing dots, new bubbles. */
+@keyframes fz-call-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@keyframes fz-call-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--hud-btn) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 22px transparent;
+  }
+}
+@keyframes fz-typing {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+@keyframes fz-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@layer components {
+  .fz-typing span {
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: currentColor;
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-call-in {
+    animation: fz-call-in 0.22s ease-out;
+  }
+  .fz-call-ring {
+    animation: fz-call-ring 1.6s ease-out infinite;
+  }
+  .fz-typing span {
+    animation: fz-typing 1.1s ease-in-out infinite;
+  }
+  .fz-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .fz-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  .fz-bubble-in {
+    animation: fz-bubble-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/*
+ * Profile covers and accents (features/profile; presets PROFILE_COVERS / PROFILE_ACCENTS in
+ * @nuvora/shared). Built only from Faroz tokens, so both themes stay on palette.
+ */
+@layer components {
+  .fz-cover-aurora {
+    background:
+      radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--orbit-cyan) 55%, transparent), transparent 55%),
+      radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--orbit-violet) 60%, transparent), transparent 60%),
+      var(--hud);
+  }
+  .fz-cover-orbit {
+    background:
+      radial-gradient(70% 120% at 70% 50%, color-mix(in srgb, var(--blue) 55%, transparent), transparent 70%),
+      repeating-radial-gradient(circle at 70% 50%, transparent 0 22px, color-mix(in srgb, var(--hud-text) 10%, transparent) 22px 23px),
+      var(--hud);
+  }
+  .fz-cover-dusk {
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--orbit-violet) 70%, transparent), transparent 60%),
+      linear-gradient(20deg, color-mix(in srgb, var(--mag) 55%, transparent), transparent 55%),
+      var(--hud);
+  }
+  .fz-cover-meadow {
+    background:
+      radial-gradient(110% 120% at 20% 100%, color-mix(in srgb, var(--mint) 55%, transparent), transparent 60%),
+      radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--orbit-cyan) 40%, transparent), transparent 60%),
+      var(--hud);
+  }
+  .fz-cover-ember {
+    background:
+      radial-gradient(110% 130% at 100% 100%, color-mix(in srgb, var(--gold) 60%, transparent), transparent 60%),
+      radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--mag) 45%, transparent), transparent 60%),
+      var(--hud);
+  }
+  .fz-accent-mint {
+    --accent: var(--mint);
+    --accent-ink: var(--mint-ink);
+    --accent-tint: var(--mint-tint);
+  }
+  .fz-accent-blue {
+    --accent: var(--blue);
+    --accent-ink: var(--blue-ink);
+    --accent-tint: var(--blue-tint);
+  }
+  .fz-accent-violet {
+    --accent: var(--orbit-violet);
+    --accent-ink: var(--orbit-violet);
+    --accent-tint: color-mix(in srgb, var(--orbit-violet) 16%, transparent);
+  }
+  .fz-accent-gold {
+    --accent: var(--gold);
+    --accent-ink: var(--gold-ink);
+    --accent-tint: var(--gold-tint);
+  }
+  .fz-accent-magenta {
+    --accent: var(--mag);
+    --accent-ink: var(--mag-ink);
+    --accent-tint: var(--mag-tint);
+  }
+  /* Photo ring in the accent colour, lifted off the cover. */
+  .fz-profile-ring {
+    box-shadow:
+      0 0 0 4px var(--panel),
+      0 0 0 7px var(--accent),
+      0 18px 40px -18px var(--accent);
   }
 }

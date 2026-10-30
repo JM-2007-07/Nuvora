@@ -132,10 +132,32 @@ export type TopicContent = z.infer<typeof TopicContentSchema>;
 export type TopicContentInput = z.input<typeof TopicContentSchema>;
 export type SubjectContentInput = z.input<typeof SubjectContentSchema>;
 
+/**
+ * A subject-level CHECKPOINT quiz (e.g. a diagnostic) covering several topics.
+ * Each question names the topic it measures, so results break down per topic.
+ */
+export const CheckpointQuestionContentSchema = z.strictObject({ ...QuestionContentSchema.shape, topic: slug });
+export type CheckpointQuestionContent = z.infer<typeof CheckpointQuestionContentSchema>;
+
+export const CheckpointContentSchema = z
+  .object({
+    slug,
+    subject: slug,
+    title: CompleteLocalizedTextSchema,
+    review: ReviewSchema,
+    questions: z.array(CheckpointQuestionContentSchema),
+  })
+  .strict();
+export type CheckpointContent = z.infer<typeof CheckpointContentSchema>;
+export type CheckpointContentInput = z.input<typeof CheckpointContentSchema>;
+
 /** Typed helpers so content files get autocomplete and compile-time checks. */
 export function defineSubject(subject: SubjectContentInput): SubjectContentInput {
   return subject;
 }
 export function defineTopic(topic: TopicContentInput): TopicContentInput {
   return topic;
+}
+export function defineCheckpoint(checkpoint: CheckpointContentInput): CheckpointContentInput {
+  return checkpoint;
 }

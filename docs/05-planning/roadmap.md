@@ -89,6 +89,19 @@ Status uses: **planned** (not started) · **implemented** (code exists, uncommit
 | **G4-D** | **Complete learning loop.** Demo profiles and guest sessions, quiz taking and submission, server scoring, saved attempts, explanations after submission, mastery, progress page, recommendations (weak prerequisites first), demo reset | G4-C | FR-QUIZ-01..06, FR-ADAPT-01..03, FR-PROG-01..02, FR-AUTH-01..04; no answers before submission; `/me/*` from the session only; unit tests for scoring/mastery/recommendations; API tests for session, attempts, progress | Implemented (uncommitted) with unit tests and e2e tests (in-memory Prisma). Guest quiz run verified in the browser on 2026-10-26. Not yet: API tests against `nuvora_test` with cross-learner isolation, Knowledge Map (FR-MAP), FR-JOUR-01 trend |
 | **G4-E** | **Verification and demo readiness** | A–D | The [demo storyline](../00-product/mvp-scope.md#demo-storyline-scripted-verified-on-friday) runs end to end in tg/ru/en and both themes; Playwright smoke green; reduced motion, keyboard, loading/error states, 375 px; console clean; Lighthouse targets; `/code-review` and `/security-review` once for the gate; story written | Planned. Playwright smoke passes again (2026-10-26: the test still expected the old G1 status heading; it now reads the homepage headline from the message files) |
 
+## Faroz defense phases (from 2026-10-28)
+
+The owner switched to the Faroz handoff (D-23) for the defense on **Mon 2 Nov 2026** (implementation deadline Sun 1 Nov). These phases continue G4; audit and details in the [defense story](../stories/2026-10-28-defense-audit-and-plan.md).
+
+| Phase | Scope | Status (2026-10-28) |
+| --- | --- | --- |
+| F1–F2 | Tokens, theme, logo, homepage, header/footer | Implemented and verified, pushed |
+| F3 Learner | CHECKPOINT seed format; JavaScript subject + 20-question diagnostic; B-12 cohort replayed from the handoff; `GET /me/attempts/:id`; before/after in `/me/progress`; `/app` dashboard, quest, results, progress | Implemented and verified (not committed). `db:seed` and `db:seed:demo` applied with approval |
+| F4 Teacher | Code-defined staff/roster (no migration, owner decision 2026-10-28), signed staff session, analytics from real B-12 attempts, teacher screens | Core implemented and verified ([story](../stories/2026-10-28-teacher-workspace.md)): `/teach` dashboard, gap insights, student answers. **Assessments list and 5-step builder** (bank, editor, preview, publish/unschedule) implemented and verified 2026-10-29 ([story](../stories/2026-10-29-teacher-assessments.md)); learners can't take them yet. Materials, question-bank page, assign practice not built |
+| F5 Center | Aggregate-only endpoints, role-aware nav, denied state, server-enforced permissions, 401/403 tests | Core implemented and verified ([story](../stories/2026-10-28-center-workspace.md)). **Teacher invitations** (Staff → link → `/invite/[token]` → accept with a teacher account) and **editable permissions** enforced from the database, implemented and verified 2026-10-29 ([story](../stories/2026-10-29-center-invitations.md)). **Group wizard** (`/center/groups/new`, 4 steps; the group appears for the center and its teacher) implemented and verified 2026-10-29 ([story](../stories/2026-10-29-center-group-wizard.md)). Coordinator invitations, deactivation, editing groups not built |
+| F6 Polish + PWA | Manifest/icons, states, 390/768/1440, themes, locales, reduced motion | Manifest and icons done, no service worker; 390 px, themes, keyboard spot-checked ([story](../stories/2026-10-28-defense-readiness.md)) |
+| F7 Release QA | All checks, Playwright journeys, `visual-qa`, defense checklist (real vs prototype) | Checks and 8 Playwright journeys pass; checklist written. Open: `/code-review`, `/security-review`, `visual-qa`, Lighthouse, Tajik/Russian review |
+
 ## Implementation sequence (dependency order)
 
 1. Walking skeleton (G1)

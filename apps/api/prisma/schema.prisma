@@ -32,6 +32,22 @@ enum Locale {
 enum UserKind {
   DEMO
   GUEST
+  /// A learner who registered with email and password (Account.role LEARNER)
+  ACCOUNT
+}
+
+/// Faroz accounts (2026-10-28, owner-approved migration): who signs in with a password.
+enum AccountRole {
+  LEARNER
+  TEACHER
+  CENTER_ADMIN
+}
+
+/// Faroz plans (handoff pricing). Payments are a demo: nothing is charged.
+enum PlanCode {
+  FREE
+  TEACHER
+  CENTER
 }
 
 enum QuizKind {
@@ -237,6 +253,8 @@ model User {
   attempts       QuizAttempt[]
   masteries      TopicMastery[]
   lessonProgress LessonProgress[]
+  account        Account?
+  memberships    GroupMember[]
 
   @@map("users")
 }
@@ -320,4 +338,383 @@ model LessonProgress {
   @@unique([userId, lessonId])
   @@index([lessonId])
   @@map("lesson_progress")
+}
+
+// ---------- Accounts, organizations, plans, groups (Faroz, 2026-10-28) ----------
+// Password accounts sit next to the demo profiles (which stay for the defense demo).
+// A learner account owns a User row, so attempts, mastery and progress work unchanged.
+
+model Account {
+  id             String        @id @default(cuid())
+  /// Stored lower-case; unique sign-in name
+  email          String        @unique
+  /// scrypt: "<salt hex>:<key hex>" (node:crypto, no extra package)
+  passwordHash   String
+  name           String
+  role           AccountRole
+  /// Learner accounts only: their learning history
+  userId         String?       @unique
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Teacher (own workspace) or center admin: the organization that holds the plan
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  teaching            StudyGroup[]
+  acceptedInvitations StaffInvitation[]
+
+  @@index([organizationId])
+  @@map("accounts")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      Account[]
+  subscriptions Subscription[]
+  groups        StudyGroup[]
+
+  @@map("organizations")
+}
+
+/// A demo checkout: records the chosen plan; no money moves (isDemo is always true here).
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan           PlanCode
+  priceCents     Int
+  currency       String
+  isDemo         Boolean      @default(true)
+  startedAt      DateTime     @default(now())
+  renewsAt       DateTime
+
+  @@index([organizationId])
+  @@map("subscriptions")
+}
+
+/// A group created by a teacher or center; learners join with its code.
+model StudyGroup {
+  id               String       @id @default(cuid())
+  /// Short join code shown to the teacher, e.g. "JS-4K7Q"
+  joinCode         String       @unique
+  name             String
+  subjectSlug      String
+  capacity         Int
+  schedule         String?
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teacherAccountId String?
+  teacher          Account?     @relation(fields: [teacherAccountId], references: [id], onDelete: SetNull)
+  createdAt        DateTime     @default(now())
+  // ----- Center group wizard (2026-10-29, owner-approved migration); empty for older groups -----
+  /// The center's own code, e.g. "B-18" (unique within the organization)
+  displayCode      String?
+  startsOn         DateTime?
+  /// Teaching languages
+  languages        Locale[]
+  /// Who teaches it: demo staff slug ("dilshod-karimov") or "acct:<accountId>"; null = assign later
+  teacherKey       String?
+  teacherName      String?
+
+  members GroupMember[]
+
+  @@unique([organizationId, displayCode])
+  @@index([organizationId])
+  @@index([teacherAccountId])
+  @@index([teacherKey])
+  @@map("study_groups")
+}
+
+model GroupMember {
+  groupId  String
+  group    StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime   @default(now())
+
+  @@id([groupId, userId])
+  @@index([userId])
+  @@map("group_members")
+}
+
+// ---------- Teacher assessments (Faroz, 2026-10-29, owner-approved migration) ----------
+// Checks, retests and diagnostics a teacher builds for one of their groups.
+// Kept apart from the seeded `quizzes` tables on purpose: the seed loader treats any
+// quiz missing from the seed files as a blocking error. Owners and groups are
+// referenced by key (demo staff and demo groups are defined in code, staff/demo-org.ts).
+// Status is derived, never stored: draft (publishedAt null), scheduled, live, closed.
+
+enum AssessmentPurpose {
+  CHECK
+  RETEST
+  DIAGNOSTIC
+}
+
+enum AnswerReveal {
+  AFTER_CLOSE
+  AFTER_SUBMIT
+  NEVER
+}
+
+/// Who takes it: the whole group, or only students under 60% on the topic in the latest diagnostic
+enum AssessmentAudience {
+  CLASS
+  UNDER_60
+}
+
+model Assessment {
+  id               String             @id @default(cuid())
+  /// The owning teacher: staff slug ("dilshod-karimov") or "acct:<accountId>"
+  ownerKey         String
+  /// Demo group code ("B-12") or a StudyGroup joinCode
+  groupCode        String
+  subjectSlug      String
+  topicSlug        String?
+  title            String
+  description      String?
+  purpose          AssessmentPurpose
+  languages        Locale[]
+  audience         AssessmentAudience @default(CLASS)
+  opensAt          DateTime?
+  closesAt         DateTime?
+  /// Null = no time limit
+  timeLimitMinutes Int?
+  attemptsAllowed  Int                @default(1)
+  revealAnswers    AnswerReveal       @default(AFTER_CLOSE)
+  xp               Int                @default(40)
+  shuffleQuestions Boolean            @default(true)
+  shuffleOptions   Boolean            @default(true)
+  notifyStudents   Boolean            @default(true)
+  /// Null while it is a draft
+  publishedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  questions AssessmentQuestion[]
+
+  @@index([ownerKey])
+  @@map("assessments")
+}
+
+/// A question snapshot: bank questions are copied, so later content edits never change a published assessment.
+model AssessmentQuestion {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  order        Int
+  topicSlug    String
+  /// Set when copied from the question bank: quiz slug and question key
+  sourceQuiz   String?
+  sourceKey    String?
+  /// Markdown per locale: { en, ru?, tg? }
+  prompt       Json
+  code         String?
+  /// [{ text: { en, ru?, tg? } }]
+  options      Json
+  correctIndex Int
+  /// Markdown per locale
+  explanation  Json
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([assessmentId, order])
+  @@map("assessment_questions")
+}
+
+// ---------- Center staff invitations and permissions (Faroz, 2026-10-29, owner-approved migration) ----------
+// A center is referenced by key: "demo-center" for the code-defined Faroz Demo Center,
+// "org:<organizationId>" for a center admin account. No email is sent: the admin copies
+// the link. Only the SHA-256 of the link token is stored. Status is derived:
+// revoked → accepted → declined → expired (expiresAt passed) → pending.
+
+model StaffInvitation {
+  id                String      @id @default(cuid())
+  orgKey            String
+  /// Shown on the invitation page
+  orgName           String
+  /// SHA-256 (hex) of the token in the link; the token itself is never stored
+  tokenHash         String      @unique
+  name              String
+  /// Lower-case; the accepting account must have this email
+  email             String
+  /// TEACHER only for now (no coordinator accounts yet)
+  role              AccountRole
+  subject           String
+  /// Language the invitation page opens in
+  locale            Locale
+  /// Staff slug or "acct:<accountId>" of the inviter
+  invitedByKey      String
+  invitedByName     String
+  expiresAt         DateTime
+  acceptedAt        DateTime?
+  acceptedAccountId String?
+  acceptedAccount   Account?    @relation(fields: [acceptedAccountId], references: [id], onDelete: SetNull)
+  declinedAt        DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([orgKey])
+  @@index([acceptedAccountId])
+  @@map("staff_invitations")
+}
+
+/// Coordinator and teacher permissions set by the center admin (handoff §7). No row = handoff defaults.
+model CenterPermissions {
+  orgKey       String   @id
+  coordGroups  Boolean  @default(true)
+  coordStaff   Boolean  @default(true)
+  teachCreate  Boolean  @default(true)
+  teachShare   Boolean  @default(false)
+  updatedByKey String
+  updatedAt    DateTime @updatedAt
+
+  @@map("center_permissions")
+}
+
+// ---------- Communications: chat, voice messages, calls (Faroz, 2026-10-29, owner-approved) ----------
+// Participants are referenced by key, like the rest of the staff data: a learner is "user:<userId>",
+// a staff member "staff:<slug>" (demo staff slug, or "acct:<accountId>" for password accounts).
+// Who may talk to whom is decided in code from the group rosters (comms/directory), never stored:
+// a direct conversation holds its two keys; a group conversation follows the group's live roster.
+// Centers never read conversations (privacy: group totals and participation only).
+
+enum ConversationKind {
+  DIRECT
+  GROUP
+}
+
+enum MessageKind {
+  TEXT
+  VOICE
+  /// Call log line: body is JSON {"media":"audio"|"video","event":"started"|"ended","seconds"?:n}
+  CALL
+}
+
+model Conversation {
+  id            String           @id @default(cuid())
+  /// "dm:<keyA>|<keyB>" (keys sorted), "group:demo:<code>" / "group:db:<studyGroupId>", or "group:custom:<uuid>" (a teacher's own group chat)
+  key           String           @unique
+  kind          ConversationKind
+  /// Group name when it was created (direct conversations show the other person instead)
+  title         String?
+  lastMessageAt DateTime?
+  /// Who created a custom group chat (the teacher who manages it)
+  createdByKey  String?
+  createdAt     DateTime         @default(now())
+
+  messages Message[]
+  reads    ConversationRead[]
+  members  ConversationMember[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderKey      String
+  /// Name at sending time, so history stays readable if a demo name changes
+  senderName     String
+  kind           MessageKind
+  /// Text, or the CALL JSON; null for voice
+  body           String?
+  createdAt      DateTime     @default(now())
+
+  voice VoiceClip?
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+/// Audio of a voice message (webm/opus or mp4/aac), at most 2 MB; served only to the conversation's members.
+model VoiceClip {
+  messageId  String  @id
+  message    Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  mimeType   String
+  durationMs Int
+  data       Bytes
+
+  @@map("voice_clips")
+}
+
+/// Last time a participant read a conversation (unread counts).
+model ConversationRead {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  participantKey String
+  lastReadAt     DateTime
+  /// "Delete chat" for me: messages up to here are hidden for this participant
+  clearedAt      DateTime?
+
+  @@id([conversationId, participantKey])
+  @@index([participantKey])
+  @@map("conversation_reads")
+}
+
+/// Changes to who is in a group chat, made by its teacher: added people, or roster members taken out
+/// (removed = true). A custom group chat's members are all rows here. Study group rosters are not changed.
+model ConversationMember {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  participantKey String
+  removed        Boolean      @default(false)
+  changedByKey   String
+  updatedAt      DateTime     @updatedAt
+
+  @@id([conversationId, participantKey])
+  @@index([participantKey])
+  @@map("conversation_members")
+}
+
+// ---------- Profiles (Faroz, 2026-10-30, owner-approved, D-25) ----------
+// One profile per person, keyed like communications: "user:<userId>" (learner) or "staff:<slug>"
+// (demo staff slug or "acct:<accountId>"). The name comes from the account and is not edited here.
+// What others see is decided on the server per block and per viewer (profiles service).
+
+model Profile {
+  participantKey  String   @id
+  /// Public address /u/<handle>: 3–24 of a-z, 0-9, "." and "_", stored lower-case
+  handle          String   @unique
+  headline        String   @default("")
+  bio             String   @default("")
+  city            String   @default("")
+  languages       Locale[]
+  interests       String[]
+  /// [{ "label": string, "url": "https://…" }], at most 4 (validated with the shared Zod schema)
+  links           Json     @default("[]")
+  /// Teachers only
+  subject         String   @default("")
+  experienceYears Int?
+  officeHours     String   @default("")
+  /// Design preset names (shared constants PROFILE_COVERS / PROFILE_ACCENTS)
+  cover           String   @default("aurora")
+  accent          String   @default("mint")
+  /// { about, links, learning, teaching, groups }: "everyone" | "groups" | "me"
+  visibility      Json
+  showOnline      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  avatar ProfileAvatar?
+
+  @@map("profiles")
+}
+
+/// Profile photo, cropped to a square in the browser (webp/jpeg/png, at most 1 MB).
+model ProfileAvatar {
+  participantKey String   @id
+  profile        Profile  @relation(fields: [participantKey], references: [participantKey], onDelete: Cascade)
+  mimeType       String
+  data           Bytes
+  updatedAt      DateTime @updatedAt
+
+  @@map("profile_avatars")
 }

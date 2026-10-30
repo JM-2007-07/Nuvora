@@ -22,6 +22,7 @@
     "db:seed": "pnpm run prep && pnpm --filter @nuvora/api run db:seed",
     "db:seed:dry-run": "pnpm run prep && pnpm --filter @nuvora/api run db:seed:dry-run",
     "db:seed:demo": "pnpm run prep && pnpm --filter @nuvora/api run db:seed:demo",
+    "db:seed:center": "pnpm run prep && pnpm --filter @nuvora/api run db:seed:center",
     "seed:check": "pnpm run prep && pnpm --filter @nuvora/api run seed:check"
   },
   "devDependencies": {

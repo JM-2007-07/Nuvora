@@ -41,6 +41,14 @@
   --radius: 1.25rem;
 }
 
+/*
+ * Tajik: Unbounded has no glyphs for ҳ ҷ ӣ ғ қ ӯ (checked 2026-10-28), so a heading mixed two
+ * fonts. On Tajik pages headings, buttons and the wordmark use Inter, which covers cyrillic-ext.
+ */
+html[lang="tg"] {
+  --nv-font-brand: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
 @theme inline {
   --font-sans: var(--nv-font-sans);
   --font-heading: var(--nv-font-brand);
