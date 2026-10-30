@@ -139,6 +139,7 @@ export class AssessmentsService {
     const status = assessmentStatus(existing, this.now());
     if (status === 'live' || status === 'closed') throw locked(status);
     if (status === 'scheduled' && !canPublish(draft)) throw checksFailed(draft);
+    await this.refuseIfTaken(id);
     const group = await this.ownGroup(staff, draft.groupCode, locale);
     const updated = await this.prisma.$transaction(async (tx) => {
       await tx.assessmentQuestion.deleteMany({ where: { assessmentId: id } });
@@ -166,6 +167,7 @@ export class AssessmentsService {
     const existing = await this.own(staff, id);
     const status = assessmentStatus(existing, this.now());
     if (status !== 'scheduled') throw new ConflictException({ code: 'NOT_SCHEDULED', message: 'Only a scheduled assessment can be unscheduled' });
+    await this.refuseIfTaken(id);
     const updated = await this.prisma.assessment.update({ where: { id }, data: { publishedAt: null }, include: withQuestions });
     return toAssessment(updated, this.now());
   }
@@ -234,6 +236,11 @@ export class AssessmentsService {
   }
 
   // ---------- helpers ----------
+
+  /** Learners' answers point at the stored questions: once anyone has started, the questions stay as they are. */
+  private async refuseIfTaken(id: string): Promise<void> {
+    if (await this.prisma.assessmentAttempt.count({ where: { assessmentId: id } })) throw new ConflictException({ code: 'HAS_ATTEMPTS', message: 'Learners have already started this assessment' });
+  }
 
   /** The teacher's groups that have content to assess. */
   private async ownGroups(staff: DemoStaff, locale: Locale): Promise<OwnGroup[]> {

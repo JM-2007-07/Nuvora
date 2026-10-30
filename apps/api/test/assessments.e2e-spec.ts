@@ -141,6 +141,7 @@ function fakePrisma() {
       delete: async ({ where }: { where: { id: string } }) => rows.delete(where.id),
     },
     assessmentQuestion: { deleteMany: async () => ({ count: 0 }) },
+    assessmentAttempt: { count: async () => 0 },
     $transaction: async <T>(fn: (tx: unknown) => Promise<T>) => fn(prisma),
     $queryRaw: async () => [{ server_version: '18.6' }],
     $disconnect: async () => {},

@@ -25,6 +25,7 @@ const APPLIED_MIGRATIONS: Record<string, string> = {
   // Profiles and profile photos, applied with the owner's approval on 2026-10-30.
   '20261030140000_profiles': '219a9bdc689ecb9ee919108cada8d1ee6b83ba8c7e995c1bcabc490a761bda1a',
   '20261030200000_sessions_audit_admin': '777a442bc6c53e043c226527f6357a4ce78d0cadc7843e7567124b49db00a720',
+  '20261030230000_exam_mode': '40a6382dc279975ff0758c52c92d2651a7e38ee1ce82c5865b086d454e231f25',
 };
 
 const migrationsDir = fileURLToPath(new URL('../../prisma/migrations/', import.meta.url));

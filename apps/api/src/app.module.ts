@@ -1,6 +1,7 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { AccountsModule } from './accounts/accounts.module.js';
 import { AdminModule } from './admin/admin.controller.js';
+import { ExamModule } from './exam/exam.gateway.js';
 import { AssessmentsModule } from './assessments/assessments.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CenterModule } from './center/center.module.js';
@@ -24,7 +25,7 @@ export class AppModule {
   static forRoot(env: AppEnv): DynamicModule {
     return {
       module: AppModule,
-      imports: [ConfigModule.forRoot(env), AuditModule, HealthModule, IdentityModule, CatalogModule, LessonsModule, QuizzesModule, ProgressModule, StaffModule, TeachingModule, CenterModule, AccountsModule, GroupsModule, AssessmentsModule, CommsModule, ProfilesModule, AdminModule],
+      imports: [ConfigModule.forRoot(env), AuditModule, HealthModule, IdentityModule, CatalogModule, LessonsModule, QuizzesModule, ProgressModule, StaffModule, TeachingModule, CenterModule, AccountsModule, GroupsModule, AssessmentsModule, CommsModule, ProfilesModule, AdminModule, ExamModule],
     };
   }
 }

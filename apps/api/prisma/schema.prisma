@@ -267,6 +267,7 @@ model User {
   lessonProgress LessonProgress[]
   account        Account?
   memberships    GroupMember[]
+  examAttempts   AssessmentAttempt[]
 
   @@map("users")
 }
@@ -481,13 +482,28 @@ enum AnswerReveal {
 }
 
 /// Who takes it: the whole group, or only students under 60% on the topic in the latest diagnostic
+/// What happens automatically when an exam attempt reaches the policy's action threshold.
+enum ExamViolationAction {
+  FLAG
+  PAUSE
+  END
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  PAUSED
+  SUBMITTED
+  EXPIRED
+  ENDED
+}
+
 enum AssessmentAudience {
   CLASS
   UNDER_60
 }
 
 model Assessment {
-  id               String             @id @default(cuid())
+  id               String              @id @default(cuid())
   /// The owning teacher: staff slug ("dilshod-karimov") or "acct:<accountId>"
   ownerKey         String
   /// Demo group code ("B-12") or a StudyGroup joinCode
@@ -498,23 +514,30 @@ model Assessment {
   description      String?
   purpose          AssessmentPurpose
   languages        Locale[]
-  audience         AssessmentAudience @default(CLASS)
+  audience         AssessmentAudience  @default(CLASS)
   opensAt          DateTime?
   closesAt         DateTime?
   /// Null = no time limit
   timeLimitMinutes Int?
-  attemptsAllowed  Int                @default(1)
-  revealAnswers    AnswerReveal       @default(AFTER_CLOSE)
-  xp               Int                @default(40)
-  shuffleQuestions Boolean            @default(true)
-  shuffleOptions   Boolean            @default(true)
-  notifyStudents   Boolean            @default(true)
+  attemptsAllowed  Int                 @default(1)
+  revealAnswers    AnswerReveal        @default(AFTER_CLOSE)
+  xp               Int                 @default(40)
+  shuffleQuestions Boolean             @default(true)
+  shuffleOptions   Boolean             @default(true)
+  notifyStudents   Boolean             @default(true)
   /// Null while it is a draft
   publishedAt      DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  // ----- Exam mode policy (2026-10-30): counts of focus-lost / fullscreen-exit / background events -----
+  examWarnAfter    Int                 @default(1)
+  examNotifyAfter  Int                 @default(2)
+  examActionAfter  Int                 @default(3)
+  examAction       ExamViolationAction @default(FLAG)
+  examAllowReentry Boolean             @default(true)
 
   questions AssessmentQuestion[]
+  attempts  AssessmentAttempt[]
 
   @@index([ownerKey])
   @@map("assessments")
@@ -540,6 +563,8 @@ model AssessmentQuestion {
   explanation  Json
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  answers AssessmentAnswer[]
 
   @@unique([assessmentId, order])
   @@map("assessment_questions")
@@ -813,4 +838,87 @@ model AuditEvent {
   @@index([actorKey])
   @@index([action])
   @@map("audit_events")
+}
+
+// ---------- Teacher assessments taken by learners, Standard Exam Mode (2026-10-30, owner-approved additive migration) ----------
+
+/// One learner's attempt at a teacher assessment. The server owns the clock: deadlineAt moves with pauses and extensions.
+model AssessmentAttempt {
+  id            String        @id @default(cuid())
+  assessmentId  String
+  assessment    Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptNo     Int
+  status        AttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime      @default(now())
+  /// Null = no time limit
+  deadlineAt    DateTime?
+  /// Set while paused by the teacher or the policy
+  pausedAt      DateTime?
+  submittedAt   DateTime?
+  /// Last answer the server stored
+  lastSyncAt    DateTime?
+  /// Highest answer sequence number stored from the device (idempotent saves)
+  lastSeq       Int           @default(0)
+  /// Question ids in the order this learner sees them
+  questionOrder Json
+  /// questionId → option keys in display order
+  optionOrder   Json
+  correctCount  Int?
+  totalCount    Int
+  scorePercent  Int?
+  violations    Int           @default(0)
+  warnings      Int           @default(0)
+  flagged       Boolean       @default(false)
+  /// Times the learner came back to the attempt after leaving it
+  reentries     Int           @default(0)
+  /// When the policy forbids re-entry: the teacher opened one more entry (READMIT), used up on entering
+  readmitOpen   Boolean       @default(false)
+  /// Latest teacher message shown to the learner
+  notice        String?
+  /// Set when a teacher reset this attempt (it no longer counts)
+  resetAt       DateTime?
+
+  answers AssessmentAnswer[]
+  events  ExamEvent[]
+
+  @@unique([assessmentId, userId, attemptNo])
+  @@index([assessmentId])
+  @@index([userId])
+  @@map("assessment_attempts")
+}
+
+/// The learner's current choice per question; correctness is computed on submission from the stored question.
+model AssessmentAnswer {
+  attemptId  String
+  attempt    AssessmentAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  question   AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  /// Index into the question's stored options (not the display position)
+  optionKey  Int
+  answeredAt DateTime           @default(now())
+  isCorrect  Boolean?
+
+  @@id([attemptId, questionId])
+  @@map("assessment_answers")
+}
+
+/// Exam timeline: client signals, server decisions and teacher actions. Rows are never changed (the database refuses
+/// UPDATE); they disappear only together with their attempt (learner or draft assessment removed).
+model ExamEvent {
+  id        String            @id @default(cuid())
+  attemptId String
+  attempt   AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  at        DateTime          @default(now())
+  kind      String
+  /// client | server | teacher
+  source    String
+  actorKey  String?
+  /// When the device says it happened (informational; the server time is `at`)
+  clientAt  String?
+  meta      Json?
+
+  @@index([attemptId, at])
+  @@map("exam_events")
 }
