@@ -67,7 +67,8 @@ export const ChangePasswordRequestSchema = z.strictObject({ currentPassword: z.s
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordRequestSchema>;
 
 /** Two-factor sign-in (TOTP). */
-export const MfaStatusSchema = z.strictObject({ enabled: z.boolean(), available: z.boolean() });
+/** `account: false` for demo profiles and guests (no password account): 200, so their pages log no errors. */
+export const MfaStatusSchema = z.strictObject({ account: z.boolean(), enabled: z.boolean(), available: z.boolean() });
 export type MfaStatus = z.infer<typeof MfaStatusSchema>;
 export const MfaSetupSchema = z.strictObject({ secret: z.string(), otpauthUrl: z.string() });
 export type MfaSetup = z.infer<typeof MfaSetupSchema>;

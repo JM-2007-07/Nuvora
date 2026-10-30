@@ -6,7 +6,6 @@ import { type FormEvent, useState } from 'react';
 import { Card, EmptyState, ErrorState, Skeleton } from '@/features/app/states';
 import { ConfirmDialog } from '@/features/teach/assessments/confirm-dialog';
 import { useRouter } from '@/i18n/navigation';
-import { ApiRequestError } from '@/lib/client-api';
 import { formatDate } from '@/lib/format';
 import { securityErrorKey } from './errors';
 import { Field } from './field';
@@ -41,20 +40,20 @@ function Notice({ children }: { children: string }) {
 /** Devices, sign-out everywhere, password and two-factor sign-in for the signed-in identity. */
 export function SecurityPanels() {
   const mfa = useMfaStatus();
-  // Demo profiles have no password account: the API answers 401 ACCOUNT_REQUIRED.
-  const accountRequired = mfa.error instanceof ApiRequestError && mfa.error.code === 'ACCOUNT_REQUIRED';
+  // Demo profiles and guests have no password account (`account: false`).
+  const accountRequired = mfa.isSuccess && !mfa.data.account;
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <DevicesCard />
       {mfa.isPending ? <Skeleton className="h-40" /> : null}
-      {mfa.isSuccess ? (
+      {mfa.isSuccess && mfa.data.account ? (
         <>
           <PasswordCard />
           <MfaCard enabled={mfa.data.enabled} available={mfa.data.available} />
         </>
       ) : null}
       {accountRequired ? <DemoNote /> : null}
-      {mfa.isError && !accountRequired ? <ErrorState error={mfa.error} onRetry={() => mfa.refetch()} /> : null}
+      {mfa.isError ? <ErrorState error={mfa.error} onRetry={() => mfa.refetch()} /> : null}
     </div>
   );
 }

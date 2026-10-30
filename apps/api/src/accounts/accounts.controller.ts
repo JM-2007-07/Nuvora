@@ -218,8 +218,9 @@ export class AccountsController {
 
   @Get('auth/mfa')
   async mfaStatus(@Req() req: Request): Promise<MfaStatus> {
-    const { account } = await this.requireAccount(req);
-    return { enabled: !!account.totpEnabledAt, available: this.accounts.mfaAvailable() };
+    await this.requireSession(req);
+    const account = await this.currentAccount(req);
+    return { account: !!account, enabled: !!account?.totpEnabledAt, available: this.accounts.mfaAvailable() };
   }
 
   @Post('auth/mfa/setup')
