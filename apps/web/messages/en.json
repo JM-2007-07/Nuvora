@@ -891,7 +891,19 @@
     "pickMembers": "Members",
     "create": "Create",
     "selected": "{count, plural, one {# selected} other {# selected}}",
-    "actionFailed": "That did not work. Try again."
+    "actionFailed": "That did not work. Try again.",
+    "dockOpen": "Open chats",
+    "dockClose": "Close chats",
+    "openFull": "Open full page",
+    "notifyTitle": "Turn on notifications?",
+    "notifyBody": "Get a notification about new messages and calls even when Faroz is in another tab.",
+    "notifyEnable": "Turn on",
+    "notifyLater": "Not now",
+    "notifyDenied": "Notifications are blocked in the browser settings.",
+    "newMessage": "New message",
+    "incomingCallNotify": "{name} is calling you",
+    "closeToast": "Close notification",
+    "openChat": "Open chat"
   },
   "Profile": {
     "nav": "My profile",

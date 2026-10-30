@@ -32,7 +32,8 @@ export function CommsView() {
   }, [conversation?.id, setOpen]);
 
   return (
-    <div className="flex flex-col gap-5">
+    // -mb-18: the workspace leaves room for the floating chat button, which this page does not show.
+    <div className="-mb-18 flex flex-col gap-5">
       <div className="flex flex-col gap-1 max-[900px]:hidden">
         <h1 className="m-0 text-[30px] leading-tight font-bold">{t('title')}</h1>
         <p className="m-0 text-[15px] text-(--muted)">{t('subtitle')}</p>
@@ -66,7 +67,8 @@ function EmptyPane() {
 
 // ---------- sidebar ----------
 
-function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string) => void }) {
+/** Chat list with search, Chats / Contacts tabs and (teachers) "New group". Also used by the floating chat. */
+export function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string) => void }) {
   const t = useTranslations('Comms');
   const comms = useComms();
   const locale = useLocale() as Locale;
@@ -241,7 +243,8 @@ function ConversationRow({ conversation: c, active, typing, onSelect }: { conver
 
 // ---------- conversation ----------
 
-function ConversationPane({ conversation, onBack, onSelect }: { conversation: ConversationSummary; onBack: () => void; onSelect: (id: string) => void }) {
+/** One conversation. `compact` (floating chat): smaller header buttons and a back button at every width. */
+export function ConversationPane({ conversation, onBack, onSelect, compact = false }: { conversation: ConversationSummary; onBack: () => void; onSelect: (id: string) => void; compact?: boolean }) {
   const t = useTranslations('Comms');
   const tp = useTranslations('Profile');
   const comms = useComms();
@@ -257,12 +260,12 @@ function ConversationPane({ conversation, onBack, onSelect }: { conversation: Co
         : conversation.peer?.online
           ? t('online')
           : t('offline');
-  const callButton = 'grid size-11 place-items-center rounded-xl border border-(--line2) text-(--text) transition-colors hover:border-(--blue) hover:bg-(--panel2) disabled:opacity-50 motion-reduce:transition-none';
+  const callButton = `grid ${compact ? 'size-9' : 'size-11'} shrink-0 place-items-center rounded-xl border border-(--line2) text-(--text) transition-colors hover:border-(--blue) hover:bg-(--panel2) disabled:opacity-50 motion-reduce:transition-none`;
 
   return (
     <section aria-label={conversation.title} className="relative flex h-full min-h-0 flex-col">
-      <header className="flex items-center gap-3 border-b border-(--line) px-4 py-3">
-        <button type="button" onClick={onBack} aria-label={t('back')} className="grid size-10 place-items-center rounded-xl text-(--muted) hover:bg-(--panel2) min-[900px]:hidden">
+      <header className={`flex items-center border-b border-(--line) ${compact ? 'gap-2 px-3 py-2.5' : 'gap-3 px-4 py-3'}`}>
+        <button type="button" onClick={onBack} aria-label={t('back')} className={`grid size-10 shrink-0 place-items-center rounded-xl text-(--muted) hover:bg-(--panel2) ${compact ? '' : 'min-[900px]:hidden'}`}>
           <ArrowLeftIcon aria-hidden="true" className="size-5" />
         </button>
         {conversation.kind === 'GROUP' ? (
@@ -271,7 +274,7 @@ function ConversationPane({ conversation, onBack, onSelect }: { conversation: Co
           </span>
         ) : conversation.peer ? (
           <Link href={`/u/${encodeURIComponent(conversation.peer.key)}`} aria-label={`${tp('viewProfile')}: ${conversation.title}`} className="shrink-0 rounded-full">
-            <Avatar name={conversation.title} src={conversation.peer.avatarUrl} size={44} online={conversation.peer.online} />
+            <Avatar name={conversation.title} src={conversation.peer.avatarUrl} size={compact ? 36 : 44} online={conversation.peer.online} />
           </Link>
         ) : (
           <Avatar name={conversation.title} size={44} />

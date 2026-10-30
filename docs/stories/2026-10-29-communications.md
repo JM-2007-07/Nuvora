@@ -152,3 +152,42 @@ The check wrote a few real messages and call log lines into the demo chats betwe
   - group deleted for everyone;
   - light theme in en; clean consoles.
 - The call and voice check (`comms-live.mjs`) was re-run: 29 of 29 in three of four runs. One run had a single failed check that did not reproduce; it looked like script timing.
+
+## Follow-up 2026-10-30: floating chat and notifications
+
+**Owner request:**
+- A chat button fixed bottom right, to talk to the teacher or others while working.
+- Not available while taking a test, where nothing should distract.
+- Notifications when someone writes.
+
+**Changes:**
+- \`chat-dock.tsx\` (new), the floating chat:
+  - A round button with an unread badge, on every learner and teacher workspace page.
+  - A compact chat window (400 px; full screen on phones) that reuses the chat list and conversation, including calls, voice messages and the "⋯" menu.
+  - "Open full page"; Escape closes it.
+  - It is rendered outside the page area, so page transitions do not move it.
+- **When it is hidden:**
+  - **During tests:** the test page (\`/app/quest/...\`) is outside the workspace shell, so there is no button, no toast, no ringing and no live connection there.
+  - **On the Chats page:** it is not needed there.
+- **Notifications** (\`notifications.ts\`, no package):
+  - **Page hidden:** a system notification (sender, text, photo; one per chat via \`tag\`) for messages, and a sticky one for incoming calls. Clicking it opens the chat.
+  - **Page visible:** an in-app card above the button with a soft two-note ping (Web Audio); clicking it opens the chat.
+  - **Permission:** asked from a "Turn on notifications?" banner in the dock, as browsers require. "Not now" is remembered on the device.
+  - **Limit:** they work while Faroz is open in a tab. With the browser closed it would need Web Push (service worker, VAPID, a push service).
+- The provider holds the dock state, \`openChat\` and the toast queue. \`Sidebar\` and \`ConversationPane\` are exported; the pane has a \`compact\` mode.
+- The workspace \`<main>\` gets bottom room for the button; the Chats page offsets it, so it still fits without scrolling.
+
+**Verification:**
+- web: \`lint\`, \`typecheck\`, \`test\`, \`build\` pass.
+- **Live**, \`dock-live.mjs\`: Edge, teacher Dilshod and learner Amina, the real API; the Notification API stubbed only to observe it. 23 of 23 passed:
+  - the button on the teacher dashboard and on learner pages;
+  - the teacher writes from the dock;
+  - the learner gets a toast with the text and an unread badge; the toast opens the chat in the dock; unread clears; Escape closes it;
+  - with the page hidden: a system notification with sender and text, and no toast;
+  - during a test (\`/app/quest/javascript-diagnostic\`): no button, no toast, no notification;
+  - no button on the Chats page;
+  - the permission banner and "Not now";
+  - on a 390 px phone the dock fills the screen with no overflow;
+  - clean consoles.
+- The Chats page has no vertical overflow at 1440 and 390, and the button clears the last content.
+- **Data:** the check left three short messages from Dilshod to Amina in their chat.

@@ -891,7 +891,19 @@
     "pickMembers": "Участники",
     "create": "Создать",
     "selected": "{count, plural, one {Выбран #} few {Выбрано #} many {Выбрано #} other {Выбрано #}}",
-    "actionFailed": "Не получилось. Попробуйте ещё раз."
+    "actionFailed": "Не получилось. Попробуйте ещё раз.",
+    "dockOpen": "Открыть чаты",
+    "dockClose": "Свернуть чаты",
+    "openFull": "Открыть на всю страницу",
+    "notifyTitle": "Включить уведомления?",
+    "notifyBody": "Узнавайте о новых сообщениях и звонках, даже когда Faroz открыт в другой вкладке.",
+    "notifyEnable": "Включить",
+    "notifyLater": "Не сейчас",
+    "notifyDenied": "Уведомления заблокированы в настройках браузера.",
+    "newMessage": "Новое сообщение",
+    "incomingCallNotify": "{name} звонит вам",
+    "closeToast": "Закрыть уведомление",
+    "openChat": "Открыть чат"
   },
   "Profile": {
     "nav": "Мой профиль",

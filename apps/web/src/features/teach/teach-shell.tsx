@@ -3,6 +3,7 @@
 import { BarChart3Icon, ClipboardCheckIcon, GraduationCapIcon, LayoutDashboardIcon, MessagesSquareIcon, SearchIcon, SettingsIcon, UsersIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { PersonCard, WorkspaceShell } from '@/features/app/workspace-shell';
+import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
 import { useMyProfile } from '@/features/profile/hooks';
 import { usePathname } from '@/i18n/navigation';
@@ -15,6 +16,9 @@ export function TeachShell({ children }: { children: React.ReactNode }) {
   return (
     <CommsProvider identity={identity}>
       <TeachShellInner>{children}</TeachShellInner>
+      {/* Outside the page area, so page transitions never move or blink it. */}
+      <ChatDock />
+      <ChatToasts />
     </CommsProvider>
   );
 }

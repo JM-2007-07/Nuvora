@@ -109,7 +109,7 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
             <LocaleButtons />
           </div>
         ) : null}
-        <main id="main" className="mx-auto w-full max-w-[1240px] flex-1 px-[18px] py-6 sm:px-8 sm:py-7">
+        <main id="main" className="mx-auto w-full max-w-[1240px] flex-1 px-[18px] pt-6 pb-24 sm:px-8 sm:pt-7">
           <PageTransition>{children}</PageTransition>
         </main>
       </div>

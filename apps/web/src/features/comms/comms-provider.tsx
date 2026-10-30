@@ -10,13 +10,15 @@ import {
   type MessagesPage,
 } from '@nuvora/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { Socket } from 'socket.io-client';
 import { commsApi, connectComms } from './api';
 import { CallEngine, type CallSnapshot } from './call-engine';
 import { CallOverlay } from './call-overlay';
 import { IncomingCall } from './incoming-call';
+import { ping, systemNotify } from './notifications';
 
 export interface Incoming {
   call: ActiveCall;
@@ -24,6 +26,15 @@ export interface Incoming {
   kind: 'DIRECT' | 'GROUP';
   title: string;
   /** Caller's photo, when they have one */
+  photo: string | null;
+}
+
+/** An in-app notification about a new message (shown while the page is visible). */
+export interface ChatToast {
+  id: string;
+  conversationId: string;
+  title: string;
+  body: string;
   photo: string | null;
 }
 
@@ -47,6 +58,16 @@ interface CommsContextValue {
   decline: () => void;
   startCall: (conversation: ConversationSummary, media: 'audio' | 'video') => void;
   joinCall: (conversation: ConversationSummary) => void;
+  /** Floating chat (bottom right): open, and which conversation it shows */
+  dock: { open: boolean; conversationId: string | null };
+  setDock: (dock: { open: boolean; conversationId: string | null }) => void;
+  /** Opens a conversation wherever chats are shown (the Chats page, or the floating chat) */
+  openChat: (conversationId: string) => void;
+  /** The workspace's full Chats page */
+  chatsHref: string;
+  onChatsPage: boolean;
+  toasts: ChatToast[];
+  dismissToast: (id: string) => void;
 }
 
 const CommsContext = createContext<CommsContextValue | null>(null);
@@ -85,6 +106,50 @@ export function CommsProvider({ identity, children }: { identity: string | null;
   const openRef = useRef<string | null>(null);
   const typingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const lastTypingSent = useRef(0);
+  const t = useTranslations('Comms');
+  const pathname = usePathname();
+  const router = useRouter();
+  const chatsHref = pathname.startsWith('/teach') ? '/teach/messages' : '/app/messages';
+  const onChatsPage = pathname === chatsHref;
+  const [dock, setDock] = useState<{ open: boolean; conversationId: string | null }>({ open: false, conversationId: null });
+  const [toasts, setToasts] = useState<ChatToast[]>([]);
+  const dismissToast = useCallback((id: string) => setToasts((list) => list.filter((x) => x.id !== id)), []);
+
+  const openChat = useCallback(
+    (conversationId: string) => {
+      if (onChatsPage) router.replace(`${chatsHref}?c=${conversationId}`, { scroll: false });
+      else setDock({ open: true, conversationId });
+    },
+    [onChatsPage, router, chatsHref],
+  );
+  /*
+   * Someone else's message that is not on screen: a system notification when the page is hidden,
+   * an in-app toast (and a soft ping) when it is visible. Read through a ref by the socket handler.
+   */
+  const notify = useCallback(
+    (message: Message) => {
+      const data = queryClient.getQueryData<CommsOverview>([...overviewKey(locale), identity]);
+      const conversation = data?.conversations.find((c) => c.id === message.conversationId);
+      const person = data?.contacts.find((c) => c.key === message.sender.key) ?? conversation?.members.find((m) => m.key === message.sender.key);
+      const group = conversation?.kind === 'GROUP';
+      const title = group ? `${message.sender.name} · ${conversation?.groupCode ?? ''}` : message.sender.name;
+      const body = message.kind === 'VOICE' ? t('lastVoice') : message.kind === 'CALL' ? t('lastCall') : (message.text ?? t('newMessage'));
+      const photo = person?.avatarUrl ?? null;
+      if (document.visibilityState === 'hidden') {
+        systemNotify({ title, body, icon: photo, tag: `chat-${message.conversationId}`, onClick: () => openChat(message.conversationId) });
+        return;
+      }
+      ping();
+      setToasts((list) => [...list.filter((x) => x.conversationId !== message.conversationId), { id: message.id, conversationId: message.conversationId, title, body, photo }].slice(-3));
+      setTimeout(() => setToasts((list) => list.filter((x) => x.id !== message.id)), 6000);
+    },
+    [queryClient, locale, identity, t, openChat],
+  );
+  const incomingTitleRef = useRef((name: string) => t('incomingCallNotify', { name }));
+  const notifyRef = useRef(notify);
+  useEffect(() => {
+    notifyRef.current = notify;
+  }, [notify]);
 
   const resync = useCallback(
     async (conversationId?: string) => {
@@ -118,12 +183,13 @@ export function CommsProvider({ identity, children }: { identity: string | null;
       queryClient.setQueryData<MessagesPage>(messagesKey(message.conversationId), (page) =>
         page && !page.items.some((m) => m.id === message.id) ? { ...page, items: [...page.items, message] } : page,
       );
+      const mine = message.sender.key === meKey;
+      const open = openRef.current === message.conversationId && document.visibilityState === 'visible';
+      if (!mine && !open && message.kind !== 'CALL') notifyRef.current(message);
       if (!known(message.conversationId)) {
         void queryClient.invalidateQueries({ queryKey: overviewKey(locale) });
         return;
       }
-      const mine = message.sender.key === meKey;
-      const open = openRef.current === message.conversationId && document.visibilityState === 'visible';
       patchOverview((o) => ({
         ...o,
         conversations: [
@@ -171,6 +237,9 @@ export function CommsProvider({ identity, children }: { identity: string | null;
       const overviewNow = queryClient.getQueryData<CommsOverview>([...overviewKey(locale), identity]);
       const photo = overviewNow?.contacts.find((c) => c.key === payload.from.key)?.avatarUrl ?? null;
       setIncoming({ ...payload, title: conversation?.kind === 'GROUP' ? conversation.title : payload.from.name, photo });
+      if (document.visibilityState === 'hidden') {
+        systemNotify({ title: incomingTitleRef.current(payload.from.name), body: conversation?.kind === 'GROUP' ? conversation.title : payload.call.media === 'video' ? t('incomingVideo') : t('incomingAudio'), icon: photo, tag: `call-${payload.call.callId}`, sticky: true, onClick: () => undefined });
+      }
     });
     const clearIfSame = ({ callId }: { callId: string }) => setIncoming((i) => (i?.call.callId === callId ? null : i));
     socket.on(COMMS_EVENTS.callDismissed, clearIfSame);
@@ -236,12 +305,19 @@ export function CommsProvider({ identity, children }: { identity: string | null;
         setIncoming(null);
       },
       startCall: (conversation, media) => void engine?.start(conversation.id, media, conversation.title),
+      dock,
+      setDock,
+      openChat,
+      chatsHref,
+      onChatsPage,
+      toasts,
+      dismissToast,
       joinCall: (conversation) => {
         if (!engine || !conversation.activeCall) return;
         void engine.join({ callId: conversation.activeCall.callId, conversationId: conversation.id }, conversation.activeCall.media, conversation.title);
       },
     };
-  }, [live, overview.data, overview.isPending, overview.isError, identity, typing, incoming, setOpen, openId, queryClient, resync]);
+  }, [live, overview.data, overview.isPending, overview.isError, identity, typing, incoming, setOpen, openId, queryClient, resync, dock, openChat, chatsHref, onChatsPage, toasts, dismissToast]);
 
   return (
     <CommsContext.Provider value={value}>

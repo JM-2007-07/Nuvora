@@ -2,6 +2,7 @@
 
 import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSquareIcon, NetworkIcon, ZapIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
 import { useLeave, useLearner } from '@/features/learning/hooks';
 import { useMyProfile } from '@/features/profile/hooks';
@@ -17,6 +18,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <CommsProvider identity={identity}>
       <AppShellInner>{children}</AppShellInner>
+      {/* Outside the page area, so page transitions never move or blink it. */}
+      <ChatDock />
+      <ChatToasts />
     </CommsProvider>
   );
 }
