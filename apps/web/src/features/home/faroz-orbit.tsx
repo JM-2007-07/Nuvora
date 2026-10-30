@@ -424,8 +424,15 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
           <div aria-hidden="true" className="fz-orbit-aura absolute top-[31%] left-[31%] z-[1] h-[38%] w-[38%]" />
 
           {/* The core: dark polished sphere with the Faroz mark */}
-          <m.div aria-hidden="true" className="fz-orbit-core absolute top-1/2 left-1/2 z-[2] aspect-square w-[24%] -translate-x-1/2 -translate-y-1/2 rounded-full" {...enter(0)}>
-            <Image src="/brand/faroz-mark-dark.svg" alt="" width={160} height={160} priority className="pointer-events-none absolute top-1/2 left-1/2 h-auto w-[60%] -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_0_18px_var(--orbit-logo-glow)]" draggable={false} />
+          {/* The outer element only places the core and runs its entrance; the inner layers move
+              gently by themselves (float, highlight, mark), off with reduced motion (faroz-site.css). */}
+          <m.div aria-hidden="true" className="absolute top-1/2 left-1/2 z-[2] aspect-square w-[24%] -translate-x-1/2 -translate-y-1/2" {...enter(0)}>
+            <div className="fz-orbit-core fz-orbit-core-float absolute inset-0 overflow-hidden rounded-full">
+              <span className="fz-orbit-core-shine pointer-events-none absolute inset-0 rounded-full" />
+              <span className="fz-orbit-mark absolute top-1/2 left-1/2 w-[60%] -translate-x-1/2 -translate-y-1/2">
+                <Image src="/brand/faroz-mark-dark.svg" alt="" width={160} height={160} priority className="pointer-events-none block h-auto w-full" draggable={false} />
+              </span>
+            </div>
           </m.div>
 
           {/* Orbit halves in front of the core */}

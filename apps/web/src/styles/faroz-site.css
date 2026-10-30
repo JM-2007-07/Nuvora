@@ -474,6 +474,14 @@ button:focus-visible,
     border-radius: 9999px;
     background: var(--orbit-core-aura);
   }
+  /* Specular highlight on the sphere; it drifts slowly with the light (see animations below). */
+  .fz-orbit-core-shine {
+    background: radial-gradient(42% 30% at 34% 22%, rgba(255, 255, 255, 0.22), transparent 70%);
+    mix-blend-mode: screen;
+  }
+  .fz-orbit-mark {
+    filter: drop-shadow(0 0 18px var(--orbit-logo-glow));
+  }
   .fz-orbit-card {
     background: var(--orbit-card-bg);
     border: 1px solid color-mix(in srgb, var(--tone) 70%, transparent);
@@ -509,6 +517,52 @@ button:focus-visible,
 @media (prefers-reduced-motion: no-preference) {
   .fz-orbit-aura {
     animation: fz-orbit-breathe 7s ease-in-out infinite;
+  }
+  /*
+   * The core is alive but calm: it floats and breathes with the aura (same 7 s), the highlight
+   * drifts over the sphere (9 s), and the mark sways and glows (11 s). Different periods keep it
+   * from looking mechanical; transforms and filters only.
+   */
+  .fz-orbit-core-float {
+    animation: fz-core-float 7s ease-in-out infinite;
+  }
+  .fz-orbit-core-shine {
+    animation: fz-core-shine 9s ease-in-out infinite;
+  }
+  .fz-orbit-mark {
+    animation: fz-core-mark 11s ease-in-out infinite;
+  }
+}
+@keyframes fz-core-float {
+  0%,
+  100% {
+    transform: translateY(1.5%) scale(0.99);
+  }
+  50% {
+    transform: translateY(-2.5%) scale(1.03);
+  }
+}
+@keyframes fz-core-shine {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translate(14%, 6%) rotate(8deg);
+    opacity: 1;
+  }
+}
+/* Centring comes from Tailwind's `translate` property on the element; this only adds sway and scale. */
+@keyframes fz-core-mark {
+  0%,
+  100% {
+    transform: rotate(-3deg) scale(1);
+    filter: drop-shadow(0 0 14px var(--orbit-logo-glow));
+  }
+  50% {
+    transform: rotate(3deg) scale(1.04);
+    filter: drop-shadow(0 0 26px var(--orbit-logo-glow));
   }
 }
 @keyframes fz-orbit-breathe {
