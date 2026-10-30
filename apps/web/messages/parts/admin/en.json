@@ -1,5 +1,66 @@
 {
   "Admin": {
-    "title": "Platform administration"
+    "title": "Platform administration",
+    "chip": "Admin",
+    "loading": "Loading…",
+    "nav": { "overview": "Overview", "accounts": "Accounts", "organizations": "Organizations", "audit": "Audit log" },
+    "denied": {
+      "title": "This area is for the platform owner",
+      "signedOut": "Sign in to continue",
+      "body": "Platform administration is checked on the server for every request.",
+      "signIn": "Sign in"
+    },
+    "roles": { "LEARNER": "Learner", "TEACHER": "Teacher", "CENTER_ADMIN": "Center admin" },
+    "overview": {
+      "subtitle": "Counts across the whole platform. No answers or scores are shown here.",
+      "mfaOn": "Two-factor sign-in is on for your account.",
+      "mfaOff": "Turn on two-factor sign-in for this account in Settings → Security.",
+      "learnerAccounts": "Learner accounts",
+      "guestsDemo": "plus {guests} guests and {demo} demo learners",
+      "teachers": "Teachers",
+      "centers": "Center admins",
+      "organizations": "{count, plural, one {# organization} other {# organizations}}",
+      "groups": "Groups",
+      "attempts": "Tests submitted",
+      "last7": "{count} in the last 7 days",
+      "sessions": "Signed-in devices",
+      "audit24h": "Audit events, 24 h",
+      "privacy": "Individual results stay with learners and their teachers."
+    },
+    "accounts": {
+      "subtitle": "{count, plural, one {# account} other {# accounts}}",
+      "search": "Search by name or email",
+      "filter": "Role",
+      "all": "All",
+      "empty": "No accounts match.",
+      "superAdmin": "Super Admin",
+      "mfa": "2FA",
+      "sessions": "{count, plural, one {# device} other {# devices}}",
+      "revoke": "Sign out everywhere",
+      "makeRole": "Make {role}",
+      "revokeTitle": "Sign {name} out of every device?",
+      "revokeBody": "They stay registered and can sign in again. This is recorded in the audit log.",
+      "roleTitle": "Make {name} a {role}?",
+      "roleBody": "Their current sessions end so the new role applies everywhere. This is recorded in the audit log.",
+      "confirmRole": "Change role",
+      "revoked": "{name}: {count, plural, one {# session ended} other {# sessions ended}}.",
+      "roleChanged": "{name} is now a {role}.",
+      "failed": "That didn’t work ({code})."
+    },
+    "orgs": {
+      "subtitle": "Schools and teachers’ own workspaces.",
+      "empty": "No organizations yet.",
+      "accounts": "Accounts",
+      "groups": "Groups",
+      "members": "Learners",
+      "plans": { "FREE": "Free", "TEACHER": "Teacher plan", "CENTER": "Center plan" }
+    },
+    "audit": {
+      "subtitle": "Sign-ins, sessions and administrative actions. The database keeps these rows unchangeable.",
+      "filter": "Filter",
+      "all": "All",
+      "empty": "No events yet.",
+      "anonymous": "anonymous"
+    }
   }
 }

@@ -29,7 +29,8 @@
     "db:seed:dry-run": "nest build && node dist/seed/load/run.js --dry-run",
     "db:seed:demo": "nest build && node dist/seed/demo/run.js",
     "db:seed:center": "nest build && node dist/seed/demo/prepare-center.js",
-    "seed:check": "nest build && node dist/seed/check.js"
+    "seed:check": "nest build && node dist/seed/check.js",
+    "admin:bootstrap": "nest build && node dist/admin/bootstrap.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
