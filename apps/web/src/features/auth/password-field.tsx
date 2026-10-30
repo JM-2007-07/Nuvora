@@ -8,6 +8,7 @@ import { Field } from './field';
 /** Password input with a show/hide toggle (44 px target). */
 export function PasswordField({
   id,
+  label,
   value,
   onChange,
   error,
@@ -15,6 +16,8 @@ export function PasswordField({
   autoComplete,
 }: {
   id: string;
+  /** Replaces the default "Password" label. */
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   error?: string | null;
@@ -26,7 +29,7 @@ export function PasswordField({
   return (
     <Field
       id={id}
-      label={t('password')}
+      label={label ?? t('password')}
       type={shown ? 'text' : 'password'}
       value={value}
       onChange={(e) => onChange(e.target.value)}

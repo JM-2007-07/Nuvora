@@ -214,7 +214,8 @@
       "guestNote": "Guest · this session only",
       "switchLearner": "Switch learner",
       "quests": "Quests & tests",
-      "library": "Library"
+      "library": "Library",
+      "settings": "Settings"
     },
     "states": {
       "loading": "Loading…",

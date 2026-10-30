@@ -3,6 +3,7 @@
 import { LogOutIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Card, ErrorState, LoadingState } from '@/features/app/states';
+import { SecurityPanels } from '@/features/auth/security-panels';
 import { formatDate } from '@/lib/format';
 import { isAccountStaff, useAuthMe, useSignOut } from './hooks';
 import { StaffGate } from './staff-gate';
@@ -71,6 +72,7 @@ export function AccountPanels({ staff }: { staff: StaffInfo }) {
           {sub.isDemo ? <p className="mt-3 text-xs text-(--faint)">{t('demoPlan')}</p> : null}
         </Card>
       ) : null}
+      <SecurityPanels />
       <div>
         <button type="button" className="fz-btn fz-btn-ghost" disabled={signOut.isPending} onClick={() => signOut.mutate()}>
           <LogOutIcon aria-hidden="true" className="size-4" />
