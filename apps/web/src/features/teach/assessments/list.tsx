@@ -227,6 +227,7 @@ function AverageCell({ r }: { r: AssessmentRow }) {
 /** What each row can do. Reference rows come from the design and offer nothing. */
 function Actions({ r }: { r: AssessmentRow }) {
   const t = useTranslations('Assess.list');
+  const tExam = useTranslations('ExamLive');
   const router = useRouter();
   const duplicate = useAssessmentAction('duplicate');
   const unschedule = useAssessmentAction('unschedule');
@@ -271,6 +272,7 @@ function Actions({ r }: { r: AssessmentRow }) {
   else
     buttons = (
       <>
+        <Link href={`/teach/assessments/${r.id}/live`} className="fz-btn fz-btn-primary min-h-11">{r.status === 'live' ? tExam('linkLive') : tExam('linkResults')}</Link>
         <Link href={`/teach/assessments/${r.id}`} className="fz-btn fz-btn-ghost min-h-11">{t('view')}</Link>
         {copy}
       </>

@@ -3,7 +3,7 @@ import { getRequestConfig } from 'next-intl/server';
 import { routing } from './routing';
 
 /** Message parts merged over the main catalog (keep in sync with test/i18n-keys.test.mjs). */
-export const MESSAGE_PARTS = ['site', 'learn', 'work', 'assess', 'consent', 'account', 'admin'] as const;
+export const MESSAGE_PARTS = ['site', 'learn', 'work', 'assess', 'consent', 'account', 'admin', 'exam'] as const;
 
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;

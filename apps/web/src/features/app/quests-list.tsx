@@ -2,6 +2,7 @@
 
 import { ArrowRightIcon, PlayIcon, ZapIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { TeacherAssessments } from '@/features/exam/learner-list';
 import { useProgress } from '@/features/learning/hooks';
 import { Link } from '@/i18n/navigation';
 import { scoreText, shortDate, StatusChip } from './bits';
@@ -55,6 +56,7 @@ function Body() {
         <h1 className="text-3xl font-bold sm:text-4xl">{t('title')}</h1>
         <p className="mt-1.5 text-(--muted)">{t('subtitle')}</p>
       </div>
+      <TeacherAssessments />
       {cards.length === 0 ? (
         <EmptyState title={t('empty')} />
       ) : (
