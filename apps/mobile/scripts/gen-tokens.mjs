@@ -43,7 +43,8 @@ export type Tokens = { [K in keyof typeof darkTokens]: string };
 `;
 
 if (process.argv.includes('--check')) {
-  if (!existsSync(target) || readFileSync(target, 'utf8') !== text) {
+  // Git may check the file out with CRLF line endings on Windows: compare without them.
+  if (!existsSync(target) || readFileSync(target, 'utf8').replaceAll('\r\n', '\n') !== text) {
     console.error('src/theme/tokens.ts is out of date: run pnpm --filter @nuvora/mobile tokens');
     process.exit(1);
   }
