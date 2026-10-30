@@ -3,7 +3,7 @@ import { type Staff, type StaffSessionState, StaffSessionRequestSchema } from '@
 import type { Request, Response } from 'express';
 import { IdentityService } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { readCookie, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
+import { readCookie, readCredential, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import { DEMO_STAFF, type DemoStaff, findStaff } from './demo-org.js';
 import { sessionMeta } from '../identity/request-meta.js';
@@ -27,7 +27,7 @@ export class StaffController {
 
   @Get('staff/session')
   async session(@Req() req: Request): Promise<StaffSessionState> {
-    const staff = await staffFromCookie(this.identity, this.prisma, readCookie(req.headers.cookie, STAFF_COOKIE));
+    const staff = await staffFromCookie(this.identity, this.prisma, readCredential(req.headers, STAFF_COOKIE));
     return { staff: staff ? toStaff(staff) : null };
   }
 
