@@ -5,7 +5,7 @@ import type { Namespace, Socket } from 'socket.io';
 import type { z } from 'zod';
 import { CallsRegistry } from './calls-registry.js';
 import { CommsService } from './comms.service.js';
-import { CommsDirectory, type CommsParticipant, contactsFrom } from './directory.js';
+import { CommsDirectory, type CommsParticipant } from './directory.js';
 import { personRoom, RealtimeHub } from './realtime-hub.js';
 
 /** Unanswered calls stop ringing after this long and are logged as missed. */
@@ -51,7 +51,7 @@ export class CommsGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       socket.disconnect(true);
       return;
     }
-    const contacts = [...contactsFrom(me, await this.directory.groupsOf(me)).keys()];
+    const contacts = [...(await this.directory.contactsOf(me)).keys()];
     socket.data.me = me;
     socket.data.contacts = contacts;
     await socket.join(personRoom(me.key));

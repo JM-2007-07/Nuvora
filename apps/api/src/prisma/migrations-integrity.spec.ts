@@ -20,6 +20,8 @@ const APPLIED_MIGRATIONS: Record<string, string> = {
   '20261029220000_center_group_wizard': 'cbdb425e5579efc9044ca07b47ec8625d5f8b133fdd7d9cda2e8d9de13736392',
   // Communications (conversations, messages, voice clips, reads), applied with the owner's approval on 2026-10-29.
   '20261030100000_communications': 'ccdeff91145691e87f969b41f94405b23082007b4f88a88772925fef37216b13',
+  // Chat members, custom group chats and cleared history, applied with the owner's approval on 2026-10-30.
+  '20261030110000_chat_members': '44c976e79793e1b789cef7eb21fd6fff1217d3fe3be16ab8e8e877ed32f622ad',
 };
 
 const migrationsDir = fileURLToPath(new URL('../../prisma/migrations/', import.meta.url));

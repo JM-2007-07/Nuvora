@@ -598,16 +598,19 @@ enum MessageKind {
 
 model Conversation {
   id            String           @id @default(cuid())
-  /// "dm:<keyA>|<keyB>" (keys sorted) or "group:demo:<code>" / "group:db:<studyGroupId>"
+  /// "dm:<keyA>|<keyB>" (keys sorted), "group:demo:<code>" / "group:db:<studyGroupId>", or "group:custom:<uuid>" (a teacher's own group chat)
   key           String           @unique
   kind          ConversationKind
   /// Group name when it was created (direct conversations show the other person instead)
   title         String?
   lastMessageAt DateTime?
+  /// Who created a custom group chat (the teacher who manages it)
+  createdByKey  String?
   createdAt     DateTime         @default(now())
 
   messages Message[]
   reads    ConversationRead[]
+  members  ConversationMember[]
 
   @@index([lastMessageAt])
   @@map("conversations")
@@ -648,8 +651,25 @@ model ConversationRead {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   participantKey String
   lastReadAt     DateTime
+  /// "Delete chat" for me: messages up to here are hidden for this participant
+  clearedAt      DateTime?
 
   @@id([conversationId, participantKey])
   @@index([participantKey])
   @@map("conversation_reads")
+}
+
+/// Changes to who is in a group chat, made by its teacher: added people, or roster members taken out
+/// (removed = true). A custom group chat's members are all rows here. Study group rosters are not changed.
+model ConversationMember {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  participantKey String
+  removed        Boolean      @default(false)
+  changedByKey   String
+  updatedAt      DateTime     @updatedAt
+
+  @@id([conversationId, participantKey])
+  @@index([participantKey])
+  @@map("conversation_members")
 }

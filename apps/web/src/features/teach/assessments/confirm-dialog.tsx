@@ -11,6 +11,7 @@ export function ConfirmDialog({
   pending,
   onConfirm,
   onClose,
+  danger = false,
   children,
 }: {
   title: string;
@@ -19,6 +20,8 @@ export function ConfirmDialog({
   pending: boolean;
   onConfirm: () => void;
   onClose: () => void;
+  /** Destructive action: the confirm button is magenta */
+  danger?: boolean;
   children?: React.ReactNode;
 }) {
   const t = useTranslations('Assess');
@@ -44,7 +47,7 @@ export function ConfirmDialog({
         {children}
         <div className="flex flex-wrap justify-end gap-3">
           <button type="button" className="fz-btn fz-btn-ghost" onClick={() => ref.current?.close()}>{t('cancel')}</button>
-          <button type="button" className="fz-btn fz-btn-primary" disabled={pending} onClick={onConfirm}>{pending ? t('list.working') : confirm}</button>
+          <button type="button" className={danger ? 'fz-btn bg-(--mag) text-(--on-blue) hover:brightness-110' : 'fz-btn fz-btn-primary'} disabled={pending} onClick={onConfirm}>{pending ? t('list.working') : confirm}</button>
         </div>
       </div>
     </dialog>

@@ -102,6 +102,15 @@ Four additive tables. Participants are keys, like the rest of the staff data: a 
 
 Who may talk to whom is **not stored**. It is derived from the live rosters: the demo groups in code and `study_groups` / `group_members`. A group conversation follows its group's roster. Live calls exist only in API memory; only the call log line is stored. Deleting a conversation cascades to its messages, clips and reads.
 
+### Chat members and custom groups (migration `20261030110000_chat_members`, owner-approved 2026-10-30, D-24)
+
+The migration only adds:
+- `conversations.createdByKey`: the teacher who created a custom group chat (key `group:custom:<uuid>`).
+- `conversation_reads.clearedAt`: "delete chat for me". Messages up to that moment are hidden for this person only.
+- `conversation_members`: membership changes made by a group's teacher. A row is either an added person or a roster member taken out (`removed = true`). A custom group chat's members are all rows here.
+
+Study group rosters are never changed by chat membership. Contacts (whom I may write to directly) still come from the class rosters.
+
 ## Later entities
 
 Sketched so the MVP schema doesn't block them. **Do not create these tables in the MVP.**

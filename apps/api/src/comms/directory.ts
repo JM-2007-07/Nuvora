@@ -90,8 +90,48 @@ export class CommsDirectory {
     return { key: staffKey(staff.slug), name: staff.name, role: 'TEACHER' };
   }
 
-  /** My groups with their teacher and learners. */
+  /** People I may contact directly (from my class rosters, not from chat membership changes). */
+  async contactsOf(me: CommsParticipant) {
+    return contactsFrom(me, await this.rosterGroupsOf(me));
+  }
+
+  /**
+   * My group chats: my class groups with the teacher's membership changes applied (people added,
+   * roster members taken out), plus custom group chats I was added to or created.
+   */
   async groupsOf(me: CommsParticipant): Promise<CommsGroup[]> {
+    const roster = await this.rosterGroupsOf(me);
+    const mine = await this.prisma.conversationMember.findMany({ where: { participantKey: me.key }, select: { removed: true, conversation: { select: { key: true } } } });
+    const removed = new Set(mine.filter((m) => m.removed).map((m) => m.conversation.key));
+    const created = me.role === 'TEACHER' ? await this.prisma.conversation.findMany({ where: { createdByKey: me.key, key: { startsWith: 'group:custom:' } }, select: { key: true } }) : [];
+    const extraKeys = [...new Set([...mine.filter((m) => !m.removed).map((m) => m.conversation.key), ...created.map((c) => c.key)])].filter((k) => !roster.some((g) => g.key === k));
+    const extra = (await Promise.all(extraKeys.map((k) => this.baseGroup(k)))).filter((g): g is CommsGroup => !!g);
+    // A teacher is never taken out of their own group.
+    const visible = roster.filter((g) => !removed.has(g.key) || g.teacher?.key === me.key);
+    return this.withChanges([...visible, ...extra]);
+  }
+
+  /** Applies a group chat's membership changes (conversation_members) to its base roster. */
+  private async withChanges(groups: CommsGroup[]): Promise<CommsGroup[]> {
+    if (!groups.length) return groups;
+    const rows = await this.prisma.conversation.findMany({ where: { key: { in: groups.map((g) => g.key) } }, select: { key: true, members: { select: { participantKey: true, removed: true } } } });
+    const changes = new Map(rows.map((r) => [r.key, r.members]));
+    const addedKeys = [...new Set(rows.flatMap((r) => r.members.filter((m) => !m.removed).map((m) => m.participantKey)))];
+    const people = new Map((await Promise.all(addedKeys.map((k) => this.describe(k)))).filter((p): p is CommsParticipant => !!p).map((p) => [p.key, p]));
+    return groups.map((g) => {
+      const list = changes.get(g.key) ?? [];
+      const out = new Set(list.filter((m) => m.removed).map((m) => m.participantKey));
+      const present = new Set(g.learners.map((l) => l.key));
+      const added = list
+        .filter((m) => !m.removed && !present.has(m.participantKey) && m.participantKey !== g.teacher?.key)
+        .map((m) => people.get(m.participantKey))
+        .filter((p): p is CommsParticipant => !!p && p.role === 'LEARNER');
+      return { ...g, learners: [...g.learners.filter((l) => !out.has(l.key)), ...added] };
+    });
+  }
+
+  /** My class groups as rosters say (demo groups in code, study groups in the database). */
+  async rosterGroupsOf(me: CommsParticipant): Promise<CommsGroup[]> {
     if (me.role === 'TEACHER') {
       const slug = me.key.slice('staff:'.length);
       const accountId = slug.startsWith('acct:') ? slug.slice(5) : null;
@@ -136,7 +176,21 @@ export class CommsDirectory {
     return group ? [...(group.teacher ? [group.teacher] : []), ...group.learners] : null;
   }
 
+  /** A group chat by key, with its membership changes applied. */
   async groupByKey(key: string): Promise<CommsGroup | null> {
+    const base = await this.baseGroup(key);
+    return base ? (await this.withChanges([base]))[0] : null;
+  }
+
+  /** A group as its roster says; a custom group chat has only its creator here (members come from changes). */
+  private async baseGroup(key: string): Promise<CommsGroup | null> {
+    if (key.startsWith('group:custom:')) {
+      const row = await this.prisma.conversation.findUnique({ where: { key }, select: { title: true, createdByKey: true } });
+      const teacher = row?.createdByKey ? await this.describe(row.createdByKey) : null;
+      if (!row || !teacher) return null;
+      const name = row.title ?? '';
+      return { key, code: initials(name), name, teacher, learners: [] };
+    }
     if (key.startsWith('group:demo:')) {
       const g = DEMO_GROUPS.find((d) => d.code === key.slice('group:demo:'.length) && d.roster);
       return g ? (await this.demoGroups([g]))[0] : null;
@@ -171,10 +225,23 @@ export class CommsDirectory {
     if (pair) {
       if (!pair.includes(me.key)) return false;
       const other = pair[0] === me.key ? pair[1] : pair[0];
-      return contactsFrom(me, await this.groupsOf(me)).has(other);
+      return (await this.contactsOf(me)).has(other);
     }
     return (await this.groupsOf(me)).some((g) => g.key === key);
   }
+}
+
+/** Badge text for a custom group chat ("JS Club" → "JC"). */
+export function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || '#'
+  );
 }
 
 const dbGroupSelect = {

@@ -79,6 +79,10 @@ export const ConversationSummarySchema = z.strictObject({
   memberCount: z.number().int(),
   /** Group members, teacher first, with online state (empty for direct conversations) */
   members: z.array(ContactSchema),
+  /** I may add and remove members (the group's teacher) */
+  canManage: z.boolean(),
+  /** A teacher's own group chat (not a class group): it can be deleted and left */
+  custom: z.boolean(),
   lastMessage: MessageSchema.nullable(),
   unread: z.number().int().nonnegative(),
   activeCall: ActiveCallSchema.nullable(),
@@ -101,6 +105,15 @@ export type CommsOverview = z.infer<typeof CommsOverviewSchema>;
 
 /** POST /comms/direct */
 export const OpenDirectRequestSchema = z.strictObject({ participantKey: ParticipantKeySchema });
+/** POST /comms/groups: a teacher's own group chat with people from their contacts */
+export const CreateGroupChatRequestSchema = z.strictObject({
+  title: z.string().trim().min(1).max(60),
+  memberKeys: z.array(ParticipantKeySchema).min(1).max(60),
+});
+/** POST /comms/conversations/:id/members */
+export const AddMemberRequestSchema = z.strictObject({ participantKey: ParticipantKeySchema });
+/** DELETE /comms/conversations/:id?forEveryone=true: delete for me (default) or for everyone */
+export const DeleteConversationQuerySchema = z.strictObject({ forEveryone: z.enum(['true', 'false']).optional() });
 /** POST /comms/conversations/:id/messages */
 export const SendTextRequestSchema = z.strictObject({ text: z.string().trim().min(1).max(TEXT_MAX) });
 /** GET /comms/conversations/:id/messages?before=<iso>&limit=n (oldest first in `items`) */
@@ -151,4 +164,6 @@ export const COMMS_EVENTS = {
   callSignal: 'call:signal',
   callMedia: 'call:media',
   callDismissed: 'call:dismissed',
+  /** My conversation list changed (added to or removed from a group, a chat deleted): refetch */
+  changed: 'conversations:changed',
 } as const;

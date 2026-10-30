@@ -38,6 +38,8 @@ interface CommsContextValue {
   setOpen: (id: string | null) => void;
   openId: string | null;
   refresh: () => void;
+  /** After a chat changed: refetch the list, then that chat's history only if it still exists for me */
+  resync: (conversationId?: string) => Promise<void>;
   emitTyping: (conversationId: string) => void;
   accept: (media: 'audio' | 'video') => void;
   decline: () => void;
@@ -82,6 +84,22 @@ export function CommsProvider({ identity, children }: { identity: string | null;
   const typingTimers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const lastTypingSent = useRef(0);
 
+  const resync = useCallback(
+    async (conversationId?: string) => {
+      await queryClient.invalidateQueries({ queryKey: overviewKey(locale) });
+      if (!conversationId) return;
+      const still = queryClient.getQueryData<CommsOverview>([...overviewKey(locale), identity])?.conversations.some((c) => c.id === conversationId);
+      // A chat I left or that was deleted: forget its history instead of asking for it (404).
+      if (still) await queryClient.invalidateQueries({ queryKey: messagesKey(conversationId) });
+      else queryClient.removeQueries({ queryKey: messagesKey(conversationId) });
+    },
+    [queryClient, locale, identity],
+  );
+  const resyncRef = useRef(resync);
+  useEffect(() => {
+    resyncRef.current = resync;
+  }, [resync]);
+
   const patchOverview = useCallback(
     (fn: (o: CommsOverview) => CommsOverview) => queryClient.setQueryData<CommsOverview>([...overviewKey(locale), identity], (o) => (o ? fn(o) : o)),
     [queryClient, locale, identity],
@@ -117,6 +135,8 @@ export function CommsProvider({ identity, children }: { identity: string | null;
       // The sender stops typing when the message lands.
       setTyping((t) => without(t, message.conversationId));
     });
+    // Added to or removed from a group, a chat deleted: refetch the list and open history.
+    socket.on(COMMS_EVENTS.changed, ({ conversationId }: { conversationId?: string }) => void resyncRef.current(conversationId));
     socket.on(COMMS_EVENTS.read, ({ conversationId }: { conversationId: string }) => {
       patchOverview((o) => ({ ...o, conversations: o.conversations.map((c) => (c.id === conversationId ? { ...c, unread: 0 } : c)) }));
     });
@@ -195,6 +215,7 @@ export function CommsProvider({ identity, children }: { identity: string | null;
       setOpen,
       openId,
       refresh: () => void queryClient.invalidateQueries({ queryKey: ['comms'] }),
+      resync,
       emitTyping: (conversationId) => {
         const now = Date.now();
         if (!live || now - lastTypingSent.current < 2500) return;
@@ -216,7 +237,7 @@ export function CommsProvider({ identity, children }: { identity: string | null;
         void engine.join({ callId: conversation.activeCall.callId, conversationId: conversation.id }, conversation.activeCall.media, conversation.title);
       },
     };
-  }, [live, overview.data, overview.isPending, overview.isError, identity, typing, incoming, setOpen, openId, queryClient]);
+  }, [live, overview.data, overview.isPending, overview.isError, identity, typing, incoming, setOpen, openId, queryClient, resync]);
 
   return (
     <CommsContext.Provider value={value}>

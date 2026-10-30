@@ -34,13 +34,18 @@ function fakePrisma() {
   const messages: Row[] = [];
   const reads: Row[] = [];
   let seq = 0;
-  let clock = Date.parse('2026-10-29T10:00:00Z');
-  const tick = () => new Date((clock += 1000));
+  let clock = 0;
+  // Real time, strictly increasing (the service compares with new Date() for cleared history).
+  const tick = () => new Date((clock = Math.max(clock + 1, Date.now())));
   const withVoice = (m: Row) => ({ ...m, voice: m.voice ? { durationMs: (m.voice as Row).durationMs, mimeType: (m.voice as Row).mimeType, data: (m.voice as Row).data } : null });
+  const members: Row[] = [];
+  const inRange = (d: Date, range: Row | undefined) => !range || ((!range.lt || d < (range.lt as Date)) && (!range.gt || d > (range.gt as Date)));
   const byConversation = (where: Row) => (m: Row) =>
-    m.conversationId === where.conversationId &&
-    (!where.createdAt || ((where.createdAt as Row).lt ? (m.createdAt as Date) < ((where.createdAt as Row).lt as Date) : (m.createdAt as Date) > ((where.createdAt as Row).gt as Date))) &&
-    (!where.senderKey || m.senderKey !== (where.senderKey as Row).not);
+    m.conversationId === where.conversationId && inRange(m.createdAt as Date, where.createdAt as Row | undefined) && (!where.senderKey || m.senderKey !== (where.senderKey as Row).not);
+  const matchConversation = (c: Row, where: Row) =>
+    (!where.key || (typeof where.key === 'string' ? c.key === where.key : (where.key as Row).in ? ((where.key as Row).in as string[]).includes(c.key as string) : (c.key as string).startsWith((where.key as Row).startsWith as string))) &&
+    (!where.createdByKey || c.createdByKey === where.createdByKey) &&
+    (!where.id || c.id === where.id);
   const prisma: Row = {
     user: {
       findUnique: async ({ where }: { where: { id: string } }) => users.find((u) => u.id === where.id) ?? null,
@@ -51,15 +56,40 @@ function fakePrisma() {
     conversation: {
       upsert: async ({ where, create }: { where: { key: string }; create: Row }) => {
         let row = conversations.find((c) => c.key === where.key);
-        if (!row) conversations.push((row = { id: `c${++seq}`, title: null, lastMessageAt: null, createdAt: tick(), ...create }));
+        if (!row) conversations.push((row = { id: `c${++seq}`, title: null, lastMessageAt: null, createdByKey: null, createdAt: tick(), ...create }));
         return row;
       },
-      findMany: async ({ where, select }: { where: { key: { in: string[] } }; select: { reads: { where: { participantKey: string } } } }) =>
+      create: async ({ data }: { data: Row }) => {
+        const { members: nested, ...rest } = data;
+        const row = { id: `c${++seq}`, lastMessageAt: null, createdAt: tick(), ...rest };
+        conversations.push(row);
+        for (const m of ((nested as Row | undefined)?.create as Row[] | undefined) ?? []) members.push({ conversationId: row.id, removed: false, ...m });
+        return { id: row.id };
+      },
+      delete: async ({ where }: { where: { id: string } }) => {
+        conversations.splice(conversations.findIndex((c) => c.id === where.id), 1);
+        for (let i = members.length - 1; i >= 0; i--) if (members[i].conversationId === where.id) members.splice(i, 1);
+      },
+      findMany: async ({ where, select }: { where: Row; select: { reads?: { where: { participantKey: string } }; members?: unknown } }) =>
         conversations
-          .filter((c) => where.key.in.includes(c.key as string))
-          .map((c) => ({ ...c, reads: reads.filter((r) => r.conversationId === c.id && r.participantKey === select.reads.where.participantKey) })),
-      findUnique: async ({ where }: { where: { id: string } }) => conversations.find((c) => c.id === where.id) ?? null,
+          .filter((c) => matchConversation(c, where))
+          .map((c) => ({
+            ...c,
+            reads: select.reads ? reads.filter((r) => r.conversationId === c.id && r.participantKey === select.reads!.where.participantKey) : undefined,
+            members: members.filter((m) => m.conversationId === c.id),
+          })),
+      findUnique: async ({ where }: { where: Row }) => conversations.find((c) => matchConversation(c, where)) ?? null,
       update: async ({ where, data }: { where: { id: string }; data: Row }) => Object.assign(conversations.find((c) => c.id === where.id)!, data),
+    },
+    conversationMember: {
+      findMany: async ({ where }: { where: { participantKey: string } }) =>
+        members.filter((m) => m.participantKey === where.participantKey).map((m) => ({ removed: m.removed, conversation: { key: conversations.find((c) => c.id === m.conversationId)?.key } })),
+      upsert: async ({ where, create, update }: { where: { conversationId_participantKey: Row }; create: Row; update: Row }) => {
+        const k = where.conversationId_participantKey;
+        const row = members.find((m) => m.conversationId === k.conversationId && m.participantKey === k.participantKey);
+        if (row) Object.assign(row, update);
+        else members.push({ removed: false, ...create });
+      },
     },
     message: {
       create: async ({ data }: { data: Row }) => {
@@ -70,12 +100,17 @@ function fakePrisma() {
       findFirst: async ({ where }: { where: Row }) => withVoiceOrNull(messages.filter(byConversation(where)).at(-1)),
       findMany: async ({ where, take }: { where: Row; take: number }) => messages.filter(byConversation(where)).reverse().slice(0, take).map(withVoice),
       count: async ({ where }: { where: Row }) => messages.filter(byConversation(where)).length,
+      deleteMany: async ({ where }: { where: { conversationId: string } }) => {
+        for (let i = messages.length - 1; i >= 0; i--) if (messages[i].conversationId === where.conversationId) messages.splice(i, 1);
+      },
       findUnique: async ({ where }: { where: { id: string } }) => {
         const m = messages.find((x) => x.id === where.id);
         return m ? { conversation: { key: conversations.find((c) => c.id === m.conversationId)?.key }, voice: m.voice } : null;
       },
     },
     conversationRead: {
+      findUnique: async ({ where }: { where: { conversationId_participantKey: Row } }) =>
+        reads.find((r) => r.conversationId === where.conversationId_participantKey.conversationId && r.participantKey === where.conversationId_participantKey.participantKey) ?? null,
       upsert: async ({ create, update }: { create: Row; update: Row }) => {
         const row = reads.find((r) => r.conversationId === create.conversationId && r.participantKey === create.participantKey);
         if (row) Object.assign(row, update);
@@ -240,6 +275,66 @@ describe('Comms (e2e, in-memory data, real sockets)', () => {
     const updated = next<{ call: { peers: unknown[] } | null }>(learner, COMMS_EVENTS.callUpdated);
     await ack(teacher, 'call:leave', { callId: started.call.callId });
     expect((await updated).call?.peers).toHaveLength(1);
+  });
+
+  it('"delete for me" hides the history only for me; "for everyone" erases a direct chat', async () => {
+    const http = app.getHttpServer();
+    await request(http).post(`/api/v1/comms/conversations/${directId}/messages`).set('Cookie', AMINA).send({ text: 'before delete' }).expect(201);
+    await request(http).delete(`/api/v1/comms/conversations/${directId}`).set('Cookie', AMINA).expect(204);
+    const mine = MessagesPageSchema.parse((await request(http).get(`/api/v1/comms/conversations/${directId}/messages`).set('Cookie', AMINA)).body);
+    expect(mine.items).toEqual([]);
+    const amina = CommsOverviewSchema.parse((await request(http).get('/api/v1/comms').set('Cookie', AMINA)).body);
+    expect(amina.conversations.find((c) => c.id === directId)?.lastMessage).toBeNull();
+    // The teacher still has the history.
+    const theirs = MessagesPageSchema.parse((await request(http).get(`/api/v1/comms/conversations/${directId}/messages`).set('Cookie', DILSHOD)).body);
+    expect(theirs.items.length).toBeGreaterThan(0);
+    // A new message shows again for Amina.
+    await request(http).post(`/api/v1/comms/conversations/${directId}/messages`).set('Cookie', DILSHOD).send({ text: 'after delete' }).expect(201);
+    const again = MessagesPageSchema.parse((await request(http).get(`/api/v1/comms/conversations/${directId}/messages`).set('Cookie', AMINA)).body);
+    expect(again.items.map((m) => m.text)).toEqual(['after delete']);
+    // For everyone: gone for both.
+    await request(http).delete(`/api/v1/comms/conversations/${directId}?forEveryone=true`).set('Cookie', DILSHOD).expect(204);
+    const gone = MessagesPageSchema.parse((await request(http).get(`/api/v1/comms/conversations/${directId}/messages`).set('Cookie', DILSHOD)).body);
+    expect(gone.items).toEqual([]);
+  });
+
+  it('a teacher manages group members: remove takes access away, add gives it back', async () => {
+    const http = app.getHttpServer();
+    const overview = CommsOverviewSchema.parse((await request(http).get('/api/v1/comms').set('Cookie', DILSHOD)).body);
+    const group = overview.conversations.find((c) => c.id === groupId)!;
+    expect(group).toMatchObject({ canManage: true, custom: false });
+    // A learner cannot manage.
+    await request(http).delete(`/api/v1/comms/conversations/${groupId}/members/user:u-firuz`).set('Cookie', AMINA).expect(403);
+    await request(http).delete(`/api/v1/comms/conversations/${groupId}/members/user:u-amina`).set('Cookie', DILSHOD).expect(204);
+    await request(http).get(`/api/v1/comms/conversations/${groupId}/messages`).set('Cookie', AMINA).expect(404);
+    const after = CommsOverviewSchema.parse((await request(http).get('/api/v1/comms').set('Cookie', DILSHOD)).body);
+    expect(after.conversations.find((c) => c.id === groupId)?.members.map((m) => m.name)).toEqual(['Dilshod Karimov', 'Firuz Nazarov']);
+    // Still her teacher: the direct chat stays possible.
+    await request(http).post('/api/v1/comms/direct').set('Cookie', AMINA).send({ participantKey: 'staff:dilshod-karimov' }).expect(200);
+    await request(http).post(`/api/v1/comms/conversations/${groupId}/members`).set('Cookie', DILSHOD).send({ participantKey: 'user:u-amina' }).expect(204);
+    await request(http).get(`/api/v1/comms/conversations/${groupId}/messages`).set('Cookie', AMINA).expect(200);
+    // Only my learners can be added; the teacher cannot be removed.
+    await request(http).post(`/api/v1/comms/conversations/${groupId}/members`).set('Cookie', DILSHOD).send({ participantKey: 'user:u-outsider' }).expect(400);
+    await request(http).delete(`/api/v1/comms/conversations/${groupId}/members/staff:dilshod-karimov`).set('Cookie', DILSHOD).expect(403);
+  });
+
+  it('a teacher creates a custom group chat; a learner can leave it; the teacher can delete it for everyone', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/api/v1/comms/groups').set('Cookie', AMINA).send({ title: 'Nope', memberKeys: ['staff:dilshod-karimov'] }).expect(403);
+    await request(http).post('/api/v1/comms/groups').set('Cookie', DILSHOD).send({ title: 'X', memberKeys: ['user:u-outsider'] }).expect(400);
+    const created = await request(http).post('/api/v1/comms/groups').set('Cookie', DILSHOD).send({ title: 'JS Olympiad', memberKeys: ['user:u-amina', 'user:u-firuz'] }).expect(200);
+    const id = created.body.id as string;
+    const amina = CommsOverviewSchema.parse((await request(http).get('/api/v1/comms').set('Cookie', AMINA)).body);
+    expect(amina.conversations.find((c) => c.id === id)).toMatchObject({ title: 'JS Olympiad', groupCode: 'JO', custom: true, canManage: false, memberCount: 3 });
+    await request(http).post(`/api/v1/comms/conversations/${id}/messages`).set('Cookie', AMINA).send({ text: 'hi all' }).expect(201);
+    // Amina leaves; she no longer sees it.
+    await request(http).delete(`/api/v1/comms/conversations/${id}/members/user:u-amina`).set('Cookie', AMINA).expect(204);
+    await request(http).get(`/api/v1/comms/conversations/${id}/messages`).set('Cookie', AMINA).expect(404);
+    // Leaving a class group is not possible.
+    await request(http).delete(`/api/v1/comms/conversations/${groupId}/members/user:u-amina`).set('Cookie', AMINA).expect(403);
+    // Only the creator deletes it for everyone.
+    await request(http).delete(`/api/v1/comms/conversations/${id}?forEveryone=true`).set('Cookie', DILSHOD).expect(204);
+    await request(http).get(`/api/v1/comms/conversations/${id}/messages`).set('Cookie', DILSHOD).expect(404);
   });
 
   it('a socket without a session is disconnected', async () => {

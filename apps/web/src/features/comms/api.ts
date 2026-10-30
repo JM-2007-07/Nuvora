@@ -20,6 +20,11 @@ export const commsApi = {
     clientFetch(`/comms/conversations/${id}/messages?limit=40${before ? `&before=${encodeURIComponent(before)}` : ''}`, MessagesPageSchema, { locale }),
   sendText: (locale: Locale, id: string, text: string) => clientFetch(`/comms/conversations/${id}/messages`, MessageSchema, { locale, method: 'POST', body: { text } }),
   markRead: (locale: Locale, id: string) => clientFetch(`/comms/conversations/${id}/read`, z.unknown(), { locale, method: 'POST' }),
+  remove: (locale: Locale, id: string, forEveryone: boolean) => clientFetch(`/comms/conversations/${id}${forEveryone ? '?forEveryone=true' : ''}`, z.unknown(), { locale, method: 'DELETE' }),
+  createGroup: (locale: Locale, title: string, memberKeys: string[]) => clientFetch('/comms/groups', z.object({ id: z.string() }), { locale, method: 'POST', body: { title, memberKeys } }),
+  addMember: (locale: Locale, id: string, participantKey: string) => clientFetch(`/comms/conversations/${id}/members`, z.unknown(), { locale, method: 'POST', body: { participantKey } }),
+  removeMember: (locale: Locale, id: string, participantKey: string) =>
+    clientFetch(`/comms/conversations/${id}/members/${encodeURIComponent(participantKey)}`, z.unknown(), { locale, method: 'DELETE' }),
   async sendVoice(id: string, blob: Blob, durationMs: number) {
     const form = new FormData();
     form.append('durationMs', String(Math.round(durationMs)));

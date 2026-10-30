@@ -109,3 +109,46 @@ The owner's idea: a teacher who cannot come to class should reach a learner, or 
 The one miss was the script's lookup of the recording clock (the voice message itself was sent); fixed with `role="timer"`.
 
 The check wrote a few real messages and call log lines into the demo chats between Dilshod, Amina and B-12.
+
+## Follow-up 2026-10-30: chat management, "Chats"
+
+**Owner request:**
+- An empty chat must not appear until something is sent.
+- Chats can be deleted.
+- Group members can be added and removed, as in a professional messenger.
+- The section is called "Chats".
+
+**Changes:**
+- **Section name:** "Chats" / «Чаты» / «Чатҳо» (nav and page title).
+- **Drafts:** a direct chat opened from Contacts is listed only once it has a message or a call; until then only the open chat shows it.
+- **"⋯" menu:**
+  - Direct chat: delete for me, optionally "also for {name}" (erases for both).
+  - Group: clear history (for me).
+  - Own custom group: delete it for everyone.
+  - Someone else's custom group: leave it.
+  - Every action is confirmed in the existing dialog, which got a `danger` variant.
+- **Members panel (teacher):**
+  - "Add member" with a searchable picker of their learners.
+  - Remove a learner, with confirmation. The teacher cannot be removed.
+  - A removed learner loses access to that group chat but keeps their teacher as a contact.
+- **New group (teacher):** a name plus learners picked from contacts. Members see it live (`conversations:changed`).
+- **API:**
+  - `DELETE /comms/conversations/:id`, `POST /comms/groups`, `POST|DELETE …/members`.
+  - The directory now separates class rosters (contacts) from group chats (rosters plus the teacher's changes plus custom groups).
+- **Migration** `20261030110000_chat_members` (additive), applied and pinned.
+- **Client resync:** after a change, the client refetches the list first and the chat's history only if the chat still exists (no 404 for a chat just left or deleted).
+
+**Verification:**
+- api: `lint` and `typecheck` pass; `test` unit 184, e2e 109.
+- The 3 new comms e2e tests cover: delete for me versus for everyone; members removed and added, with permissions; a custom group created, left and deleted.
+- web: `lint`, `typecheck`, `test`, `build` pass.
+- **Live**, `comms-manage-live.mjs`: Edge, teacher and learner, the real API. 26 of 26 passed, twice:
+  - section name in ru/en/tg;
+  - draft not listed; rows fit;
+  - new group (2 picked) appears live for the learner;
+  - add and remove members;
+  - clear history only for the learner; leave group with a live update on the teacher's side;
+  - delete dialog with "also for Amina" (cancelled, so the demo history stays);
+  - group deleted for everyone;
+  - light theme in en; clean consoles.
+- The call and voice check (`comms-live.mjs`) was re-run: 29 of 29 in three of four runs. One run had a single failed check that did not reproduce; it looked like script timing.

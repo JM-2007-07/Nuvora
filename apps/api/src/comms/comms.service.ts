@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   API_PREFIX,
   type CallLog,
@@ -14,7 +14,8 @@ import {
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CallsRegistry } from './calls-registry.js';
-import { CommsDirectory, type CommsParticipant, contactsFrom, directKey, directMembers } from './directory.js';
+import { randomUUID } from 'node:crypto';
+import { CommsDirectory, type CommsParticipant, directKey, directMembers } from './directory.js';
 import { RealtimeHub } from './realtime-hub.js';
 
 const ALLOWED_AUDIO = /^audio\/(webm|ogg|mp4|mpeg|aac|x-m4a|wav)(;.*)?$/;
@@ -85,22 +86,24 @@ export class CommsService {
 
   async overview(me: CommsParticipant): Promise<CommsOverview> {
     const groups = await this.directory.groupsOf(me);
-    const contacts = [...contactsFrom(me, groups).values()].map((c) => ({ ...c, online: this.hub.isOnline(c.key) }));
-    // Group conversations exist for every group (created on first look, idempotent).
+    const contacts = [...(await this.directory.contactsOf(me)).values()].map((c) => ({ ...c, online: this.hub.isOnline(c.key) }));
+    // Class group conversations exist for every group (created on first look, idempotent); custom ones already exist.
     await Promise.all(
-      groups.map((g) =>
+      groups.filter((g) => !g.key.startsWith('group:custom:')).map((g) =>
         this.prisma.conversation.upsert({ where: { key: g.key }, create: { key: g.key, kind: 'GROUP', title: g.name }, update: {}, select: { id: true } }),
       ),
     );
     const keys = [...groups.map((g) => g.key), ...contacts.map((c) => directKey(me.key, c.key))];
     const rows = await this.prisma.conversation.findMany({
       where: { key: { in: keys } },
-      select: { id: true, key: true, kind: true, title: true, lastMessageAt: true, createdAt: true, reads: { where: { participantKey: me.key }, select: { lastReadAt: true } } },
+      select: { id: true, key: true, kind: true, title: true, lastMessageAt: true, createdAt: true, reads: { where: { participantKey: me.key }, select: { lastReadAt: true, clearedAt: true } } },
     });
     const summaries = await Promise.all(
       rows.map(async (row): Promise<ConversationSummary & { sort: number }> => {
-        const last = await this.prisma.message.findFirst({ where: { conversationId: row.id }, orderBy: { createdAt: 'desc' }, select: messageSelect });
-        const readAt = row.reads[0]?.lastReadAt ?? new Date(0);
+        // "Deleted for me": nothing before clearedAt counts or shows.
+        const clearedAt = row.reads[0]?.clearedAt ?? new Date(0);
+        const last = await this.prisma.message.findFirst({ where: { conversationId: row.id, createdAt: { gt: clearedAt } }, orderBy: { createdAt: 'desc' }, select: messageSelect });
+        const readAt = new Date(Math.max((row.reads[0]?.lastReadAt ?? new Date(0)).getTime(), clearedAt.getTime()));
         const unread = await this.prisma.message.count({ where: { conversationId: row.id, createdAt: { gt: readAt }, senderKey: { not: me.key } } });
         const group = groups.find((g) => g.key === row.key);
         const pair = directMembers(row.key);
@@ -108,7 +111,7 @@ export class CommsService {
         return {
           id: row.id,
           kind: row.kind,
-          title: group ? `${group.code} · ${group.name}` : (peer?.name ?? row.title ?? ''),
+          title: group ? (custom(row.key) ? group.name : `${group.code} · ${group.name}`) : (peer?.name ?? row.title ?? ''),
           peer,
           groupCode: group?.code ?? null,
           memberCount: group ? group.learners.length + (group.teacher ? 1 : 0) : 2,
@@ -116,6 +119,8 @@ export class CommsService {
           members: group
             ? [...(group.teacher ? [group.teacher] : []), ...group.learners].map((p) => ({ ...p, groups: [group.code], online: p.key === me.key || this.hub.isOnline(p.key) }))
             : [],
+          canManage: !!group && group.teacher?.key === me.key,
+          custom: custom(row.key),
           lastMessage: last ? toMessage(last) : null,
           unread,
           activeCall: this.calls.activeIn(row.id),
@@ -123,7 +128,7 @@ export class CommsService {
         };
       }),
     );
-    // A direct conversation exists once someone opened it (POST /comms/direct), so it is listed from then on.
+    // Direct conversations are returned even when empty (just opened); the client lists them once they have a message.
     const conversations = summaries
       .sort((a, b) => b.sort - a.sort)
       .map(({ sort: _sort, ...s }) => s);
@@ -148,8 +153,9 @@ export class CommsService {
 
   async messages(me: CommsParticipant, id: string, before: string | undefined, limit: number): Promise<MessagesPage> {
     await this.conversationFor(me, id);
+    const clearedAt = (await this.prisma.conversationRead.findUnique({ where: { conversationId_participantKey: { conversationId: id, participantKey: me.key } }, select: { clearedAt: true } }))?.clearedAt;
     const rows = await this.prisma.message.findMany({
-      where: { conversationId: id, ...(before ? { createdAt: { lt: new Date(before) } } : {}) },
+      where: { conversationId: id, createdAt: { ...(clearedAt ? { gt: clearedAt } : {}), ...(before ? { lt: new Date(before) } : {}) } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       select: messageSelect,
@@ -187,6 +193,91 @@ export class CommsService {
       update: { lastReadAt: now },
     });
     this.hub.emitTo([me.key], COMMS_EVENTS.read, { conversationId: id });
+  }
+
+  // ---------- managing chats ----------
+
+  /**
+   * Deletes a chat. For me (default): its history disappears for me only and a direct chat leaves
+   * my list until someone writes again. For everyone: a direct chat's messages are erased for both;
+   * a custom group chat I created is removed. Class group chats can only be cleared for me.
+   */
+  async deleteConversation(me: CommsParticipant, id: string, forEveryone: boolean): Promise<void> {
+    const conversation = await this.conversationFor(me, id);
+    const members = await this.memberKeys(conversation.key);
+    if (forEveryone && conversation.kind === 'DIRECT') {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.message.deleteMany({ where: { conversationId: id } });
+        await tx.conversation.update({ where: { id }, data: { lastMessageAt: null } });
+      });
+      this.hub.emitTo(members, COMMS_EVENTS.changed, { conversationId: id });
+      return;
+    }
+    if (forEveryone && custom(conversation.key)) {
+      const group = await this.directory.groupByKey(conversation.key);
+      if (group?.teacher?.key !== me.key) throw forbidden();
+      await this.prisma.conversation.delete({ where: { id } });
+      this.hub.emitTo(members, COMMS_EVENTS.changed, { conversationId: id });
+      return;
+    }
+    const now = new Date();
+    await this.prisma.conversationRead.upsert({
+      where: { conversationId_participantKey: { conversationId: id, participantKey: me.key } },
+      create: { conversationId: id, participantKey: me.key, lastReadAt: now, clearedAt: now },
+      update: { lastReadAt: now, clearedAt: now },
+    });
+    this.hub.emitTo([me.key], COMMS_EVENTS.changed, { conversationId: id });
+  }
+
+  /** A teacher's own group chat with people from their contacts. */
+  async createGroup(me: CommsParticipant, title: string, memberKeys: string[]): Promise<{ id: string }> {
+    if (me.role !== 'TEACHER') throw forbidden();
+    const contacts = await this.directory.contactsOf(me);
+    const keys = [...new Set(memberKeys)];
+    if (keys.some((k) => !contacts.has(k))) throw new BadRequestException({ code: 'NOT_A_CONTACT', message: 'Members must be learners of your groups' });
+    const row = await this.prisma.conversation.create({
+      data: { key: `group:custom:${randomUUID()}`, kind: 'GROUP', title, createdByKey: me.key, members: { create: keys.map((participantKey) => ({ participantKey, changedByKey: me.key })) } },
+      select: { id: true },
+    });
+    this.hub.emitTo([me.key, ...keys], COMMS_EVENTS.changed, { conversationId: row.id });
+    return row;
+  }
+
+  /** The group's teacher adds one of their learners to the group chat. */
+  async addMember(me: CommsParticipant, id: string, participantKey: string): Promise<void> {
+    const conversation = await this.managed(me, id);
+    if (!(await this.directory.contactsOf(me)).has(participantKey)) throw new BadRequestException({ code: 'NOT_A_CONTACT', message: 'Add learners of your groups' });
+    await this.prisma.conversationMember.upsert({
+      where: { conversationId_participantKey: { conversationId: id, participantKey } },
+      create: { conversationId: id, participantKey, changedByKey: me.key },
+      update: { removed: false, changedByKey: me.key },
+    });
+    this.hub.emitTo(await this.memberKeys(conversation.key), COMMS_EVENTS.changed, { conversationId: id });
+  }
+
+  /** The teacher takes someone out of the group chat, or a learner leaves a custom group chat. */
+  async removeMember(me: CommsParticipant, id: string, participantKey: string): Promise<void> {
+    const conversation = await this.conversationFor(me, id);
+    if (conversation.kind !== 'GROUP') throw notFound();
+    const group = await this.directory.groupByKey(conversation.key);
+    const leaving = participantKey === me.key;
+    if (group?.teacher?.key === participantKey) throw forbidden(); // the teacher stays
+    if (!leaving && group?.teacher?.key !== me.key) throw forbidden();
+    if (leaving && !custom(conversation.key)) throw forbidden(); // class chats follow the class roster
+    const before = await this.memberKeys(conversation.key);
+    await this.prisma.conversationMember.upsert({
+      where: { conversationId_participantKey: { conversationId: id, participantKey } },
+      create: { conversationId: id, participantKey, removed: true, changedByKey: me.key },
+      update: { removed: true, changedByKey: me.key },
+    });
+    this.hub.emitTo(before, COMMS_EVENTS.changed, { conversationId: id });
+  }
+
+  private async managed(me: CommsParticipant, id: string) {
+    const conversation = await this.conversationFor(me, id);
+    const group = conversation.kind === 'GROUP' ? await this.directory.groupByKey(conversation.key) : null;
+    if (!group || group.teacher?.key !== me.key) throw forbidden();
+    return conversation;
   }
 
   /** Call log line in the conversation (written by the calls service when a call ends). */
@@ -230,5 +321,7 @@ export class CommsService {
   }
 }
 
+const forbidden = () => new ForbiddenException({ code: 'FORBIDDEN', message: 'Only the group teacher can do this' });
+const custom = (key: string) => key.startsWith('group:custom:');
 const notFound = () => new NotFoundException({ code: 'CONVERSATION_NOT_FOUND', message: 'Conversation not found' });
 

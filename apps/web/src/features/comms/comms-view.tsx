@@ -3,13 +3,14 @@
 import type { Contact, ConversationSummary, Locale, Message, MessagesPage } from '@nuvora/shared';
 import { TEXT_MAX } from '@nuvora/shared';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftIcon, MessageSquareIcon, MicIcon, PhoneIcon, PhoneIncomingIcon, PhoneMissedIcon, SearchIcon, SendHorizontalIcon, UsersIcon, VideoIcon, XIcon } from 'lucide-react';
+import { ArrowLeftIcon, MessageSquareIcon, MicIcon, PhoneIcon, PhoneIncomingIcon, PhoneMissedIcon, SearchIcon, SendHorizontalIcon, UserPlusIcon, UsersIcon, UsersRoundIcon, VideoIcon, XIcon } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { commsApi } from './api';
 import { Avatar, clock } from './avatar';
+import { AddMembers, ChatMenu, NewGroupDialog, RemoveMemberButton } from './chat-actions';
 import { messagesKey, overviewKey, useCallSnapshot, useComms } from './comms-provider';
 import { useVoiceRecorder, VoiceBubble } from './voice';
 
@@ -73,7 +74,11 @@ function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect
   const [tab, setTab] = useState<'chats' | 'contacts'>('chats');
   const [query, setQuery] = useState('');
   const q = query.trim().toLocaleLowerCase(locale);
-  const conversations = (comms.overview?.conversations ?? []).filter((c) => !q || c.title.toLocaleLowerCase(locale).includes(q));
+  // A direct chat shows up once something was sent (or it is the one open right now), like a messenger draft.
+  const conversations = (comms.overview?.conversations ?? []).filter(
+    (c) => (c.kind === 'GROUP' || c.lastMessage || c.activeCall || c.id === selectedId) && (!q || c.title.toLocaleLowerCase(locale).includes(q)),
+  );
+  const [creating, setCreating] = useState(false);
   const contacts = (comms.overview?.contacts ?? []).filter((c) => !q || c.name.toLocaleLowerCase(locale).includes(q));
   const teacher = comms.overview?.me.role === 'TEACHER';
 
@@ -87,11 +92,27 @@ function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-col gap-3 p-4 pb-3">
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-(--line2) bg-(--bg) px-3 focus-within:border-(--sel)">
-          <SearchIcon aria-hidden="true" className="size-4 text-(--faint)" />
-          <span className="sr-only">{t('search')}</span>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('search')} className="min-w-0 flex-1 bg-transparent text-sm text-(--text) outline-none placeholder:text-(--faint)" />
-        </label>
+        <div className="flex items-center gap-2">
+          <label className="flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--line2) bg-(--bg) px-3 focus-within:border-(--sel)">
+            <SearchIcon aria-hidden="true" className="size-4 text-(--faint)" />
+            <span className="sr-only">{t('search')}</span>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('search')} className="min-w-0 flex-1 bg-transparent text-sm text-(--text) outline-none placeholder:text-(--faint)" />
+          </label>
+          {teacher ? (
+            <button type="button" onClick={() => setCreating(true)} aria-label={t('newGroup')} title={t('newGroup')} className="grid size-11 shrink-0 place-items-center rounded-xl border border-(--line2) text-(--text) transition-colors hover:border-(--blue) hover:bg-(--panel2) motion-reduce:transition-none">
+              <UsersRoundIcon aria-hidden="true" className="size-[18px]" />
+            </button>
+          ) : null}
+        </div>
+        {creating ? (
+          <NewGroupDialog
+            onClose={() => setCreating(false)}
+            onCreated={(id) => {
+              setTab('chats');
+              onSelect(id);
+            }}
+          />
+        ) : null}
         <div role="tablist" aria-label={t('title')} className="grid grid-cols-2 gap-1 rounded-xl bg-(--panel2) p-1">
           {(['chats', 'contacts'] as const).map((k) => (
             <button
@@ -274,6 +295,7 @@ function ConversationPane({ conversation, onBack, onSelect }: { conversation: Co
         <button type="button" disabled={busy || !comms.engine} onClick={() => comms.startCall(conversation, 'video')} aria-label={t('callVideo')} title={t('callVideo')} className={callButton}>
           <VideoIcon aria-hidden="true" className="size-[18px]" />
         </button>
+        <ChatMenu conversation={conversation} onGone={onBack} />
       </header>
 
       {conversation.activeCall && !inThisCall ? (
@@ -309,6 +331,7 @@ function MembersPanel({ conversation, onClose, onSelect }: { conversation: Conve
   const queryClient = useQueryClient();
   const meKey = comms.overview?.me.key;
   const reachable = new Set(comms.overview?.contacts.map((c) => c.key));
+  const [adding, setAdding] = useState(false);
   const write = async (key: string) => {
     const { id } = await commsApi.openDirect(locale, key);
     await queryClient.invalidateQueries({ queryKey: overviewKey(locale) });
@@ -324,6 +347,20 @@ function MembersPanel({ conversation, onClose, onSelect }: { conversation: Conve
           <XIcon aria-hidden="true" className="size-4" />
         </button>
       </div>
+      {conversation.canManage ? (
+        <div className="border-b border-(--line) p-2">
+          <button
+            type="button"
+            onClick={() => setAdding((v) => !v)}
+            aria-expanded={adding}
+            className={`flex min-h-10 w-full items-center gap-2.5 rounded-xl px-3 text-sm font-semibold transition-colors motion-reduce:transition-none ${adding ? 'bg-(--mint-tint) text-(--mint-ink)' : 'text-(--text) hover:bg-(--panel2)'}`}
+          >
+            <UserPlusIcon aria-hidden="true" className="size-4" />
+            {t('addMember')}
+          </button>
+        </div>
+      ) : null}
+      {adding && conversation.canManage ? <AddMembers conversation={conversation} onDone={() => setAdding(false)} /> : null}
       <ul className="m-0 grid min-h-0 list-none grid-cols-[minmax(0,1fr)] content-start gap-0.5 overflow-y-auto p-2">
         {conversation.members.map((m) => {
           const me = m.key === meKey;
@@ -344,6 +381,7 @@ function MembersPanel({ conversation, onClose, onSelect }: { conversation: Conve
                   <MessageSquareIcon aria-hidden="true" className="size-4" />
                 </button>
               ) : null}
+              {conversation.canManage && !me && m.role === 'LEARNER' ? <RemoveMemberButton conversation={conversation} member={m} /> : null}
             </li>
           );
         })}

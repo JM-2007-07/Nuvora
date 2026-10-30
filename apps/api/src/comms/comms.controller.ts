@@ -1,5 +1,6 @@
 import {
   Body,
+  Delete,
   type CanActivate,
   Controller,
   createParamDecorator,
@@ -20,7 +21,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  AddMemberRequestSchema,
   type CommsOverview,
+  CreateGroupChatRequestSchema,
+  DeleteConversationQuerySchema,
   type Message,
   type MessagesPage,
   MessagesQuerySchema,
@@ -78,6 +82,30 @@ export class CommsController {
   @HttpCode(200)
   openDirect(@Me() me: CommsParticipant, @Body(new ZodValidationPipe(OpenDirectRequestSchema)) body: z.infer<typeof OpenDirectRequestSchema>): Promise<{ id: string }> {
     return this.comms.openDirect(me, body.participantKey);
+  }
+
+  @Post('groups')
+  @HttpCode(200)
+  createGroup(@Me() me: CommsParticipant, @Body(new ZodValidationPipe(CreateGroupChatRequestSchema)) body: z.infer<typeof CreateGroupChatRequestSchema>): Promise<{ id: string }> {
+    return this.comms.createGroup(me, body.title, body.memberKeys);
+  }
+
+  @Delete('conversations/:id')
+  @HttpCode(204)
+  remove(@Me() me: CommsParticipant, @Param('id') id: string, @Query(new ZodValidationPipe(DeleteConversationQuerySchema)) query: z.infer<typeof DeleteConversationQuerySchema>): Promise<void> {
+    return this.comms.deleteConversation(me, id, query.forEveryone === 'true');
+  }
+
+  @Post('conversations/:id/members')
+  @HttpCode(204)
+  addMember(@Me() me: CommsParticipant, @Param('id') id: string, @Body(new ZodValidationPipe(AddMemberRequestSchema)) body: z.infer<typeof AddMemberRequestSchema>): Promise<void> {
+    return this.comms.addMember(me, id, body.participantKey);
+  }
+
+  @Delete('conversations/:id/members/:key')
+  @HttpCode(204)
+  removeMember(@Me() me: CommsParticipant, @Param('id') id: string, @Param('key') key: string): Promise<void> {
+    return this.comms.removeMember(me, id, key);
   }
 
   @Get('conversations/:id/messages')

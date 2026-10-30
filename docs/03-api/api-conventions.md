@@ -144,11 +144,16 @@ Chat, voice messages and calls (D-24). The contract is [`packages/shared/src/com
 | `POST /comms/conversations/:id/voice` | multipart: `audio` (webm/ogg/mp4/aac, ≤ 2 MB) and `durationMs` (0.3 s – 3 min) → `201 Message` | `400 VOICE_*`, `404` |
 | `GET /comms/messages/:id/voice` | The audio bytes (members only) | `404` |
 | `POST /comms/conversations/:id/read` | `204`; my unread count drops to 0 on all my devices | `404` |
+| `DELETE /comms/conversations/:id?forEveryone=` | `204`. Default: history hidden for me only (a direct chat leaves my list until someone writes). `forEveryone=true`: a direct chat's messages are erased for both; my own custom group is deleted | `403` (not the creator), `404` |
+| `POST /comms/groups` | Teacher only. Body `{ title, memberKeys }` (learners from my contacts) → `{ id }` of a custom group chat | `400 NOT_A_CONTACT`, `403` |
+| `POST /comms/conversations/:id/members` | The group's teacher adds one of their learners → `204` | `400 NOT_A_CONTACT`, `403`, `404` |
+| `DELETE /comms/conversations/:id/members/:key` | The teacher removes a learner, or a learner leaves a custom group → `204`. The teacher cannot be removed; class groups cannot be left | `403`, `404` |
 
 **Live connection:** Socket.IO namespace `/comms`, path `/realtime`, on the API port. The browser connects to the API directly, because Next rewrites do not carry WebSockets. CORS allows the web origin and local ports.
 
 Server → client events:
 - `message:new`
+- `conversations:changed` (I was added or removed, or a chat was deleted: refetch)
 - `conversation:read`
 - `typing`
 - `presence`
