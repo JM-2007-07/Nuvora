@@ -23,6 +23,7 @@ This folder holds the product, architecture, design, and process documentation o
 | Agent and contributor workflow: task sizing, planning, delegation, review, safety | [engineering/HARNESS.md](engineering/HARNESS.md) |
 | Which checks a change needs, browser checks, how to report results | [engineering/VERIFICATION.md](engineering/VERIFICATION.md) |
 | Homepage and brand-surface visual contract, imagery, motion/3D stack plan | [engineering/VISUAL_EXPERIENCE.md](engineering/VISUAL_EXPERIENCE.md) (G4-B working brief: [HOMEPAGE_BRIEF.md](engineering/HOMEPAGE_BRIEF.md)) |
+| Technical readiness audit (Phase 0, 2026-10-30): functionality matrix, security findings, mobile readiness, roadmap | [engineering/FAROZ-TECHNICAL-READINESS-REPORT.md](engineering/FAROZ-TECHNICAL-READINESS-REPORT.md) |
 | Dated records of significant changes | [stories/](stories/README.md) |
 | Development workflow: git, commands, conventions, approval gates | [../AGENTS.md](../AGENTS.md) |
 | Claude Code–specific instructions | [../CLAUDE.md](../CLAUDE.md) |
