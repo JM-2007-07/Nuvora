@@ -1,5 +1,5 @@
 import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { GroupAnalytics, Locale, StudentAnswers, TeacherGroup, TeacherOverview } from '@nuvora/shared';
+import type { GroupAnalytics, Locale, StudentAnswers, StudyGroupView, TeacherGroup, TeacherOverview } from '@nuvora/shared';
 import { localizeFields } from '../common/i18n/locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { percent } from '../quizzes/scoring.js';
@@ -27,26 +27,19 @@ export class TeachingService {
       const own = await this.groups.teacherGroups(staff, locale);
       return {
         staff: toStaff(staff),
-        groups: own.map((g) => ({
-          code: g.joinCode,
-          name: g.name,
-          status: 'active' as const,
-          schedule: g.schedule ?? '',
-          studentCount: g.memberCount,
-          submitted: g.submitted,
-          averagePercent: g.diagnosticPercent,
-          weakestTopic: null,
-          recorded: true,
-          synthetic: false,
-        })),
+        groups: own.map(dbGroupSummary),
       };
     }
     const groups = DEMO_GROUPS.filter((g) => staff.groups.includes(g.code));
     const summaries = await Promise.all(groups.map(async (g) => (g.roster && g.diagnosticQuiz ? (await this.analyse(g, locale)).group : referenceGroup(g))));
-    return { staff: toStaff(staff), groups: summaries };
+    // Groups a center assigned to this demo teacher with the wizard (database groups).
+    const assigned = (await this.groups.teacherGroups(staff, locale)).map(dbGroupSummary);
+    return { staff: toStaff(staff), groups: [...summaries, ...assigned] };
   }
 
   async group(staff: DemoStaff, code: string, locale: Locale): Promise<GroupAnalytics> {
+    const db = findGroup(code) ? null : await this.ownDbGroup(staff, code);
+    if (db) return this.analyseRoster(db.meta, db.roster, db.diagnosticQuiz, locale);
     const group = this.ownGroup(staff, code);
     if (!group.roster || !group.diagnosticQuiz) {
       throw new NotFoundException({ code: 'GROUP_HAS_NO_RECORDS', message: `Group ${code} has no recorded attempts in this demo` });
@@ -55,9 +48,21 @@ export class TeachingService {
   }
 
   async student(staff: DemoStaff, code: string, studentSlug: string, locale: Locale): Promise<StudentAnswers> {
-    const group = this.ownGroup(staff, code);
-    if (!group.roster?.includes(studentSlug)) throw new NotFoundException({ code: 'STUDENT_NOT_FOUND', message: 'Student not found in this group' });
-    const user = await this.prisma.user.findFirst({ where: { kind: 'DEMO', demoSlug: studentSlug }, select: { id: true, displayName: true } });
+    const db = findGroup(code) ? null : await this.ownDbGroup(staff, code);
+    let group: { code: string; name: string };
+    let user: { id: string; displayName: string } | null;
+    if (db) {
+      // Database groups: the student key is the member's user id.
+      const member = db.roster.find((m) => m.key === studentSlug);
+      if (!member) throw new NotFoundException({ code: 'STUDENT_NOT_FOUND', message: 'Student not found in this group' });
+      group = db.meta;
+      user = { id: member.id, displayName: member.name };
+    } else {
+      const demo = this.ownGroup(staff, code);
+      if (!demo.roster?.includes(studentSlug)) throw new NotFoundException({ code: 'STUDENT_NOT_FOUND', message: 'Student not found in this group' });
+      group = demo;
+      user = await this.prisma.user.findFirst({ where: { kind: 'DEMO', demoSlug: studentSlug }, select: { id: true, displayName: true } });
+    }
     if (!user) throw new NotFoundException({ code: 'STUDENT_NOT_FOUND', message: 'Student not found in this group' });
     const attempts = await this.prisma.quizAttempt.findMany({
       where: { userId: user.id },
@@ -117,10 +122,47 @@ export class TeachingService {
     return group;
   }
 
-  /** Full analytics of a group with a stored roster. Also used by the center, which keeps only aggregates. */
+  /**
+   * A database group this teacher teaches, by its join code: their own (account) or assigned by a
+   * center (wizard, by key). Unknown or someone else's → 404, so codes cannot be probed.
+   */
+  private async ownDbGroup(staff: DemoStaff, code: string): Promise<{ meta: GroupMeta; roster: RosterMember[]; diagnosticQuiz: string }> {
+    const row = await this.prisma.studyGroup.findUnique({
+      where: { joinCode: code },
+      select: {
+        joinCode: true,
+        name: true,
+        schedule: true,
+        subjectSlug: true,
+        teacherKey: true,
+        teacherAccountId: true,
+        members: { orderBy: { joinedAt: 'asc' }, select: { userId: true, user: { select: { displayName: true } } } },
+      },
+    });
+    const teaches = row && (row.teacherKey === staff.slug || (!!staff.accountId && row.teacherAccountId === staff.accountId));
+    if (!row || !teaches) throw new NotFoundException({ code: 'GROUP_NOT_FOUND', message: `Group ${code} not found` });
+    const diagnostic = await this.prisma.quiz.findFirst({ where: { kind: 'CHECKPOINT', subject: { slug: row.subjectSlug } }, orderBy: { slug: 'asc' }, select: { slug: true } });
+    if (!diagnostic) throw new NotFoundException({ code: 'QUIZ_NOT_FOUND', message: 'This subject has no diagnostic yet' });
+    return {
+      meta: { code: row.joinCode, name: row.name, status: 'active', schedule: row.schedule ?? '', synthetic: false },
+      roster: row.members.map((m) => ({ id: m.userId, key: m.userId, name: m.user.displayName })),
+      diagnosticQuiz: diagnostic.slug,
+    };
+  }
+
+  /** Full analytics of a demo group with a stored roster. Also used by the center, which keeps only aggregates. */
   async analyse(group: DemoGroup, locale: Locale): Promise<GroupAnalytics> {
+    const users = await this.prisma.user.findMany({ where: { kind: 'DEMO', demoSlug: { in: group.roster! } }, select: { id: true, demoSlug: true, displayName: true } });
+    const bySlug = new Map(users.map((u) => [u.demoSlug!, u]));
+    // The design's roster order; a member without a user row still counts as "not submitted".
+    const roster = group.roster!.map((slug) => ({ id: bySlug.get(slug)?.id ?? '', key: slug, name: bySlug.get(slug)?.displayName ?? slug }));
+    return this.analyseRoster(group, roster, group.diagnosticQuiz!, locale);
+  }
+
+  /** Answer-by-answer analytics of any roster on a diagnostic, from stored attempts. */
+  private async analyseRoster(group: GroupMeta, roster: RosterMember[], diagnosticQuiz: string, locale: Locale): Promise<GroupAnalytics> {
     const quiz = await this.prisma.quiz.findUnique({
-      where: { slug: group.diagnosticQuiz! },
+      where: { slug: diagnosticQuiz },
       select: {
         slug: true,
         title: true,
@@ -133,8 +175,8 @@ export class TeachingService {
     });
     if (!quiz) throw new NotFoundException({ code: 'QUIZ_NOT_FOUND', message: 'Diagnostic not seeded. Run pnpm db:seed.' });
 
-    const users = await this.prisma.user.findMany({ where: { kind: 'DEMO', demoSlug: { in: group.roster! } }, select: { id: true, demoSlug: true, displayName: true } });
-    const slugById = new Map(users.map((u) => [u.id, u.demoSlug!]));
+    const users = roster.filter((m) => m.id);
+    const slugById = new Map(users.map((u) => [u.id, u.key]));
     const rows = await this.prisma.quizAttempt.findMany({
       where: { userId: { in: users.map((u) => u.id) }, quiz: { subjectId: quiz.subjectId } },
       select: {
@@ -149,7 +191,7 @@ export class TeachingService {
     const text = (value: unknown) => localizeFields(locale, { v: value }).v;
     const questions = quiz.questions.map((q) => ({ key: q.key, topicSlug: q.topic.slug, prompt: text(q.prompt), options: q.options.map((o) => ({ key: o.key, text: text(o.text), isCorrect: o.isCorrect })) }));
     const result = groupAnalytics(
-      group.roster!,
+      roster.map((m) => m.key),
       { slug: quiz.slug, questions },
       rows.map((r) => ({
         id: r.id,
@@ -175,10 +217,10 @@ export class TeachingService {
           (await this.prisma.question.findMany({ where: { quiz: { slug: result.retest.quizSlug } }, select: { key: true, prompt: true } })).map((q) => [q.key, text(q.prompt)]),
         )
       : new Map<string, string>();
-    const nameBySlug = new Map(users.map((u) => [u.demoSlug!, u.displayName]));
+    const nameBySlug = new Map(roster.map((u) => [u.key, u.name]));
 
     return {
-      group: recordedGroup(group, result, topics.map((t) => ({ title: topicRef(t.topicSlug).title, percent: t.score.percent }))),
+      group: recordedGroup(group, roster.length, result, topics.map((t) => ({ title: topicRef(t.topicSlug).title, percent: t.score.percent }))),
       diagnostic: { quiz: { slug: quiz.slug, ...localizeFields(locale, { title: quiz.title }) }, firstSubmittedAt: result.firstSubmittedAt?.toISOString() ?? null },
       topics: topics.map((t) => ({ topic: topicRef(t.topicSlug), score: t.score })),
       questions: result.questions.map((s) => {
@@ -217,14 +259,45 @@ export class TeachingService {
   }
 }
 
-function recordedGroup(group: DemoGroup, result: GroupAnalyticsResult, topics: { title: string; percent: number }[]): TeacherGroup {
+/** What a group summary needs, for demo groups and database groups alike. */
+interface GroupMeta {
+  code: string;
+  name: string;
+  status: TeacherGroup['status'];
+  schedule: string;
+  synthetic: boolean;
+}
+/** A roster member: user id (empty when a demo learner has no row yet), the key used in URLs, the name. */
+interface RosterMember {
+  id: string;
+  key: string;
+  name: string;
+}
+
+/** Overview row for a database group (own or wizard-assigned): analytics open by its join code. */
+function dbGroupSummary(g: StudyGroupView): TeacherGroup {
+  return {
+    code: g.joinCode,
+    name: g.name,
+    status: 'active',
+    schedule: g.schedule ?? '',
+    studentCount: g.memberCount,
+    submitted: g.submitted,
+    averagePercent: g.diagnosticPercent,
+    weakestTopic: null,
+    recorded: true,
+    synthetic: false,
+  };
+}
+
+function recordedGroup(group: GroupMeta, studentCount: number, result: GroupAnalyticsResult, topics: { title: string; percent: number }[]): TeacherGroup {
   const weakest = [...topics].sort((a, b) => a.percent - b.percent)[0] ?? null;
   return {
     code: group.code,
     name: group.name,
     status: group.status,
     schedule: group.schedule,
-    studentCount: group.roster!.length,
+    studentCount,
     submitted: result.submitted,
     averagePercent: result.averagePercent,
     weakestTopic: weakest,

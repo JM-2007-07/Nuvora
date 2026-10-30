@@ -1,13 +1,11 @@
 import { Controller, Get, Inject, Param, UseGuards, UseInterceptors } from '@nestjs/common';
-import { type GroupAnalytics, type Locale, SlugSchema, type StudentAnswers, type TeacherOverview } from '@nuvora/shared';
-import { z } from 'zod';
+import { type GroupAnalytics, GroupCodeSchema, type Locale, SlugSchema, type StudentAnswers, type TeacherOverview } from '@nuvora/shared';
 import { ContentLanguageInterceptor, ContentLocale } from '../common/i18n/content-locale.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import type { DemoStaff } from '../staff/demo-org.js';
 import { CurrentStaff, Roles, StaffGuard } from '../staff/staff.guard.js';
 import { TeachingService } from './teaching.service.js';
 
-const GroupCodeSchema = z.string().regex(/^[A-Z]-\d{2}$/, 'Not a group code');
 
 /** Teacher workspace: role and group ownership are checked on the server for every request. */
 @Controller('teach')

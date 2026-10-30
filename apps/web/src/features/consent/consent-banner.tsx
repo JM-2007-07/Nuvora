@@ -22,7 +22,7 @@ export function ConsentBanner() {
         <section
           aria-label={t('bannerLabel')}
           data-testid="consent-banner"
-          className="fixed inset-x-0 bottom-0 z-[60] max-h-[70vh] overflow-y-auto rounded-t-[24px] border border-b-0 border-(--hud-border) bg-(--hud) p-5 text-(--hud-text) shadow-(--hud-glow) sm:inset-x-4 sm:bottom-4 sm:mx-auto sm:max-w-3xl sm:rounded-[24px] sm:border-b"
+          className="fixed inset-x-0 bottom-0 z-[60] max-h-[70vh] overflow-y-auto rounded-t-[24px] border border-b-0 border-(--hud-border) [background:var(--hud)] p-5 text-(--hud-text) shadow-(--hud-glow) sm:inset-x-4 sm:bottom-4 sm:mx-auto sm:max-w-3xl sm:rounded-[24px] sm:border-b"
         >
           <h2 className="m-0 mb-1.5 text-base font-bold">{t('title')}</h2>
           <p className="m-0 mb-4 text-sm leading-relaxed text-(--hud-muted)">

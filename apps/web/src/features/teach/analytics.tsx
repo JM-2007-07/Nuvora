@@ -2,27 +2,29 @@
 
 import type { GroupAnalytics, QuestionStat } from '@nuvora/shared';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { InlineMarkdown } from '@/components/markdown';
 import { Reveal } from '@/components/motion/reveal';
 import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
 import { Link } from '@/i18n/navigation';
 import { useGroupAnalytics, useTeacherOverview } from './hooks';
 import { DeniedState, isDenied, StaffGate } from './staff-gate';
-import { MAIN_GROUP } from './teacher-dashboard';
+import { GroupPicker, useActiveGroup } from './active-group';
 import { PageHead, PercentBar, Tabs } from './work-ui';
 
 /** Question-level analytics of the recorded group's diagnostic (handoff TAnalytics). */
 export function TeacherAnalytics() {
-  return <StaffGate>{() => <Body />}</StaffGate>;
+  return <StaffGate>{() => <Suspense><Body /></Suspense>}</StaffGate>;
 }
 
 function Body() {
   const t = useTranslations('Analytics');
   const tStates = useTranslations('Teach.states');
   const overview = useTeacherOverview(true);
-  const recorded = overview.isSuccess && overview.data.groups.some((g) => g.code === MAIN_GROUP && g.recorded);
-  const group = useGroupAnalytics(MAIN_GROUP, recorded);
+  const active = useActiveGroup(overview.data?.groups);
+  const recorded = active.code !== null;
+  const group = useGroupAnalytics(active.code ?? '', recorded);
+  const picker = <GroupPicker options={active.options} code={active.code} onSelect={active.select} />;
 
   if (overview.isPending) return <LoadingState label={tStates('loading')} />;
   if (overview.isError) return isDenied(overview.error) ? <DeniedState error={overview.error} need={['TEACHER']} /> : <ErrorState error={overview.error} onRetry={() => overview.refetch()} />;
@@ -34,14 +36,14 @@ function Body() {
   );
   if (group.isPending) return <LoadingState label={tStates('loading')} />;
   if (group.isError) return isDenied(group.error) ? <DeniedState error={group.error} need={['TEACHER']} /> : <ErrorState error={group.error} onRetry={() => group.refetch()} />;
-  return <Loaded g={group.data} />;
+  return <Loaded g={group.data} picker={picker} />;
 }
 
 function bands(total: number) {
   return Array.from({ length: 5 }, (_, i) => ({ lo: i === 0 ? 0 : Math.floor((i * total) / 5) + 1, hi: Math.floor(((i + 1) * total) / 5) }));
 }
 
-function Loaded({ g }: { g: GroupAnalytics }) {
+function Loaded({ g, picker }: { g: GroupAnalytics; picker: React.ReactNode }) {
   const t = useTranslations('Analytics');
   const [topic, setTopic] = useState('all');
   const [sort, setSort] = useState<'hard' | 'number'>('hard');
@@ -63,7 +65,12 @@ function Loaded({ g }: { g: GroupAnalytics }) {
       <PageHead
         title={t('title')}
         subtitle={t('subtitle', { group: g.group.code, quiz: g.diagnostic.quiz.title, count: total, submitted: g.group.submitted, students: g.group.studentCount })}
-        action={<Link href="/teach/insights" className="fz-btn fz-btn-ghost">{t('gaps')}</Link>}
+        action={
+          <div className="flex flex-wrap items-center gap-3">
+            {picker}
+            <Link href={`/teach/insights?group=${encodeURIComponent(g.group.code)}`} className="fz-btn fz-btn-ghost">{t('gaps')}</Link>
+          </div>
+        }
       />
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[

@@ -3,7 +3,7 @@
 import type { StudentRow } from '@nuvora/shared';
 import { ArrowRightIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Reveal } from '@/components/motion/reveal';
 import { shortDate, StatusChip, statusFor } from '@/features/app/bits';
 import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
@@ -11,22 +11,23 @@ import { Link } from '@/i18n/navigation';
 import { band } from './cells';
 import { useGroupAnalytics, useMyGroupDetail, useMyGroups, useTeacherOverview } from './hooks';
 import { DeniedState, isDenied, StaffGate } from './staff-gate';
-import { MAIN_GROUP } from './teacher-dashboard';
+import { GroupPicker, useActiveGroup } from './active-group';
 import { PageHead, SearchBox } from './work-ui';
 
 const GRID = 'sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_28px]';
 
 /** Teacher roster (handoff TStudents): the recorded group's students and the members of groups created by this account. */
 export function StudentsView() {
-  return <StaffGate>{() => <Body />}</StaffGate>;
+  return <StaffGate>{() => <Suspense><Body /></Suspense>}</StaffGate>;
 }
 
 function Body() {
   const t = useTranslations('Roster');
   const tStates = useTranslations('Teach.states');
   const overview = useTeacherOverview(true);
-  const recorded = overview.isSuccess && overview.data.groups.some((g) => g.code === MAIN_GROUP && g.recorded);
-  const group = useGroupAnalytics(MAIN_GROUP, recorded);
+  const active = useActiveGroup(overview.data?.groups);
+  const recorded = active.code !== null;
+  const group = useGroupAnalytics(active.code ?? '', recorded);
   const mine = useMyGroups('teach');
   const [q, setQ] = useState('');
 
@@ -46,7 +47,10 @@ function Body() {
 
       {recorded ? (
         <section aria-labelledby="roster-title" className="grid gap-3">
-          <h2 id="roster-title" className="text-lg font-bold">{t('groupTitle', { group: MAIN_GROUP })}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="roster-title" className="text-lg font-bold">{t('groupTitle', { group: active.code ?? '' })}</h2>
+            <GroupPicker options={active.options} code={active.code} onSelect={active.select} />
+          </div>
           {group.isPending ? <LoadingState label={tStates('loading')} /> : null}
           {group.isError ? <ErrorState error={group.error} onRetry={() => group.refetch()} /> : null}
           {group.data ? (
@@ -57,7 +61,7 @@ function Body() {
                 </div>
                 <ul className="divide-y divide-(--line)">
                   {rows.map((s, i) => (
-                    <li key={s.slug}><Reveal index={Math.min(i, 5)}><RosterRow s={s} /></Reveal></li>
+                    <li key={s.slug}><Reveal index={Math.min(i, 5)}><RosterRow s={s} group={active.code ?? ''} /></Reveal></li>
                   ))}
                 </ul>
               </Card>
@@ -81,12 +85,12 @@ function Body() {
   );
 }
 
-function RosterRow({ s }: { s: StudentRow }) {
+function RosterRow({ s, group }: { s: StudentRow; group: string }) {
   const t = useTranslations('Roster');
   const status = s.score ? statusFor(s.score.percent) : null;
   const cell = 'min-w-0 text-sm';
   return (
-    <Link href={`/teach/students/${encodeURIComponent(s.slug)}?group=${encodeURIComponent(MAIN_GROUP)}`} className={`fz-row-hover grid items-center gap-x-3 gap-y-2 px-5 py-3.5 text-(--text) no-underline sm:px-6 ${GRID}`}>
+    <Link href={`/teach/students/${encodeURIComponent(s.slug)}?group=${encodeURIComponent(group)}`} className={`fz-row-hover grid items-center gap-x-3 gap-y-2 px-5 py-3.5 text-(--text) no-underline sm:px-6 ${GRID}`}>
       <span className="font-semibold">{s.name}</span>
       <span className={cell}>
         <span className="block text-xs text-(--faint) sm:sr-only">{t('diagnostic')}</span>

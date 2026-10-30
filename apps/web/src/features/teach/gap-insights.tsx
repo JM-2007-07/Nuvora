@@ -3,30 +3,36 @@
 import type { GroupAnalytics } from '@nuvora/shared';
 import { CheckIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { InlineMarkdown, Markdown } from '@/components/markdown';
-import { Card, ErrorState, LoadingState } from '@/features/app/states';
+import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
 import { Link } from '@/i18n/navigation';
 import { band, Bar, ScoreCell } from './cells';
-import { useGroupAnalytics } from './hooks';
+import { useGroupAnalytics, useTeacherOverview } from './hooks';
 import { DeniedState, isDenied, StaffGate } from './staff-gate';
-import { MAIN_GROUP } from './teacher-dashboard';
+import { GroupPicker, useActiveGroup } from './active-group';
 
 /** Gap insights (handoff TInsights): pick a topic → its questions → how the class answered → who. */
 export function GapInsights() {
-  return <StaffGate>{() => <Body />}</StaffGate>;
+  return <StaffGate>{() => <Suspense><Body /></Suspense>}</StaffGate>;
 }
 
 function Body() {
   const t = useTranslations('Teach.insights');
   const tStates = useTranslations('Teach.states');
-  const group = useGroupAnalytics(MAIN_GROUP, true);
+  const tEmpty = useTranslations('Analytics');
+  const overview = useTeacherOverview(true);
+  const active = useActiveGroup(overview.data?.groups);
+  const group = useGroupAnalytics(active.code ?? '', active.code !== null);
+  if (overview.isPending) return <LoadingState label={tStates('loading')} />;
+  if (overview.isError) return isDenied(overview.error) ? <DeniedState error={overview.error} need={['TEACHER']} /> : <ErrorState error={overview.error} onRetry={() => overview.refetch()} />;
+  if (active.code === null) return <EmptyState title={tEmpty('emptyTitle')} body={tEmpty('emptyBody')} />;
   if (group.isPending) return <LoadingState label={tStates('loading')} />;
   if (group.isError) return isDenied(group.error) ? <DeniedState error={group.error} need={['TEACHER']} /> : <ErrorState error={group.error} onRetry={() => group.refetch()} />;
-  return <Insights g={group.data} title={t('title')} />;
+  return <Insights key={group.data.group.code} g={group.data} title={t('title')} picker={<GroupPicker options={active.options} code={active.code} onSelect={active.select} />} />;
 }
 
-function Insights({ g, title }: { g: GroupAnalytics; title: string }) {
+function Insights({ g, title, picker }: { g: GroupAnalytics; title: string; picker: React.ReactNode }) {
   const t = useTranslations('Teach.insights');
   const ranked = [...g.topics].sort((a, b) => a.score.percent - b.score.percent);
   const [topicSlug, setTopicSlug] = useState(ranked[0]?.topic.slug ?? '');
@@ -37,9 +43,12 @@ function Insights({ g, title }: { g: GroupAnalytics; title: string }) {
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
-      <div>
-        <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
-        <p className="mt-1.5 text-(--muted)">{t('subtitle', { group: g.group.code, quiz: g.diagnostic.quiz.title, submitted: g.group.submitted, students: g.group.studentCount })}</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold sm:text-4xl">{title}</h1>
+          <p className="mt-1.5 text-(--muted)">{t('subtitle', { group: g.group.code, quiz: g.diagnostic.quiz.title, submitted: g.group.submitted, students: g.group.studentCount })}</p>
+        </div>
+        {picker}
       </div>
 
       <div role="radiogroup" aria-label={t('pickTopic')} className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

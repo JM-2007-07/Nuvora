@@ -429,7 +429,8 @@
       "ADMIN": "Center admin"
     },
     "states": {
-      "loading": "Loading…"
+      "loading": "Loading…",
+      "group": "Group"
     },
     "choose": {
       "kicker": "Demo staff",
