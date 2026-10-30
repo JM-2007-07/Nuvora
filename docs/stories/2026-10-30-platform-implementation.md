@@ -45,3 +45,13 @@ Work split: the main session wrote the API, the migrations, the admin workspace,
 - Rate limits live in API memory (one process). `secure` cookies and strict CSP are production steps.
 - The full exam flow in a browser waits for the owner's OK to publish a test assessment in `nuvora_dev` (`db:seed:demo` resets it).
 - ru/tg texts of all new screens are AI drafts for native review.
+
+## Update the same evening: full exam run in the browser
+
+With the owner's OK ("Да, публикуй") the demo draft "Functions — return vs console.log" (B-12, 5 questions) was published in `nuvora_dev`: open now, 15 minutes, answers revealed after submission. `db:seed:demo` recreates it as a draft.
+
+Run on the production build (ru, 1440 px, dark): Amina starts (intro explains what is recorded) → keyboard answers autosave ("all answers saved") → leaving the tab is reported → Dilshod's live board shows "writing", 3/5, time left, last sync, 1 signal/1 warning and the event feed → Dilshod warns (prefilled polite text) and adds 5 minutes (17:34) → Amina comes back: saved answers and the moved deadline restored, the teacher's message shown → submit confirms one unanswered question → the server scores 2/5 (40%) and the review shows chosen and correct answers with explanations; the untranslated question falls back to English.
+
+**Bug found and fixed (`6c0cc3d`):** starting failed with 500 because the builder stores missing translations as empty strings, which the strict content resolver rejects; the attempt was created but the player could not open it. Teacher text now treats empty values as missing. Unit test added; the integration tests had only fully translated questions.
+
+**Still to improve:** the live board's per-row actions are a tall vertical stack at 1440 px (a compact menu would read better); the exam was not checked at 390 px or in tg.
