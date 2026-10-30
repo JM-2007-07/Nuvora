@@ -15,6 +15,7 @@ This folder holds the product, architecture, design, and process documentation o
 | **Faroz design** (current): brand, tokens, fonts, components, screen map, roles, privacy, demo data | [02-design/FAROZ_HANDOFF.md](02-design/FAROZ_HANDOFF.md); logos and tokens in [assets/brand/faroz](../assets/brand/faroz) |
 | Brand: logo, colours, typography, asset usage (Nuvora; superseded by the handoff where they conflict) | [02-design/BRAND_GUIDELINES.md](02-design/BRAND_GUIDELINES.md) |
 | UI design system: theme tokens, UI type, components, motion (Nuvora; superseded by the handoff where they conflict) | [02-design/design-system.md](02-design/design-system.md) |
+| Writing voice for UI copy: tone, address form, glossary, examples (ru/tg/en) | [02-design/VOICE.md](02-design/VOICE.md) |
 | API conventions, errors, draft resource outline | [03-api/api-conventions.md](03-api/api-conventions.md) |
 | Data model and entity relationships | [04-data/data-model.md](04-data/data-model.md) |
 | Schedule to the defense (Mon 2 Nov 2026), Faroz defense phases, implementation sequence, Definition of Done | [05-planning/roadmap.md](05-planning/roadmap.md) |

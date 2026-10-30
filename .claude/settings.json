@@ -1,7 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "skillOverrides": {
-    "ui-ux-pro-max": "user-invocable-only"
+    "ui-ux-pro-max": "user-invocable-only",
+    "humanizer": "user-invocable-only"
   },
   "permissions": {
     "deny": [

@@ -38,6 +38,7 @@ Project skills (`.claude/skills/`), invoked as `/<name>`:
 - `design-review`: compare a UI proposal or implementation with the visual contract.
 - `new-story`: create or update a dated story from the real diff and real check output.
 - `ui-ux-pro-max` (third-party, v2.15.0, explicit `/ui-ux-pro-max` only): reference data for UX patterns, accessibility, and stack notes. Nuvora's docs and D-22 win; never its `--design-system`/`--persist` (no second design system or `MASTER.md`), no GSAP. A CLI update regenerates its `SKILL.md` and drops our Nuvora block: re-add it.
+- `humanizer` (third-party, `blader/humanizer` v3.1.0, MIT, explicit `/humanizer` only): content-quality pass for user-facing copy, never for getting past AI detectors. `docs/02-design/VOICE.md` and the Faroz block at the top of its `SKILL.md` win (dashes and «ёлочки» stay where Russian and Tajik need them; facts, keys and placeholders never change). Updating it from upstream drops that block: re-add it.
 
 Project subagents (`.claude/agents/`): `architect` (opus, read-only planning), `implementer` (sonnet, bounded units), `quality-reviewer` (sonnet, read-only review), `visual-reviewer` (sonnet, read-only UI review). Spawn them only when the user asks or approves a plan that names them; each one costs extra usage. The main agent coordinates, integrates, runs final verification, and writes the report. Rules: `docs/engineering/HARNESS.md#delegation-and-the-agent-team`.
 

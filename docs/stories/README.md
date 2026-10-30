@@ -69,3 +69,4 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-29 | [Center group wizard](2026-10-29-center-group-wizard.md) | implemented and verified; no group created in the real DB |
 | 2026-10-29 | [Faroz Orbit hero](2026-10-29-faroz-orbit-hero.md) | implemented and verified |
 | 2026-10-29 | [Handover for the next session](2026-10-29-handover.md) | handover (read first) |
+| 2026-10-30 | [Site copy pass and the Faroz writing voice](2026-10-30-site-copy-voice.md) | implemented and verified; ru/tg need native review |

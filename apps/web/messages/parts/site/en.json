@@ -14,7 +14,7 @@
   "Start": {
     "metaTitle": "Start with Faroz",
     "kicker": "Get started",
-    "title": "Who are you using Faroz as?",
+    "title": "How will you use Faroz?",
     "sub": "Pick a role. Create an account, sign in, or look around with demo data first. Nothing is charged.",
     "chosen": "Selected",
     "create": "Create account",
@@ -29,7 +29,7 @@
     "centerBody": "Compare groups on the same assessments and manage teachers. Group totals only.",
     "pickLearner": "Choose a demo learner",
     "guest": "Continue as guest",
-    "demoError": "Could not open the demo. Check that the server is running and try again."
+    "demoError": "Couldn’t open the demo. Try again in a moment."
   },
   "Auth": {
     "loginMeta": "Sign in",
