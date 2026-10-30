@@ -200,6 +200,28 @@ Profiles (D-25). The contract is [`packages/shared/src/profile-api.ts`](../../pa
 
 **Communications:** contacts, peers and group members carry `avatarUrl`, so chats show the same photos.
 
+## Implemented: sessions, account security, admin and exam mode (2026-10-30)
+
+Contracts: `packages/shared/src/auth-api.ts`, `admin-api.ts`, `exam-api.ts` (D-26, D-27, D-28). Every route below runs behind the security middleware (rate limits, Origin check for cookie-authenticated writes, security headers).
+
+**Credentials.** Web: httpOnly cookie (`nv_session` learner, `fz_staff` staff) holding an opaque `fzs_…` token. Mobile: `Authorization: Bearer fza_…` (1 h) plus a rotating refresh token `fzr_…` (session ends after 60 days). Every guard accepts either. Only SHA-256 hashes are stored.
+
+| Route | Who | Notes |
+| --- | --- | --- |
+| `POST /auth/login` | anyone | `{email, password, code?}`; 401 `INVALID_CREDENTIALS`, `MFA_REQUIRED`, `MFA_INVALID`; 429 `RATE_LIMITED` |
+| `POST /auth/logout`, `POST /auth/logout-all` | signed in | logout revokes this session on the server; logout-all ends every session of the identity |
+| `GET /auth/sessions`, `DELETE /auth/sessions/:id` | signed in | signed-in devices (device label from the User-Agent, never the raw header) |
+| `POST /auth/token`, `/auth/token/demo`, `/auth/token/refresh`, `/auth/token/revoke` | mobile | refresh reuse → 401 `REFRESH_REUSED` and the session is revoked |
+| `POST /auth/password/forgot` / `reset` / `change` | — / signed in | forgot always 204; reset is single-use (1 h) and signs out every device |
+| `GET /auth/mfa`, `POST /auth/mfa/setup` / `enable` / `disable` | account | TOTP; `account: false` for demo profiles |
+| `GET /admin/overview`, `/admin/organizations`, `/admin/accounts`, `/admin/audit`; `POST /admin/accounts/:id/revoke-sessions`; `PUT /admin/accounts/:id/role` | Super Admin | 401 without session, 403 for everyone else; changes audited |
+| `GET /me/assessments`; `POST /me/assessments/:id/attempts`; `GET /me/assessment-attempts/:id` | learner (group member) | start or re-enter (counted); state for reconnect recovery; 409 `NOT_OPEN_YET`/`CLOSED`/`NO_ATTEMPTS_LEFT`, 423 `READMIT_REQUIRED` |
+| `PUT /me/assessment-attempts/:id/answers/:questionId` | learner | `{optionKey, seq}`; idempotent (older/equal seq → `saved: false`); 409 `ATTEMPT_PAUSED`/`ATTEMPT_CLOSED` |
+| `POST /me/assessment-attempts/:id/events`, `/submit`; `GET …/result` | learner | events go through the policy; result reveals answers per `revealAnswers` |
+| `GET /teach/assessments/:id/live`; `POST /teach/assessment-attempts/:id/actions` | owning teacher | someone else's → 404; actions audited (`exam.*`) |
+
+**Realtime.** Socket.IO at path `/realtime`: namespace `/exam` — learners `exam:join {attemptId}` (connected/disconnected recorded), teachers `exam:watch {assessmentId}`; server events `exam:live` (refetch) and `exam:command` (warning, pause, resume, extend, end, reset, readmit). Clients also poll REST.
+
 ## Draft resource outline (not a contract)
 
 Listed to plan the work and check that the data model supports the journeys. Exact shapes are defined in `packages/shared` per feature.

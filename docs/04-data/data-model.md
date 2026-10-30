@@ -125,6 +125,22 @@ Two additive tables, keyed by participant key (`user:<id>`, `staff:<slug>`):
 
 A profile row exists once the owner saves or uploads a photo. Until then the API shows a default view built from the account.
 
+### Sessions, password reset, audit (migration `20261030200000_sessions_audit_admin`, D-26/D-27)
+
+- `auth_sessions`: one signed-in device. `subject` is the identity (learner user id, `staff:<slug>`, `staff:acct:<accountId>`), `tokenHash` (SHA-256, unique), `channel` WEB/MOBILE, `accessExpiresAt`, `expiresAt`, `revokedAt` + `revokedReason`, device details.
+- `auth_refresh_tokens`: mobile refresh tokens, single use (`usedAt`); reuse revokes the session.
+- `password_reset_tokens`: single use, 1 hour, hash only.
+- `audit_events`: append-only (a trigger refuses UPDATE and DELETE).
+- `accounts.platformRole` (`SUPER_ADMIN` or null; set only by `admin:bootstrap`), `accounts.totpSecretEnc`, `accounts.totpEnabledAt`.
+
+### Exam mode (migration `20261030230000_exam_mode`, D-28)
+
+- `assessments` gains the policy: `examWarnAfter` (1), `examNotifyAfter` (2), `examActionAfter` (3), `examAction` (FLAG/PAUSE/END), `examAllowReentry` (true).
+- `assessment_attempts`: one learner attempt (`attemptNo` unique per learner and assessment), server clock (`deadlineAt`, `pausedAt`), `lastSeq` for idempotent saves, shuffled `questionOrder`/`optionOrder`, score, `violations`, `warnings`, `flagged`, `reentries`, `readmitOpen`, `resetAt` (reset attempts stay, but no longer count).
+- `assessment_answers`: the current choice per question (`optionKey` = index into the stored options), `isCorrect` set on submission.
+- `exam_events`: the exam timeline (client signals, server decisions, teacher actions); rows cannot be updated and go only with their attempt.
+- Assessments that learners have started cannot be edited or unscheduled (409 `HAS_ATTEMPTS`).
+
 ## Later entities
 
 Sketched so the MVP schema doesn't block them. **Do not create these tables in the MVP.**

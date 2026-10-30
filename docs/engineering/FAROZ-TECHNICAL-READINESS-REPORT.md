@@ -8,6 +8,8 @@ Date: 2026-10-30. Branch `docs/site-copy` (on top of `feat/faroz-rebrand`, last 
 - **S** = taken from a dated story in `docs/stories/` and not re-checked here.
 - Severity: **Critical / High / Medium / Low**. Where it matters, each finding says whether it is **acceptable for the local defense demo** (AGENTS.md: the MVP runs on the team laptop and must never be deployed publicly) or **blocks production**.
 
+> **Update 2026-10-30 (evening).** Implementation started on `feat/faroz-platform`. Closed since this audit: S-02 (rate limits, in-memory), S-03/B-04 (revocable sessions), S-05 (Origin check; `secure` cookie still for production), S-06 (headers), S-07 (voice signatures), S-09 (privacy threshold), S-10/B-07 (audit log), B-03 (bearer everywhere), B-05 (MFA needs `SESSION_SECRET`), B-08, F-02, F-03, F-08, T-01 (real-DB integration tests). Added: Super Admin, exam mode, password reset, two-factor sign-in, cookie consent, `apps/mobile`. Still open: S-01 (demo logins, by design for the defense), S-04, B-01/B-02/D-01/D-02 (identity consolidation), push, offline, Google/Apple sign-in. Details: [roadmap](../05-planning/roadmap.md#platform-implementation-from-2026-10-30) and the [story](../stories/2026-10-30-platform-implementation.md).
+
 ---
 
 ## 1. Executive summary

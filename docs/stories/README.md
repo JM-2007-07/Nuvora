@@ -70,3 +70,4 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-29 | [Faroz Orbit hero](2026-10-29-faroz-orbit-hero.md) | implemented and verified |
 | 2026-10-29 | [Handover for the next session](2026-10-29-handover.md) | handover (read first) |
 | 2026-10-30 | [Site copy pass and the Faroz writing voice](2026-10-30-site-copy-voice.md) | implemented and verified; ru/tg need native review |
+| 2026-10-30 | [Platform implementation: security, sessions, admin, exam mode, mobile foundation](2026-10-30-platform-implementation.md) | implemented; API integration-tested on real PostgreSQL; full exam browser run and device run of the app pending |
