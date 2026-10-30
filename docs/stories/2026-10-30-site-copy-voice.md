@@ -30,6 +30,7 @@ The owner approved the integration plan and the edit order in the chat.
   - Staff pages: access and permission notes without "server/API"; invitation note says Faroz doesn't send emails.
   - Center and teacher data notes and labels as above.
   - Role choice title: «Как вы будете пользоваться Faroz?» / "How will you use Faroz?".
+  - English spelling made American throughout, as most of the catalog already was (center, organize, license): practise → practice (verb), centre → center, licence → license, memorised → memorized (10 values). Keys such as `practiseNext` are unchanged.
 - `.claude/skills/humanizer/` (new), `.claude/settings.json`, `CLAUDE.md`, `docs/engineering/HARNESS.md` (skill table and external-skills entry), `docs/README.md` (map row), `docs/02-design/VOICE.md` (new).
 
 ## Verification

@@ -19,7 +19,7 @@ Status: written 2026-10-30 by the AI agent at the owner's request. Russian and T
 | --- | --- | --- |
 | Russian | **«вы»** everywhere, lower case | Learners, teachers and centers alike. Imperatives in the plural: «Найдите», «Начните» |
 | Tajik | **«шумо»** everywhere | Plural verb forms: «ёбед», «оғоз кунед» |
-| English | "you" | Plain, contractions are fine (don't, can't) |
+| English | "you" | Plain, contractions are fine (don't, can't). **American spelling**: center, license, organize, memorized, and "practice" as both noun and verb (not "practise") |
 
 ## Glossary
 
