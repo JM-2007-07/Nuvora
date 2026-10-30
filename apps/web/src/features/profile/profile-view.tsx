@@ -55,11 +55,11 @@ export function ProfileView({ profile, actions, compact = false }: { profile: Pu
         <div className={`fz-cover-${p.cover} relative ${compact ? 'h-28' : 'h-36 sm:h-48'}`}>
           <div aria-hidden="true" className="fz-dots absolute inset-0 opacity-50" />
         </div>
-        <div className={`relative flex flex-wrap items-end gap-x-5 gap-y-3 px-5 pb-5 sm:px-7 ${compact ? '-mt-12' : '-mt-14 sm:-mt-16'}`}>
-          <span className="fz-profile-ring rounded-full">
+        <div className={`relative flex flex-wrap items-end gap-x-5 gap-y-3 px-5 pb-5 max-[640px]:flex-col max-[640px]:items-start sm:px-7 ${compact ? '-mt-12 flex-col items-start' : '-mt-14 sm:-mt-16'}`}>
+          <span className="fz-profile-ring inline-grid shrink-0 rounded-full">
             <Avatar name={p.name} src={p.avatarUrl} size={compact ? 92 : 120} />
           </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5 pt-2 sm:pt-16">
+          <div className={`flex min-w-0 flex-1 flex-col gap-1.5 ${compact ? 'pt-1' : 'pt-1 sm:pt-16'}`}>
             <div className="flex flex-wrap items-center gap-2">
               <h1 id={`profile-name-${p.key}`} className={`m-0 min-w-0 font-brand leading-tight font-bold break-words ${compact ? 'text-xl' : 'text-[28px] max-[640px]:text-2xl'}`}>
                 {p.name}
@@ -82,16 +82,16 @@ export function ProfileView({ profile, actions, compact = false }: { profile: Pu
             </div>
             {p.headline ? <p className="m-0 text-[15px] font-semibold text-(--text)">{p.headline}</p> : null}
           </div>
-          {actions ? <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:pt-16">{actions}</div> : null}
+          {actions ? <div className={`flex w-full flex-wrap gap-2 ${compact ? '' : 'sm:w-auto sm:pt-16'}`}>{actions}</div> : null}
         </div>
       </div>
 
       {nothing ? (
         <p className="m-0 rounded-[22px] border border-dashed border-(--line2) p-6 text-center text-sm text-(--muted)">{t('empty')}</p>
       ) : (
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2">
+        <div className={`grid grid-cols-[minmax(0,1fr)] gap-4 ${compact ? '' : 'md:grid-cols-2'}`}>
           {p.about && (p.about.bio || p.about.city || p.about.languages.length) ? (
-            <Section title={t('aboutTitle')} Icon={BookOpenIcon} wide={!p.learning && !p.teaching}>
+            <Section title={t('aboutTitle')} Icon={BookOpenIcon} wide={!compact && !p.learning && !p.teaching}>
               {p.about.bio ? <p className="m-0 text-[15px] leading-relaxed break-words whitespace-pre-line">{p.about.bio}</p> : null}
               <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-(--muted)">
                 {p.about.city ? (

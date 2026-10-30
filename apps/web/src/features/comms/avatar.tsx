@@ -21,7 +21,7 @@ export function Avatar({ name, src, size = 40, online, className = '' }: { name:
     <span aria-hidden="true" className={`relative inline-grid shrink-0 place-items-center rounded-full [background:var(--avatar)] font-bold text-(--on-blue) ${className}`} style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}>
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element -- small authenticated API images; next/image would proxy them without the cookie
-        <img src={photo} alt="" width={size} height={size} loading="lazy" decoding="async" onError={() => setFailed(photo)} className="size-full rounded-full object-cover" />
+        <img src={photo} alt="" width={size} height={size} loading="lazy" decoding="async" onError={() => setFailed(photo)} className="block size-full rounded-full object-cover" />
       ) : (
         initials || '•'
       )}

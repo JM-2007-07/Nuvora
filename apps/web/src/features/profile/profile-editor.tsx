@@ -228,7 +228,7 @@ function Editor({ profile }: { profile: MyProfile }) {
           {/* Photo and style */}
           <Card title={t('sectionLook')} Icon={CameraIcon}>
             <div className="flex flex-wrap items-center gap-5">
-              <span className={`fz-accent-${form.accent} fz-profile-ring rounded-full`}>
+              <span className={`fz-accent-${form.accent} fz-profile-ring inline-grid shrink-0 rounded-full`}>
                 <Avatar name={profile.name} src={profile.avatarUrl} size={88} />
               </span>
               <div className="grid gap-2">

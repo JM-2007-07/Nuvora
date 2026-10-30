@@ -22,5 +22,7 @@ export default function proxy(request: NextRequest) {
 
 export const config = {
   // Skip the /api/v1 rewrite to the API, Next.js internals, static brand assets, and any file with an extension.
-  matcher: ['/((?!api|_next|_vercel|brand|.*\\..*).*)'],
+  // Profile addresses may contain dots (/ru/u/amina.rahimova), so they are matched explicitly:
+  // without this the locale would not be set and the page would render in the default language.
+  matcher: ['/((?!api|_next|_vercel|brand|.*\\..*).*)', '/:locale(ru|tg|en)/u/:path*'],
 };
