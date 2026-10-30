@@ -3,9 +3,10 @@
 import type { LiveEvent, LiveExam, LiveParticipant, Locale, TeacherExamActionRequest } from '@nuvora/shared';
 import { EXAM_EVENTS } from '@nuvora/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftIcon, FlagIcon } from 'lucide-react';
+import { ArrowLeftIcon, DoorOpenIcon, EllipsisIcon, FlagIcon, MessageSquareWarningIcon, PauseIcon, PlayIcon, RotateCcwIcon, SquareIcon, TimerIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
 import { ConfirmDialog } from '@/features/teach/assessments/confirm-dialog';
 import { DeniedState, isDenied, StaffGate } from '@/features/teach/staff-gate';
@@ -292,28 +293,78 @@ function Score({ p }: { p: LiveParticipant }) {
   return <>{`${p.score.correct}/${p.score.total} · ${p.score.percent}%`}</>;
 }
 
-/** Actions that make sense for the attempt's state; the server still decides what is allowed. */
+/**
+ * Actions that make sense for the attempt's state, compact: the most useful one as a button
+ * (warn while the attempt runs, readmit after it closed) and the rest in a keyboard-accessible
+ * "⋯" menu, destructive ones last and set apart. The server still decides what is allowed.
+ */
 function Actions({ p, busy, run, ask }: { p: LiveParticipant; busy: boolean; run: (p: LiveParticipant, body: TeacherExamActionRequest) => void; ask: (kind: 'WARN' | 'RESET' | 'END') => void }) {
   const t = useTranslations('ExamLive.action');
   if (!p.attemptId) return null;
-  const small = 'fz-btn fz-btn-ghost min-h-11 px-3 text-[13px]';
   const live = p.status === 'IN_PROGRESS' || p.status === 'PAUSED';
+  const item = 'min-h-11 cursor-pointer rounded-[10px] px-3 text-[14px] text-(--text) focus:bg-(--panel2) focus:text-(--text)';
+  const danger = 'min-h-11 cursor-pointer rounded-[10px] px-3 text-[14px] font-semibold text-(--mag-ink) focus:bg-(--mag-tint) focus:text-(--mag-ink)';
   return (
-    <div className="flex flex-wrap items-center gap-1.5 lg:justify-end">
-      {live ? <button type="button" className={small} onClick={() => ask('WARN')}>{t('WARN')}</button> : null}
-      {p.status === 'IN_PROGRESS' ? <button type="button" className={small} disabled={busy} onClick={() => run(p, { action: 'PAUSE' })}>{t('PAUSE')}</button> : null}
-      {p.status === 'PAUSED' ? <button type="button" className={small} disabled={busy} onClick={() => run(p, { action: 'RESUME' })}>{t('RESUME')}</button> : null}
+    <div className="flex items-center gap-1.5 lg:justify-end">
       {live ? (
-        <>
-          <button type="button" className={small} disabled={busy} onClick={() => run(p, { action: 'EXTEND', minutes: 5 })}>{t('EXTEND5')}</button>
-          <button type="button" className={small} disabled={busy} onClick={() => run(p, { action: 'EXTEND', minutes: 10 })}>{t('EXTEND10')}</button>
-        </>
-      ) : (
-        <button type="button" className={small} disabled={busy} onClick={() => run(p, { action: 'READMIT' })}>{t('READMIT')}</button>
+        <button type="button" className="fz-btn fz-btn-ghost min-h-11 px-3 text-[13px]" onClick={() => ask('WARN')}>
+          <MessageSquareWarningIcon aria-hidden="true" className="size-4" />
+          {t('WARN')}
+        </button>
+      ) : p.status === 'SUBMITTED' ? null : (
+        <button type="button" className="fz-btn fz-btn-ghost min-h-11 px-3 text-[13px]" disabled={busy} onClick={() => run(p, { action: 'READMIT' })}>
+          <DoorOpenIcon aria-hidden="true" className="size-4" />
+          {t('READMIT')}
+        </button>
       )}
-      <button type="button" className={small} disabled={busy} onClick={() => run(p, { action: p.flagged ? 'UNFLAG' : 'FLAG' })}>{p.flagged ? t('UNFLAG') : t('FLAG')}</button>
-      <button type="button" className={small} onClick={() => ask('RESET')}>{t('RESET')}</button>
-      {live ? <button type="button" className={small} onClick={() => ask('END')}>{t('END')}</button> : null}
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <button type="button" disabled={busy} aria-label={t('more', { name: p.name })} className="fz-btn fz-btn-ghost grid min-h-11 min-w-11 place-items-center px-0">
+            <EllipsisIcon aria-hidden="true" className="size-5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 rounded-[16px] border border-(--line2) bg-(--panel) p-1.5 text-(--text) shadow-(--hud-glow)">
+          {live ? (
+            <>
+              <DropdownMenuItem className={item} onSelect={() => run(p, { action: 'EXTEND', minutes: 5 })}>
+                <TimerIcon aria-hidden="true" />
+                {t('EXTEND5')}
+              </DropdownMenuItem>
+              <DropdownMenuItem className={item} onSelect={() => run(p, { action: 'EXTEND', minutes: 10 })}>
+                <TimerIcon aria-hidden="true" />
+                {t('EXTEND10')}
+              </DropdownMenuItem>
+              {p.status === 'IN_PROGRESS' ? (
+                <DropdownMenuItem className={item} onSelect={() => run(p, { action: 'PAUSE' })}>
+                  <PauseIcon aria-hidden="true" />
+                  {t('PAUSE')}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem className={item} onSelect={() => run(p, { action: 'RESUME' })}>
+                  <PlayIcon aria-hidden="true" />
+                  {t('RESUME')}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator className="my-1 bg-(--line)" />
+            </>
+          ) : null}
+          <DropdownMenuItem className={item} onSelect={() => run(p, { action: p.flagged ? 'UNFLAG' : 'FLAG' })}>
+            <FlagIcon aria-hidden="true" />
+            {p.flagged ? t('UNFLAG') : t('FLAG')}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="my-1 bg-(--line)" />
+          <DropdownMenuItem className={danger} onSelect={() => ask('RESET')}>
+            <RotateCcwIcon aria-hidden="true" />
+            {t('RESET')}
+          </DropdownMenuItem>
+          {live ? (
+            <DropdownMenuItem className={danger} onSelect={() => ask('END')}>
+              <SquareIcon aria-hidden="true" />
+              {t('END')}
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

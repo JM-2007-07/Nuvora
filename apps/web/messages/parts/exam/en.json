@@ -123,7 +123,8 @@
       "RESET": "Reset",
       "END": "End",
       "FLAG": "Flag",
-      "UNFLAG": "Remove flag"
+      "UNFLAG": "Remove flag",
+      "more": "More actions for {name}"
     },
     "warn": { "title": "Warn {name}", "send": "Send warning", "label": "Message to the student", "defaultMessage": "Please return to the exam window and keep working." },
     "reset": { "title": "Reset {name}’s attempt?", "body": "This clears their answers and lets them start again. It can’t be undone." },
