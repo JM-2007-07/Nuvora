@@ -148,7 +148,7 @@ describe.skipIf(!url)('exam mode (real database)', () => {
     expect((await send('APP_BACKGROUND').expect(200)).body).toMatchObject({ violations: 3, outcome: 'flagged', status: 'IN_PROGRESS' });
     await send('CHEATING_DETECTED').expect(400); // clients cannot invent events
     const live = LiveExamSchema.parse((await http().get(`/api/v1/teach/assessments/${assessmentId}/live`).set('Cookie', cookie.teacher).expect(200)).body);
-    expect(live.participants[0]).toMatchObject({ violations: 3, warnings: 2, flagged: true });
+    expect(live.participants[0]).toMatchObject({ violations: 3, warnings: 2, flagged: true, signals: { FOCUS_LOST: 2, FOCUS_RETURNED: 1, FULLSCREEN_EXIT: 1, APP_BACKGROUND: 1 } });
     expect(live.events.map((e) => e.kind)).toEqual(expect.arrayContaining(['WARNING', 'TEACHER_NOTIFIED', 'FLAGGED', 'FOCUS_LOST']));
   });
 

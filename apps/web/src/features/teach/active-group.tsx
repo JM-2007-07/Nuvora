@@ -4,6 +4,7 @@ import type { TeacherGroup } from '@nuvora/shared';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { usePathname, useRouter } from '@/i18n/navigation';
+import { FzSelect } from '@/components/ui/fz-select';
 
 /** The group the demo story starts with; any other recorded group can be picked. */
 export const DEFAULT_GROUP = 'B-12';
@@ -28,15 +29,8 @@ export function GroupPicker({ options, code, onSelect }: { options: TeacherGroup
   const t = useTranslations('Teach.states');
   if (options.length < 2 || !code) return null;
   return (
-    <label className="inline-flex min-h-11 items-center gap-2 rounded-[14px] border border-(--line2) bg-(--panel) px-3 text-sm text-(--muted)">
-      <span>{t('group')}</span>
-      <select value={code} onChange={(e) => onSelect(e.target.value)} className="min-h-10 bg-transparent font-semibold text-(--text) focus-visible:outline-2 focus-visible:outline-(--mint)">
-        {options.map((g) => (
-          <option key={g.code} value={g.code} className="bg-(--panel) text-(--text)">
-            {g.code} · {g.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div className="min-w-56">
+      <FzSelect label={t('group')} surface="panel" className="mt-0" value={code} onValueChange={onSelect} options={options.map((g) => ({ value: g.code, label: `${g.code} · ${g.name}` }))} />
+    </div>
   );
 }

@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
+  CLIENT_EXAM_EVENTS,
   type ClientExamEvent,
   type ExamEventResult,
   type ExamPolicy,
@@ -326,6 +327,17 @@ export class ExamService {
     const latest = new Map<string, (typeof fresh)[number]>();
     for (const t of fresh) if (!latest.has(t.userId)) latest.set(t.userId, t);
     const nameByUser = new Map(members.map((m) => [m.userId, m.name]));
+    // Device signals per attempt and kind, so the board can show which ones happened.
+    const latestIds = [...latest.values()].map((t) => t.id);
+    const signalRows = latestIds.length
+      ? await this.prisma.examEvent.groupBy({ by: ['attemptId', 'kind'], where: { attemptId: { in: latestIds }, source: 'client', kind: { in: [...CLIENT_EXAM_EVENTS] } }, _count: { _all: true } })
+      : [];
+    const signalsByAttempt = new Map<string, Partial<Record<ClientExamEvent, number>>>();
+    for (const r of signalRows) {
+      const entry = signalsByAttempt.get(r.attemptId) ?? {};
+      entry[r.kind as ClientExamEvent] = r._count._all;
+      signalsByAttempt.set(r.attemptId, entry);
+    }
     const participants = members.map((m) => {
       const t = m.userId ? latest.get(m.userId) : undefined;
       return {
@@ -344,6 +356,7 @@ export class ExamService {
         attemptNo: t?.attemptNo ?? 0,
         score: t && t.correctCount !== null ? { correct: t.correctCount, total: t.totalCount, percent: t.scorePercent ?? 0 } : null,
         reentries: t?.reentries ?? 0,
+        signals: t ? (signalsByAttempt.get(t.id) ?? {}) : {},
       };
     });
     const events = await this.prisma.examEvent.findMany({

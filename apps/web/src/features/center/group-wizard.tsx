@@ -13,6 +13,7 @@ import { LOCALE_NATIVE_NAMES } from '@/i18n/routing';
 import { ApiRequestError } from '@/lib/client-api';
 import { Loaded } from './center-views';
 import { useCreateCenterGroup, useGroupWizard } from './group-wizard-hooks';
+import { FzSelect } from '@/components/ui/fz-select';
 
 const STEPS = ['details', 'teacher', 'students', 'review'] as const;
 type Step = (typeof STEPS)[number];
@@ -128,11 +129,7 @@ function Wizard({ o }: { o: GroupWizardOptions }) {
             </label>
             <label className="block text-sm font-semibold">
               {t('details.subject')}
-              <select value={form.subjectSlug} onChange={(e) => set({ subjectSlug: e.target.value })} className={field}>
-                {o.subjects.map((s) => (
-                  <option key={s.slug} value={s.slug}>{s.title}</option>
-                ))}
-              </select>
+              <FzSelect label={t('details.subject')} value={form.subjectSlug} onValueChange={(v) => set({ subjectSlug: v })} options={o.subjects.map((s) => ({ value: s.slug, label: s.title }))} />
             </label>
             <label className="block text-sm font-semibold">
               {t('details.schedule')}

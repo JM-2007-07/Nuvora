@@ -113,6 +113,8 @@
     "violations": "{count, plural, one {# signal} other {# signals}}",
     "warnings": "{count, plural, one {# warning} other {# warnings}}",
     "reentries": "{count, plural, one {# re-entry} other {# re-entries}}",
+    "violationBadge": "Violation",
+    "noSignals": "No signals",
     "action": {
       "WARN": "Warn",
       "PAUSE": "Pause",

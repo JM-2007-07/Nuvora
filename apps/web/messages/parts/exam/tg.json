@@ -113,6 +113,8 @@
     "violations": "{count, plural, one {# сигнал} other {# сигнал}}",
     "warnings": "{count, plural, one {# огоҳӣ} other {# огоҳӣ}}",
     "reentries": "{count, plural, one {# воридшавии такрорӣ} other {# воридшавии такрорӣ}}",
+    "violationBadge": "Қоидашиканӣ",
+    "noSignals": "Сигнал нест",
     "action": {
       "WARN": "Огоҳ кардан",
       "PAUSE": "Таваққуф",

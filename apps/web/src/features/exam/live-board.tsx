@@ -3,7 +3,7 @@
 import type { LiveEvent, LiveExam, LiveParticipant, Locale, TeacherExamActionRequest } from '@nuvora/shared';
 import { EXAM_EVENTS } from '@nuvora/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftIcon, DoorOpenIcon, EllipsisIcon, FlagIcon, MessageSquareWarningIcon, PauseIcon, PlayIcon, RotateCcwIcon, SquareIcon, TimerIcon } from 'lucide-react';
+import { ArrowLeftIcon, DoorOpenIcon, EllipsisIcon, FlagIcon, LogInIcon, MessageSquareWarningIcon, PauseIcon, PlayIcon, RotateCcwIcon, ShieldCheckIcon, SquareIcon, TimerIcon, TriangleAlertIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -14,6 +14,7 @@ import { PageHead, PercentBar } from '@/features/teach/work-ui';
 import { Link } from '@/i18n/navigation';
 import { ApiRequestError } from '@/lib/client-api';
 import { connectExam, examApi } from './api';
+import { EVENT_META, SIGNAL_CHIPS, TONE as TONE_CLASS } from './event-meta';
 import { usePolicySentence } from './policy';
 import { clock, dayTime, secondsLeft, serverOffset, useNow } from './time';
 
@@ -136,7 +137,7 @@ function Body({ assessmentId }: { assessmentId: string }) {
             </thead>
             <tbody>
               {data.participants.map((p) => (
-                <tr key={p.key} className="border-t border-(--line) align-middle">
+                <tr key={p.key} className={`border-t border-(--line) align-middle ${p.flagged ? 'bg-(--mag-tint)/40' : ''}`}>
                   <td className="px-4 py-3"><NameCell p={p} /></td>
                   <td className="px-4 py-3"><StatusPill status={p.status} /></td>
                   <td className="px-4 py-3"><ProgressCell p={p} /></td>
@@ -151,7 +152,7 @@ function Body({ assessmentId }: { assessmentId: string }) {
           </table>
           <ul className="grid lg:hidden">
             {data.participants.map((p) => (
-              <li key={p.key} className="grid gap-3 border-t border-(--line) p-4 first:border-t-0">
+              <li key={p.key} className={`grid gap-3 border-t border-(--line) p-4 first:border-t-0 ${p.flagged ? 'bg-(--mag-tint)/40' : ''}`}>
                 <div className="flex items-start justify-between gap-3">
                   <NameCell p={p} />
                   <StatusPill status={p.status} />
@@ -278,12 +279,43 @@ function LastSync({ p, offset, now }: { p: LiveParticipant; offset: number; now:
 
 function Signals({ p }: { p: LiveParticipant }) {
   const t = useTranslations('ExamLive');
+  const tk = useTranslations('ExamLive.events.kind');
   if (p.status === 'NOT_STARTED') return <span className="text-(--faint)">—</span>;
+  const chips = SIGNAL_CHIPS.filter((k) => (p.signals[k] ?? 0) > 0);
+  const chip = 'inline-flex min-h-7 items-center gap-1 rounded-full px-2 text-xs font-bold tabular-nums';
   return (
-    <span className="grid gap-0.5 text-xs text-(--muted)">
-      <span>{t('violations', { count: p.violations })}</span>
-      <span>{t('warnings', { count: p.warnings })}</span>
-      {p.reentries > 0 ? <span>{t('reentries', { count: p.reentries })}</span> : null}
+    <span className="flex max-w-56 flex-wrap items-center gap-1.5">
+      {chips.map((k) => {
+        const { Icon, tone } = EVENT_META[k];
+        const label = `${tk(k)}: ${p.signals[k]}`;
+        return (
+          <span key={k} title={label} className={`${chip} ${TONE_CLASS[tone]}`}>
+            <Icon aria-hidden="true" className="size-3.5" />
+            {p.signals[k]}
+            <span className="sr-only">{label}</span>
+          </span>
+        );
+      })}
+      {p.warnings > 0 ? (
+        <span title={t('warnings', { count: p.warnings })} className={`${chip} ${TONE_CLASS.gold}`}>
+          <TriangleAlertIcon aria-hidden="true" className="size-3.5" />
+          {p.warnings}
+          <span className="sr-only">{t('warnings', { count: p.warnings })}</span>
+        </span>
+      ) : null}
+      {p.reentries > 0 ? (
+        <span title={t('reentries', { count: p.reentries })} className={`${chip} ${TONE_CLASS.blue}`}>
+          <LogInIcon aria-hidden="true" className="size-3.5" />
+          {p.reentries}
+          <span className="sr-only">{t('reentries', { count: p.reentries })}</span>
+        </span>
+      ) : null}
+      {!chips.length && !p.warnings && !p.reentries ? (
+        <span className="inline-flex items-center gap-1 text-xs text-(--mint-ink)">
+          <ShieldCheckIcon aria-hidden="true" className="size-3.5" />
+          {t('noSignals')}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -371,12 +403,19 @@ function Actions({ p, busy, run, ask }: { p: LiveParticipant; busy: boolean; run
 
 function EventRow({ e }: { e: LiveEvent }) {
   const t = useTranslations('ExamLive.events');
+  const tl = useTranslations('ExamLive');
+  const { Icon, tone, violation } = EVENT_META[e.kind];
   return (
-    <li className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-3 text-sm">
-      <span className="font-mono text-xs tabular-nums text-(--faint)">{dayTime(e.at)}</span>
-      <span className="font-semibold text-(--text)">{e.name}</span>
-      <span className="text-(--muted)">{t(`kind.${e.kind}`)}</span>
-      <span className="ml-auto rounded-full bg-(--panel2) px-2 py-0.5 text-xs text-(--muted)">{t(`source.${e.source}`)}</span>
+    <li className={`flex items-center gap-3 px-4 py-3 text-sm ${violation ? 'border-l-4 border-(--mag) bg-(--mag-tint)/40' : 'border-l-4 border-transparent'}`}>
+      <span aria-hidden="true" className={`grid size-8 shrink-0 place-items-center rounded-full ${TONE_CLASS[tone]}`}>
+        <Icon className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="font-semibold text-(--text)">{e.name}</span>{' '}
+        <span className={violation ? 'font-semibold text-(--mag-ink)' : 'text-(--muted)'}>{t(`kind.${e.kind}`)}</span>
+        {violation ? <span className="ml-2 rounded-full bg-(--mag) px-2 py-0.5 align-middle text-[11px] font-bold text-(--danger-ink)">{tl('violationBadge')}</span> : null}
+        <span className="block font-mono text-xs tabular-nums text-(--faint)">{dayTime(e.at)} · {t(`source.${e.source}`)}</span>
+      </span>
     </li>
   );
 }

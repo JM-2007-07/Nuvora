@@ -23,6 +23,7 @@ import { dayTime, fromInputs, STATUS_TONE, toInputs } from './format';
 import { useAssessment, useAssessmentAction, useAssessments, useCreateAssessment, useSaveAssessment, useSubjectTopics } from './hooks';
 import { PreviewStep } from './preview-step';
 import { QuestionsStep } from './questions-step';
+import { FzSelect } from '@/components/ui/fz-select';
 
 export const STEPS = ['details', 'questions', 'settings', 'preview', 'publish'] as const;
 export type Step = (typeof STEPS)[number];
@@ -278,20 +279,11 @@ function DetailsStep({ draft, update, groups, topics, tried }: { draft: Assessme
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">
           {t('class')}
-          <select value={draft.groupCode} onChange={(e) => update({ groupCode: e.target.value })} className={field}>
-            {groups.map((g) => (
-              <option key={g.code} value={g.code}>{`${g.code} · ${g.name}`}</option>
-            ))}
-          </select>
+          <FzSelect label={t('class')} value={draft.groupCode} onValueChange={(v) => update({ groupCode: v })} options={groups.map((g) => ({ value: g.code, label: `${g.code} · ${g.name}` }))} />
         </label>
         <label className="block text-sm font-semibold">
           {t('topic')}
-          <select value={draft.topicSlug ?? ''} onChange={(e) => update({ topicSlug: e.target.value || null })} className={field}>
-            <option value="">{t('allTopics')}</option>
-            {topics.map((x) => (
-              <option key={x.slug} value={x.slug}>{x.title}</option>
-            ))}
-          </select>
+          <FzSelect label={t('topic')} value={draft.topicSlug ?? ''} onValueChange={(v) => update({ topicSlug: v || null })} options={[{ value: '', label: t('allTopics') }, ...topics.map((x) => ({ value: x.slug, label: x.title }))]} />
         </label>
       </div>
       <fieldset className="grid gap-2">
@@ -408,18 +400,11 @@ function SettingsStep({
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">
           {t('attempts')}
-          <select value={draft.attemptsAllowed} onChange={(e) => update({ attemptsAllowed: e.target.value === '2' ? 2 : 1 })} className={field}>
-            <option value="1">{t('attempts1')}</option>
-            <option value="2">{t('attempts2')}</option>
-          </select>
+          <FzSelect label={t('attempts')} value={String(draft.attemptsAllowed)} onValueChange={(v) => update({ attemptsAllowed: v === '2' ? 2 : 1 })} options={[{ value: '1', label: t('attempts1') }, { value: '2', label: t('attempts2') }]} />
         </label>
         <label className="block text-sm font-semibold">
           {t('show')}
-          <select value={draft.revealAnswers} onChange={(e) => update({ revealAnswers: e.target.value as AssessmentDraft['revealAnswers'] })} className={field}>
-            <option value="AFTER_CLOSE">{t('reveal.AFTER_CLOSE')}</option>
-            <option value="AFTER_SUBMIT">{t('reveal.AFTER_SUBMIT')}</option>
-            <option value="NEVER">{t('reveal.NEVER')}</option>
-          </select>
+          <FzSelect label={t('show')} value={draft.revealAnswers} onValueChange={(v) => update({ revealAnswers: v as AssessmentDraft['revealAnswers'] })} options={(['AFTER_CLOSE', 'AFTER_SUBMIT', 'NEVER'] as const).map((r) => ({ value: r, label: t(`reveal.${r}`) }))} />
         </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">

@@ -169,6 +169,8 @@ export const LiveParticipantSchema = z.strictObject({
   /** Correct answers, only once submitted (teachers see their own groups answer by answer). */
   score: z.strictObject({ correct: z.number().int(), total: z.number().int(), percent: z.number().int() }).nullable(),
   reentries: z.number().int(),
+  /** Device signals by kind for the current attempt (e.g. FOCUS_LOST: 2), for icons on the board. */
+  signals: z.partialRecord(z.enum(CLIENT_EXAM_EVENTS), z.number().int()),
 });
 export type LiveParticipant = z.infer<typeof LiveParticipantSchema>;
 

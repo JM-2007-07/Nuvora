@@ -11,6 +11,7 @@ import { useGroupAnalytics, useTeacherOverview } from './hooks';
 import { DeniedState, isDenied, StaffGate } from './staff-gate';
 import { GroupPicker, useActiveGroup } from './active-group';
 import { PageHead, PercentBar, Tabs } from './work-ui';
+import { FzSelect } from '@/components/ui/fz-select';
 
 /** Question-level analytics of the recorded group's diagnostic (handoff TAnalytics). */
 export function TeacherAnalytics() {
@@ -134,13 +135,9 @@ function Loaded({ g, picker }: { g: GroupAnalytics; picker: React.ReactNode }) {
               onChange={setTopic}
               items={[{ key: 'all', label: t('all') }, ...g.topics.map((x) => ({ key: x.topic.slug, label: x.topic.title }))]}
             />
-            <label className="text-sm font-semibold">
-              <span className="sr-only">{t('sort')}</span>
-              <select value={sort} onChange={(e) => setSort(e.target.value as 'hard' | 'number')} className="min-h-12 rounded-[14px] border border-(--line2) bg-(--panel2) px-3 text-(--text)">
-                <option value="hard">{t('hardest')}</option>
-                <option value="number">{t('byNumber')}</option>
-              </select>
-            </label>
+            <div className="min-w-44 text-sm font-semibold">
+              <FzSelect label={t('sort')} value={sort} onValueChange={(v) => setSort(v as 'hard' | 'number')} className="mt-0" options={[{ value: 'hard', label: t('hardest') }, { value: 'number', label: t('byNumber') }]} />
+            </div>
           </div>
         </div>
         <div aria-hidden="true" className="hidden grid-cols-[48px_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.2fr)] gap-4 border-y border-(--line) bg-(--panel2) px-6 py-3 text-sm font-semibold text-(--muted) md:grid">

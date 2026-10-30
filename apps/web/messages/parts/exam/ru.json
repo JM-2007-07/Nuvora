@@ -113,6 +113,8 @@
     "violations": "{count, plural, one {# сигнал} few {# сигнала} many {# сигналов} other {# сигнала}}",
     "warnings": "{count, plural, one {# предупреждение} few {# предупреждения} many {# предупреждений} other {# предупреждения}}",
     "reentries": "{count, plural, one {# повторный вход} few {# повторных входа} many {# повторных входов} other {# повторного входа}}",
+    "violationBadge": "Нарушение",
+    "noSignals": "Сигналов нет",
     "action": {
       "WARN": "Предупредить",
       "PAUSE": "Пауза",

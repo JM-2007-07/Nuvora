@@ -14,6 +14,7 @@ import { ApiRequestError } from '@/lib/client-api';
 import { connectExam, examApi } from './api';
 import { usePolicySentence } from './policy';
 import { clock, dayTime, secondsLeft, serverOffset, useNow } from './time';
+import { SubmittedHero } from './submitted-hero';
 
 const FINAL: readonly AttemptStatus[] = ['SUBMITTED', 'EXPIRED', 'ENDED'];
 const isFinal = (status: AttemptStatus | undefined) => !!status && FINAL.includes(status);
@@ -475,10 +476,15 @@ function ResultView({ attemptId, title, status }: { attemptId: string; title: st
   return (
     <div className="mx-auto grid max-w-3xl gap-5">
       <Card as="div">
-        <p className="fz-kicker text-(--mint-ink)">{t('kicker')}</p>
-        <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{title}</h1>
-        <p className="mt-4 text-4xl font-bold tabular-nums">{t('score', { correct: r.correct, total: r.total })}</p>
-        <p className="mt-1 text-(--muted)">{t('percent', { percent: r.percent })}</p>
+        <div className="flex flex-wrap items-center gap-5">
+          <SubmittedHero percent={r.percent} label={t('percent', { percent: r.percent })} />
+          <div className="min-w-0">
+            <p className="fz-kicker text-(--mint-ink)">{t('kicker')}</p>
+            <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{title}</h1>
+            <p className="mt-3 text-4xl font-bold tabular-nums">{t('score', { correct: r.correct, total: r.total })}</p>
+            <p className="mt-1 text-(--muted)">{t('percent', { percent: r.percent })}</p>
+          </div>
+        </div>
         {status === 'EXPIRED' || status === 'ENDED' ? <p className="mt-3 text-sm text-(--muted)">{t(`note.${status}`)}</p> : null}
         <Link href="/app/quests" className="fz-btn fz-btn-ghost mt-5">{t('back')}</Link>
       </Card>
