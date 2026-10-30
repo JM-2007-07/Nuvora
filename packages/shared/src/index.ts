@@ -11,3 +11,4 @@ export * from './invitation-api.js';
 export * from './group-wizard-api.js';
 export * from './comms-api.js';
 export * from './profile-api.js';
+export * from './auth-api.js';

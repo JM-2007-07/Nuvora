@@ -31,7 +31,8 @@ export const RegisterRequestSchema = z.discriminatedUnion('role', [
 ]);
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 
-export const LoginRequestSchema = z.strictObject({ email: Email, password: z.string().min(1).max(200) });
+/** `code`: the six-digit two-factor code, required only when the account has two-factor sign-in on. */
+export const LoginRequestSchema = z.strictObject({ email: Email, password: z.string().min(1).max(200), code: z.string().trim().regex(/^\d{6}$/).optional() });
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 export const SubscriptionViewSchema = z.strictObject({

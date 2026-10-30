@@ -19,6 +19,8 @@ import { type ContentSet, content as fullContent } from '../src/seed/content/ind
 import { TEMPLATE_CONTENT as content } from '../src/seed/fixtures.js';
 import { emptySnapshot } from '../src/seed/load/types.js';
 import { type FakeContentOptions, fakeContentPrisma, snapshotOf } from './support/fake-content-prisma.js';
+import { SessionStore } from '../src/identity/session-store.js';
+import { SignedTestSessions } from './support/signed-sessions.js';
 
 const env = { DATABASE_URL: 'postgresql://test:test@localhost:5432/unused', API_PORT: 4000, WEB_ORIGIN: 'http://localhost:3000' };
 const variablesTopic = content.topics[0];
@@ -36,7 +38,9 @@ function withConditions(): ContentSet {
 
 async function startApp(db: Awaited<ReturnType<typeof snapshotOf>>, options?: FakeContentOptions): Promise<INestApplication<App>> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
-    .overrideProvider(PrismaService)
+    .overrideProvider(SessionStore)
+      .useValue(new SignedTestSessions())
+      .overrideProvider(PrismaService)
     .useValue(fakeContentPrisma(db, options))
     .compile();
   const app = moduleRef.createNestApplication<INestApplication<App>>();

@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { AccountsController } from './accounts.controller.js';
 import { AccountsService } from './accounts.service.js';
+import { ResetLinkDelivery } from './reset-delivery.js';
 
 /** Password accounts, plans and the demo checkout (IdentityService is global). */
 @Module({
   imports: [PrismaModule],
   controllers: [AccountsController],
-  providers: [AccountsService],
+  providers: [AccountsService, ResetLinkDelivery],
+  exports: [AccountsService],
 })
 export class AccountsModule {}

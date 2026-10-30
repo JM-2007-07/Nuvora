@@ -8,6 +8,8 @@ import { configureApp } from '../src/app.setup.js';
 import type { LearnerRecord } from '../src/identity/identity.service.js';
 import { SESSION_COOKIE, SessionSigner } from '../src/identity/session-cookie.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { SessionStore } from '../src/identity/session-store.js';
+import { SignedTestSessions } from './support/signed-sessions.js';
 
 const SESSION_SECRET = 's'.repeat(32);
 const env = { DATABASE_URL: 'postgresql://test:test@localhost:5432/unused', API_PORT: 4000, WEB_ORIGIN: 'http://localhost:3000', SESSION_SECRET };
@@ -43,6 +45,8 @@ describe('Identity and access checks (e2e, in-memory data)', () => {
   beforeEach(async () => {
     db = fakeIdentityPrisma();
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
+      .overrideProvider(SessionStore)
+      .useValue(new SignedTestSessions(SESSION_SECRET))
       .overrideProvider(PrismaService)
       .useValue(db)
       .compile();

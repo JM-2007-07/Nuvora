@@ -43,6 +43,18 @@ enum AccountRole {
   CENTER_ADMIN
 }
 
+/// Platform-wide role, separate from the account role. Granted only by the server-side
+/// bootstrap command (pnpm admin:bootstrap), never by registration, invitations or any HTTP route.
+enum PlatformRole {
+  SUPER_ADMIN
+}
+
+/// How a session authenticates: a web cookie, or bearer tokens with refresh rotation (mobile).
+enum AuthChannel {
+  WEB
+  MOBILE
+}
+
 /// Faroz plans (handoff pricing). Payments are a demo: nothing is charged.
 enum PlanCode {
   FREE
@@ -360,9 +372,16 @@ model Account {
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  /// Null for everyone except the platform owner (see PlatformRole)
+  platformRole   PlatformRole?
+  /// TOTP secret for two-factor sign-in, encrypted with a key derived from SESSION_SECRET
+  totpSecretEnc  String?
+  /// Set when two-factor sign-in is switched on
+  totpEnabledAt  DateTime?
 
   teaching            StudyGroup[]
   acceptedInvitations StaffInvitation[]
+  passwordResets      PasswordResetToken[]
 
   @@index([organizationId])
   @@map("accounts")
@@ -717,4 +736,81 @@ model ProfileAvatar {
   updatedAt      DateTime @updatedAt
 
   @@map("profile_avatars")
+}
+
+// ---------- Sessions, password reset, audit (2026-10-30, owner-approved additive migration) ----------
+
+/// One signed-in device. The token itself is never stored, only its SHA-256.
+/// `subject` is the identity the session acts as: a learner's user id, "staff:<slug>" for demo
+/// staff or "staff:acct:<accountId>" for teacher and center accounts.
+model AuthSession {
+  id              String      @id @default(cuid())
+  subject         String
+  channel         AuthChannel
+  /// SHA-256 of the cookie value (web) or of the current access token (mobile)
+  tokenHash       String      @unique
+  /// The access token stops working at this time (web: same as expiresAt)
+  accessExpiresAt DateTime
+  /// The session ends at this time (mobile: refresh tokens stop working)
+  expiresAt       DateTime
+  createdAt       DateTime    @default(now())
+  lastSeenAt      DateTime    @default(now())
+  revokedAt       DateTime?
+  /// logout, logout-all, password-reset, refresh-reuse, admin, …
+  revokedReason   String?
+  userAgent       String?
+  ip              String?
+  deviceLabel     String?
+
+  refreshTokens AuthRefreshToken[]
+
+  @@index([subject])
+  @@map("auth_sessions")
+}
+
+/// Mobile refresh tokens: each one works once; presenting a used one again revokes the session (reuse detection).
+model AuthRefreshToken {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tokenHash String      @unique
+  createdAt DateTime    @default(now())
+  usedAt    DateTime?
+
+  @@index([sessionId])
+  @@map("auth_refresh_tokens")
+}
+
+/// Password reset links: single use, expire after one hour; only the SHA-256 is stored.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  accountId String
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@index([accountId])
+  @@map("password_reset_tokens")
+}
+
+/// Append-only record of security-relevant and administrative actions. The application only inserts rows.
+model AuditEvent {
+  id             String   @id @default(cuid())
+  at             DateTime @default(now())
+  /// Session subject of who acted, or null for anonymous events (failed sign-in)
+  actorKey       String?
+  action         String
+  targetType     String?
+  targetId       String?
+  organizationId String?
+  ip             String?
+  /// Small, non-secret details (never passwords, tokens or answers)
+  meta           Json?
+
+  @@index([at])
+  @@index([actorKey])
+  @@index([action])
+  @@map("audit_events")
 }

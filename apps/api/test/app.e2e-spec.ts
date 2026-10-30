@@ -6,6 +6,8 @@ import type { App } from 'supertest/types.js';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
+import { SessionStore } from '../src/identity/session-store.js';
+import { SignedTestSessions } from './support/signed-sessions.js';
 
 // No real database: PrismaService is replaced by a stub.
 const env = {
@@ -19,6 +21,8 @@ describe('API (e2e)', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
+      .overrideProvider(SessionStore)
+      .useValue(new SignedTestSessions())
       .overrideProvider(PrismaService)
       .useValue({ $queryRaw: async () => [{ server_version: '18.6' }], $disconnect: async () => {} })
       .compile();

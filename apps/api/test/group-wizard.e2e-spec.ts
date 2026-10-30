@@ -10,6 +10,8 @@ import { PrismaService } from '../src/prisma/prisma.service.js';
 import { DEMO_UNASSIGNED_STUDENTS } from '../src/staff/demo-org.js';
 import { STAFF_COOKIE } from '../src/staff/staff.guard.js';
 import { TeachingService } from '../src/teaching/teaching.service.js';
+import { SessionStore } from '../src/identity/session-store.js';
+import { SignedTestSessions } from './support/signed-sessions.js';
 
 const SESSION_SECRET = 's'.repeat(32);
 const env = { DATABASE_URL: 'postgresql://test:test@localhost:5432/unused', API_PORT: 4000, WEB_ORIGIN: 'http://localhost:3000', SESSION_SECRET };
@@ -96,6 +98,8 @@ describe('Center group wizard (e2e)', () => {
   async function start(options?: { organization: boolean }) {
     prisma = fakePrisma(options);
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
+      .overrideProvider(SessionStore)
+      .useValue(new SignedTestSessions(SESSION_SECRET))
       .overrideProvider(PrismaService)
       .useValue(prisma)
       // The demo groups' analytics are not part of this test: no recorded roster.

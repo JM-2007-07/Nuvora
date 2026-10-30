@@ -3,14 +3,12 @@ import { GroupAnalyticsSchema, StudentAnswersSchema, TeacherOverviewSchema } fro
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
-import { SessionSigner } from '../../src/identity/session-cookie.js';
+import { SessionStore } from '../../src/identity/session-store.js';
 import { recordAttempt } from '../../src/quizzes/record-attempt.js';
-import { startApp, SESSION_SECRET } from './app.js';
+import { startApp } from './app.js';
 import { resetPeople, testDatabaseUrl, testPrisma } from './db.js';
 
 const url = testDatabaseUrl();
-const signer = new SessionSigner(SESSION_SECRET);
-const staffCookie = (accountId: string) => `fz_staff=${encodeURIComponent(signer.sign(`staff:acct:${accountId}`))}`;
 
 /**
  * Teacher analytics for a database group (own account group), on real PostgreSQL:
@@ -24,6 +22,9 @@ describe.skipIf(!url)('teacher analytics for any authorized group (real database
   let otherTeacherId: string;
   let memberIds: string[];
   const code = 'JS-T3ST';
+  const cookies = new Map<string, string>();
+  /** A real database session for a teacher account. */
+  const staffCookie = (accountId: string) => cookies.get(accountId)!;
 
   beforeAll(async () => {
     prisma = testPrisma(url!);
@@ -42,6 +43,7 @@ describe.skipIf(!url)('teacher analytics for any authorized group (real database
     await prisma.$transaction((tx) => recordAttempt(tx, memberIds[0]!, 'javascript-diagnostic', answers(true)));
     await prisma.$transaction((tx) => recordAttempt(tx, memberIds[1]!, 'javascript-diagnostic', answers(false)));
     app = await startApp(url!);
+    for (const id of [teacherId, otherTeacherId]) cookies.set(id, `fz_staff=${(await app.get(SessionStore).issueWeb(`staff:acct:${id}`, {})).token}`);
   });
 
   afterAll(async () => {
