@@ -5,6 +5,8 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { QueryProvider } from '@/components/providers';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ConsentBanner } from '@/features/consent/consent-banner';
+import { ConsentProvider } from '@/features/consent/consent-provider';
 import { routing } from '@/i18n/routing';
 import '../globals.css';
 
@@ -37,7 +39,10 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <NextIntlClientProvider>
           <ThemeProvider>
             <QueryProvider>
-              {children}
+              <ConsentProvider>
+                {children}
+                <ConsentBanner />
+              </ConsentProvider>
             </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

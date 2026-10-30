@@ -222,7 +222,9 @@
       "offlineBody": "Faroz isn’t responding right now. Your saved results are still there; try again in a moment.",
       "errorTitle": "Something went wrong",
       "errorBody": "The request failed. Try again.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "pageErrorBody": "This page couldn’t be shown. Try again, or go back to the start.",
+      "home": "Go to the start"
     },
     "choose": {
       "kicker": "Demo mode",

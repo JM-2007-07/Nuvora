@@ -1,0 +1,6 @@
+{
+  "cookies": [
+    { "name": "faroz-consent", "value": "%7B%22version%22%3A1%2C%22decidedAt%22%3A%222026-10-30T00%3A00%3A00.000Z%22%2C%22categories%22%3A%7B%22analytics%22%3Afalse%2C%22marketing%22%3Afalse%7D%7D", "domain": "localhost", "path": "/", "expires": -1, "httpOnly": false, "secure": false, "sameSite": "Lax" }
+  ],
+  "origins": []
+}

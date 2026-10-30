@@ -102,6 +102,25 @@ The owner switched to the Faroz handoff (D-23) for the defense on **Mon 2 Nov 20
 | F6 Polish + PWA | Manifest/icons, states, 390/768/1440, themes, locales, reduced motion | Manifest and icons done, no service worker; 390 px, themes, keyboard spot-checked ([story](../stories/2026-10-28-defense-readiness.md)) |
 | F7 Release QA | All checks, Playwright journeys, `visual-qa`, defense checklist (real vs prototype) | Checks and 8 Playwright journeys pass; checklist written. Open: `/code-review`, `/security-review`, `visual-qa`, Lighthouse, Tajik/Russian review |
 
+## Platform implementation (from 2026-10-30)
+
+Owner directive "Full product implementation" (2026-10-30), based on the [technical readiness report](../engineering/FAROZ-TECHNICAL-READINESS-REPORT.md). Owner decisions in the chat, 2026-10-30: **defense-strengthening slices first**, the full identity migration, mobile, push and offline right after the defense; packages approved: Expo stack for `apps/mobile`, web test tools; new additive migrations are checked on `nuvora_test` first, then applied to `nuvora_dev`; branch `feat/faroz-platform`.
+
+| # | Feature | State 2026-10-30 | Depends on | Backend | Web | Mobile | Tests | Acceptance | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Security baseline | No rate limits, headers, Origin check, error boundaries; center totals for tiny groups; ICE env unvalidated | — | In-memory rate limiter, security headers, Origin check on writes, Zod env | Headers in Next config, `error.tsx` per area | — | unit + e2e | Report findings S-02 (partly), S-05, S-06, S-09, B-08, F-08 closed | In progress |
+| 2 | Teacher analytics for any authorized group | Hard-wired to B-12 | — | existing `/teach/groups/:code` | Group picker | later | e2e | An account teacher sees their own groups | Planned |
+| 3 | Cookie consent + cookie policy | Missing | — | — | Banner, settings dialog, footer entry, `/cookies` | — | Playwright | Accept/reject/customize/withdraw persist; no trackers | In progress |
+| 4 | Sessions: expiry, revocation, devices, mobile tokens | Stateless HMAC cookie | 1 | `sessions` table, one guard (cookie or bearer), refresh rotation with reuse detection, logout current/all, session list | Sessions in settings | uses tokens | real-DB integration | Revoked or expired session gets 401 everywhere | Planned |
+| 5 | Password reset | Missing | 4 | Reset tokens (hashed, single use, expiring), delivery boundary (no mail provider configured) | Forgot/reset pages | later | integration | Reset works end to end with the configured delivery | Planned |
+| 6 | Super Admin + audit log | Missing | 4 | `platformRole` set only by a server CLI, admin endpoints, `audit_events` | `/admin` workspace | optional | integration | Only bootstrap can grant it; actions logged | Planned |
+| 7 | Learners take teacher assessments | Builder only | 4 | Assignment to groups, attempts, server scoring, results by reveal setting | Learner list + player, teacher results | later | integration + Playwright | Steps 1–10 of directive section E | Planned |
+| 8 | Exam mode + live dashboard | Missing | 7 | Server timer, idempotent autosave, events, policy, socket namespace | Exam player, teacher live view | later | integration + Playwright | Reconnect keeps answers; teacher actions logged | Planned |
+| 9 | Identity consolidation (memberships, FKs, demo org in DB) | Three models | 4, 6 | Additive migrations + backfill verified on `nuvora_test` | adapt | — | migration tests | No data lost; old ids still resolve | After defense |
+| 10 | Google sign-in | Missing | 4 | ID-token verification boundary; needs owner OAuth client id | Button when configured | later | unit | Works when credentials exist; hidden otherwise | Planned (credentials needed) |
+| 11 | Notifications + push | In-tab only | 4 | `notifications`, preferences, device tokens, delivery boundary | Preferences, center | push | integration | Preferences respected, no duplicates | After defense (push credentials needed) |
+| 12 | Mobile app (Expo) | Missing | 4 | — | — | Scaffold, auth, student flows, then teacher/center, offline, biometrics/PIN | unit + emulator | Android build runs against the API | After defense |
+
 ## Implementation sequence (dependency order)
 
 1. Walking skeleton (G1)

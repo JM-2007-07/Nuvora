@@ -46,6 +46,32 @@ describe('API (e2e)', () => {
     expect(res.headers['x-request-id']).toBe(body.error.requestId);
   });
 
+  it('sends security headers on every response', async () => {
+    const res = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-frame-options']).toBe('DENY');
+    expect(res.headers['content-security-policy']).toContain("frame-ancestors 'none'");
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
+
+  it('refuses a cookie-authenticated write from a foreign origin (CSRF)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/logout')
+      .set('Cookie', 'nv_session=anything')
+      .set('Origin', 'https://evil.example')
+      .expect(403);
+    expect(ApiErrorSchema.parse(res.body).error.code).toBe('ORIGIN_REJECTED');
+    await request(app.getHttpServer()).post('/api/v1/auth/logout').set('Cookie', 'nv_session=anything').set('Origin', 'http://localhost:3000').expect(204);
+  });
+
+  it('rate-limits sign-in attempts per client with 429 and Retry-After', async () => {
+    const attempt = () => request(app.getHttpServer()).post('/api/v1/auth/login').send({});
+    for (let i = 0; i < 20; i++) expect((await attempt()).status).toBe(400); // invalid body, but counted
+    const res = await attempt().expect(429);
+    expect(ApiErrorSchema.parse(res.body).error.code).toBe('RATE_LIMITED');
+    expect(Number(res.headers['retry-after'])).toBeGreaterThan(0);
+  });
+
   it('allows CORS only for the web origin', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/health')

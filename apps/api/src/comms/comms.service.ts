@@ -12,6 +12,8 @@ import {
   VOICE_MAX_MS,
 } from '@nuvora/shared';
 import type { Prisma } from '../generated/prisma/client.js';
+import { looksLikeAudio } from './audio-signature.js';
+import { parseIceServers } from '../config/env.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CallsRegistry } from './calls-registry.js';
 import { randomUUID } from 'node:crypto';
@@ -77,12 +79,9 @@ export class CommsService {
   rtcConfig(): RtcConfig {
     // Optional STUN/TURN for calls across networks (mobile app, other sites): COMMS_ICE_SERVERS as JSON.
     // Same machine and same network need none (host candidates).
-    try {
-      const raw = process.env.COMMS_ICE_SERVERS;
-      return { iceServers: raw ? (JSON.parse(raw) as RtcConfig['iceServers']) : [] };
-    } catch {
-      return { iceServers: [] };
-    }
+    // Validated at startup by config/env.ts; parsed again here because tests build the app without it.
+    const raw = process.env.COMMS_ICE_SERVERS;
+    return { iceServers: raw ? ((parseIceServers(raw) ?? []) as RtcConfig['iceServers']) : [] };
   }
 
   async overview(me: CommsParticipant): Promise<CommsOverview> {
@@ -176,7 +175,7 @@ export class CommsService {
     const conversation = await this.conversationFor(me, id);
     if (!file || file.size === 0) throw new BadRequestException({ code: 'VOICE_MISSING', message: 'Attach the recording as "audio"' });
     if (file.size > VOICE_MAX_BYTES) throw new BadRequestException({ code: 'VOICE_TOO_LARGE', message: 'Voice messages are at most 2 MB' });
-    if (!ALLOWED_AUDIO.test(file.mimetype)) throw new BadRequestException({ code: 'VOICE_FORMAT', message: 'Unsupported audio format' });
+    if (!ALLOWED_AUDIO.test(file.mimetype) || !looksLikeAudio(file.buffer)) throw new BadRequestException({ code: 'VOICE_FORMAT', message: 'Unsupported audio format' });
     if (!Number.isInteger(durationMs) || durationMs < 300 || durationMs > VOICE_MAX_MS) throw new BadRequestException({ code: 'VOICE_DURATION', message: 'Voice messages last 0.3 s to 3 min' });
     return this.store(conversation, me, { kind: 'VOICE', body: null, voice: { mimeType: file.mimetype.split(';')[0], durationMs, data: Uint8Array.from(file.buffer) } });
   }

@@ -1,0 +1,67 @@
+{
+  "Consent": {
+    "bannerLabel": "Cookie notice",
+    "title": "Cookies on Faroz",
+    "body": "Faroz uses only the cookies it needs to work. It uses no analytics or marketing cookies today. You can choose now what is allowed if that changes.",
+    "policyLink": "Cookie policy",
+    "acceptAll": "Accept all",
+    "rejectOptional": "Reject optional",
+    "customize": "Customize",
+    "dialogTitle": "Cookie settings",
+    "dialogIntro": "Choose which optional cookies Faroz may use. You can change this at any time from the footer.",
+    "necessary": {
+      "title": "Necessary",
+      "text": "Keeps you signed in and remembers your language, theme and unsent quiz answers. Faroz cannot work without them."
+    },
+    "alwaysOn": "Always on",
+    "analytics": {
+      "title": "Analytics",
+      "text": "Would count visits and show how the site is used. Faroz does not use analytics today."
+    },
+    "marketing": {
+      "title": "Marketing",
+      "text": "Would be used for ads or tracking across sites. Faroz does not use marketing cookies today."
+    },
+    "noneToday": "Faroz does not use analytics or marketing cookies today. These switches only record your choice for the future.",
+    "cancel": "Cancel",
+    "save": "Save choices",
+    "settings": "Cookie settings",
+    "footerPolicy": "Cookies",
+    "privacyCookies": "More about the cookies and browser storage Faroz uses, and how to change your choice, is on the cookie policy page."
+  },
+  "CookiePolicy": {
+    "metaTitle": "Cookie policy",
+    "title": "Cookie policy",
+    "intro": "A factual list of the cookies and browser storage Faroz uses, what each one is for, and how long it lasts.",
+    "legalNote": "This is a draft for a course project. It has not had legal review for any specific country, and Faroz does not claim to meet any particular cookie law.",
+    "listTitle": "What Faroz stores in your browser",
+    "colName": "Name",
+    "colType": "Type",
+    "colPurpose": "Purpose",
+    "colDuration": "Duration",
+    "colCategory": "Category",
+    "typeCookie": "Cookie",
+    "typeLocal": "Local storage",
+    "typeSession": "Session storage",
+    "categoryNecessary": "Necessary",
+    "durationSession": "Until you close the tab",
+    "duration30d": "30 days",
+    "duration1y": "1 year",
+    "durationUntilCleared": "Until you clear it",
+    "rows": {
+      "session": "Keeps you signed in as a learner or teacher. Set by the Faroz server and not readable by page scripts (HttpOnly).",
+      "staff": "Keeps you signed in to a center workspace. Set by the Faroz server and not readable by page scripts (HttpOnly).",
+      "locale": "Remembers the language you chose (Russian, Tajik or English).",
+      "consent": "Remembers your cookie choice so Faroz does not ask again.",
+      "theme": "Remembers whether you use the dark or the light theme.",
+      "notify": "Remembers that you dismissed the prompt to turn on notifications on this device.",
+      "quest": "Keeps your unsent quiz answers if you reload the page. The key ends with the quiz name. It is removed when you submit."
+    },
+    "optionalTitle": "Optional categories",
+    "optionalBody": "Analytics and marketing are the optional categories. Faroz uses neither today: it has no analytics tools, no advertising and no third-party trackers. If that ever changes, the notice will ask you again before anything optional is switched on.",
+    "manageTitle": "Change your choice",
+    "manageBody": "You can see, change or withdraw your choice at any time. You can also delete cookies and site data in your browser settings; you will then be signed out and asked about cookies again.",
+    "manageButton": "Cookie settings",
+    "back": "Back to the home page"
+  }
+}
