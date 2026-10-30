@@ -4,6 +4,7 @@ import { BarChart3Icon, ClipboardCheckIcon, GraduationCapIcon, LayoutDashboardIc
 import { useTranslations } from 'next-intl';
 import { PersonCard, WorkspaceShell } from '@/features/app/workspace-shell';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
+import { useMyProfile } from '@/features/profile/hooks';
 import { usePathname } from '@/i18n/navigation';
 import { isAccountStaff, useLeaveStaff, useSignOut, useStaff } from './hooks';
 
@@ -42,13 +43,16 @@ function TeachShellInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function StaffCard() {
+/** The signed-in staff member; `profileHref` is the workspace's "My profile" page. */
+export function StaffCard({ profileHref = '/teach/profile' }: { profileHref?: string }) {
   const t = useTranslations('Teach.nav');
   const tRole = useTranslations('Teach.role');
   const staff = useStaff();
   const tw = useTranslations('WorkNav');
   const leave = useLeaveStaff();
   const signOut = useSignOut();
+  const tp = useTranslations('Profile');
+  const profile = useMyProfile(!!staff.data);
   if (!staff.data) return null;
   const account = isAccountStaff(staff.data.slug);
   return (
@@ -58,6 +62,9 @@ export function StaffCard() {
       switchLabel={account ? tw('signOut') : t('switch')}
       onSwitch={() => (account ? signOut.mutate() : leave.mutate())}
       pending={leave.isPending || signOut.isPending}
+      avatarUrl={profile.data?.avatarUrl}
+      profileHref={profileHref}
+      profileLabel={tp('nav')}
     />
   );
 }

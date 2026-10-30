@@ -164,7 +164,7 @@ function PeoplePicker({ people, selected, onToggle, actionLabel }: { people: Con
                 aria-label={`${actionLabel}: ${p.name}`}
                 className={`flex w-full min-w-0 items-center gap-3 rounded-xl p-2 text-left hover:bg-(--panel2) ${on ? 'bg-(--mint-tint)' : ''}`}
               >
-                <Avatar name={p.name} size={34} online={p.online} />
+                <Avatar name={p.name} src={p.avatarUrl} size={34} online={p.online} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-(--text)">{p.name}</span>
                   <span className="block truncate text-xs text-(--faint)">{p.groups.join(', ')}</span>

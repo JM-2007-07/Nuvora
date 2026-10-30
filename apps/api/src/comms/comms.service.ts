@@ -15,6 +15,7 @@ import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CallsRegistry } from './calls-registry.js';
 import { randomUUID } from 'node:crypto';
+import { avatarUrls } from '../profiles/avatar-url.js';
 import { CommsDirectory, type CommsParticipant, directKey, directMembers } from './directory.js';
 import { RealtimeHub } from './realtime-hub.js';
 
@@ -86,7 +87,9 @@ export class CommsService {
 
   async overview(me: CommsParticipant): Promise<CommsOverview> {
     const groups = await this.directory.groupsOf(me);
-    const contacts = [...(await this.directory.contactsOf(me)).values()].map((c) => ({ ...c, online: this.hub.isOnline(c.key) }));
+    const people = [...(await this.directory.contactsOf(me)).values()];
+    const photos = await avatarUrls(this.prisma, [...people.map((p) => p.key), ...groups.flatMap((g) => [...(g.teacher ? [g.teacher.key] : []), ...g.learners.map((l) => l.key)])]);
+    const contacts = people.map((c) => ({ ...c, online: this.hub.isOnline(c.key), avatarUrl: photos.get(c.key) ?? null }));
     // Class group conversations exist for every group (created on first look, idempotent); custom ones already exist.
     await Promise.all(
       groups.filter((g) => !g.key.startsWith('group:custom:')).map((g) =>
@@ -117,7 +120,7 @@ export class CommsService {
           memberCount: group ? group.learners.length + (group.teacher ? 1 : 0) : 2,
           // Group members (teacher first) with online state; the client offers "write" to those in `contacts`.
           members: group
-            ? [...(group.teacher ? [group.teacher] : []), ...group.learners].map((p) => ({ ...p, groups: [group.code], online: p.key === me.key || this.hub.isOnline(p.key) }))
+            ? [...(group.teacher ? [group.teacher] : []), ...group.learners].map((p) => ({ ...p, groups: [group.code], online: p.key === me.key || this.hub.isOnline(p.key), avatarUrl: photos.get(p.key) ?? null }))
             : [],
           canManage: !!group && group.teacher?.key === me.key,
           custom: custom(row.key),

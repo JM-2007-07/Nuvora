@@ -50,7 +50,7 @@ export function IncomingCall({ incoming, onAccept, onDecline }: { incoming: Inco
     <div role="alertdialog" aria-labelledby="fz-incoming-title" aria-describedby="fz-incoming-what" className="fz-call-in fixed top-4 right-4 left-4 z-[70] mx-auto flex max-w-[400px] flex-col gap-4 rounded-[24px] border border-(--hud-border) p-5 text-(--hud-text) shadow-(--card-glow-hover) [background:var(--hud)] sm:left-auto">
       <div className="flex items-center gap-4">
         <span className="fz-call-ring rounded-full p-1">
-          <Avatar name={incoming.kind === 'GROUP' ? incoming.title : incoming.from.name} size={56} />
+          <Avatar name={incoming.kind === 'GROUP' ? incoming.title : incoming.from.name} src={incoming.kind === 'GROUP' ? null : incoming.photo} size={56} />
         </span>
         <div className="min-w-0">
           <p id="fz-incoming-title" className="m-0 truncate font-brand text-lg font-bold">

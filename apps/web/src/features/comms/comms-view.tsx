@@ -7,7 +7,7 @@ import { ArrowLeftIcon, MessageSquareIcon, MicIcon, PhoneIcon, PhoneIncomingIcon
 import { useSearchParams } from 'next/navigation';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { usePathname, useRouter } from '@/i18n/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { commsApi } from './api';
 import { Avatar, clock } from './avatar';
 import { AddMembers, ChatMenu, NewGroupDialog, RemoveMemberButton } from './chat-actions';
@@ -152,7 +152,7 @@ function Sidebar({ selectedId, onSelect }: { selectedId: string | null; onSelect
             {contacts.map((c) => (
               <li key={c.key}>
                 <button type="button" onClick={() => void openContact(c)} className="flex w-full min-w-0 items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-(--panel2)">
-                  <Avatar name={c.name} size={42} online={c.online} />
+                  <Avatar name={c.name} src={c.avatarUrl} size={42} online={c.online} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-(--text)">{c.name}</span>
                     <span className="block truncate text-xs text-(--faint)">
@@ -208,7 +208,7 @@ function ConversationRow({ conversation: c, active, typing, onSelect }: { conver
           {c.groupCode}
         </span>
       ) : (
-        <Avatar name={c.title} size={42} online={c.peer?.online} />
+        <Avatar name={c.title} src={c.peer?.avatarUrl} size={42} online={c.peer?.online} />
       )}
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline gap-2">
@@ -243,6 +243,7 @@ function ConversationRow({ conversation: c, active, typing, onSelect }: { conver
 
 function ConversationPane({ conversation, onBack, onSelect }: { conversation: ConversationSummary; onBack: () => void; onSelect: (id: string) => void }) {
   const t = useTranslations('Comms');
+  const tp = useTranslations('Profile');
   const comms = useComms();
   const [members, setMembers] = useState(false);
   const snap = useCallSnapshot(comms.engine);
@@ -268,11 +269,21 @@ function ConversationPane({ conversation, onBack, onSelect }: { conversation: Co
           <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-[14px] bg-(--blue-tint) font-brand text-xs font-bold text-(--blue-ink)">
             {conversation.groupCode}
           </span>
+        ) : conversation.peer ? (
+          <Link href={`/u/${encodeURIComponent(conversation.peer.key)}`} aria-label={`${tp('viewProfile')}: ${conversation.title}`} className="shrink-0 rounded-full">
+            <Avatar name={conversation.title} src={conversation.peer.avatarUrl} size={44} online={conversation.peer.online} />
+          </Link>
         ) : (
-          <Avatar name={conversation.title} size={44} online={conversation.peer?.online} />
+          <Avatar name={conversation.title} size={44} />
         )}
         <div className="min-w-0 flex-1">
-          <p className="m-0 truncate font-brand text-base font-bold">{conversation.title}</p>
+          {conversation.peer ? (
+            <Link href={`/u/${encodeURIComponent(conversation.peer.key)}`} className="m-0 block truncate font-brand text-base font-bold text-(--text) no-underline hover:underline">
+              {conversation.title}
+            </Link>
+          ) : (
+            <p className="m-0 truncate font-brand text-base font-bold">{conversation.title}</p>
+          )}
           <p className={`m-0 truncate text-xs ${comms.typing[conversation.id] || conversation.peer?.online ? 'text-(--mint-ink)' : 'text-(--faint)'}`}>
             {conversation.kind === 'GROUP' ? (
               <span className="inline-flex items-center gap-1">
@@ -366,12 +377,12 @@ function MembersPanel({ conversation, onClose, onSelect }: { conversation: Conve
           const me = m.key === meKey;
           return (
             <li key={m.key} className="flex min-w-0 items-center gap-3 rounded-xl p-2">
-              <Avatar name={m.name} size={36} online={m.online} />
+              <Avatar name={m.name} src={m.avatarUrl} size={36} online={m.online} />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-(--text)">
+                <Link href={`/u/${encodeURIComponent(m.key)}`} className="block truncate text-sm font-semibold text-(--text) no-underline hover:underline">
                   {m.name}
                   {me ? <span className="font-normal text-(--faint)"> · {t('you')}</span> : null}
-                </span>
+                </Link>
                 <span className="block truncate text-xs text-(--faint)">
                   {m.role === 'TEACHER' ? t('roleTeacher') : t('roleLearner')} · {m.online ? t('online') : t('offline')}
                 </span>

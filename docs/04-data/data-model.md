@@ -111,6 +111,20 @@ The migration only adds:
 
 Study group rosters are never changed by chat membership. Contacts (whom I may write to directly) still come from the class rosters.
 
+### Profiles (migration `20261030140000_profiles`, owner-approved 2026-10-30, D-25)
+
+Two additive tables, keyed by participant key (`user:<id>`, `staff:<slug>`):
+- `profiles` holds:
+  - `handle` (unique);
+  - `headline`, `bio`, `city`, `languages`, `interests`;
+  - `links` (JSON, at most 4 https links);
+  - the teacher-only `subject`, `experienceYears`, `officeHours`;
+  - the presets `cover` and `accent`;
+  - `visibility` (JSON per block) and `showOnline`.
+- `profile_avatars` holds the cropped photo (mime type and bytes, at most 1 MB).
+
+A profile row exists once the owner saves or uploads a photo. Until then the API shows a default view built from the account.
+
 ## Later entities
 
 Sketched so the MVP schema doesn't block them. **Do not create these tables in the MVP.**

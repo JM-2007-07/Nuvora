@@ -53,6 +53,7 @@ function fakePrisma() {
     },
     account: { findUnique: async () => null },
     studyGroup: { findMany: async () => [], findUnique: async () => null },
+    profileAvatar: { findMany: async () => [] },
     conversation: {
       upsert: async ({ where, create }: { where: { key: string }; create: Row }) => {
         let row = conversations.find((c) => c.key === where.key);

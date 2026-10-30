@@ -180,6 +180,26 @@ Client → server events take acknowledgements `{ ok, ... }`:
 - Authenticate with the token.
 - Set `COMMS_ICE_SERVERS` (TURN), because phones are rarely on the same network.
 
+## Implemented: profiles API (Faroz)
+
+Profiles (D-25). The contract is [`packages/shared/src/profile-api.ts`](../../packages/shared/src/profile-api.ts).
+
+**Who:** any signed-in person (learner, guest, or staff of any role) from the session cookie. Without one the answer is `401`. Guests cannot own a profile.
+
+**Visibility:** decided on the server for each viewer with `canSeeBlock`, the same rule the editor's preview uses.
+
+| Method & path | Response | Errors |
+| --- | --- | --- |
+| `GET /me/profile` | `MyProfile`: settings plus key, name, role and photo URL. `saved: false` with a suggested handle until the first save | `403 PROFILE_NOT_AVAILABLE` (guest) |
+| `PUT /me/profile` | Body `ProfileSettings` (unknown fields refused) → `MyProfile`. Teacher-only fields are stored empty for others | `400`, `409 HANDLE_TAKEN` |
+| `GET /me/profile/handle-available?handle=` | `{ available }` | `400` |
+| `PUT /me/profile/avatar` | multipart `image` (WebP/JPEG/PNG, ≤ 1 MB, magic bytes checked) → `MyProfile` | `400 AVATAR_*` |
+| `DELETE /me/profile/avatar` | `MyProfile` | — |
+| `GET /profiles/avatar/:key` | The photo; immutable cache, because the URL carries `?v=` | `404` |
+| `GET /profiles/:ref` | `PublicProfile` by handle or participant key: hidden blocks are `null`, plus `relation` (me/group/other) and `canMessage` | `404 PROFILE_NOT_FOUND` |
+
+**Communications:** contacts, peers and group members carry `avatarUrl`, so chats show the same photos.
+
 ## Draft resource outline (not a contract)
 
 Listed to plan the work and check that the data model supports the journeys. Exact shapes are defined in `packages/shared` per feature.

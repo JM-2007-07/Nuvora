@@ -25,7 +25,7 @@ export function CenterShell({ children }: { children: React.ReactNode }) {
     ...(staff.data?.role === 'COORDINATOR' ? [] : [{ href: '/center/settings', label: t('settings'), Icon: SettingsIcon, active: pathname.startsWith('/center/settings') }]),
   ];
   return (
-    <WorkspaceShell items={items} chip={t('chip')} person={<StaffCard />}>
+    <WorkspaceShell items={items} chip={t('chip')} person={<StaffCard profileHref="/center/profile" />}>
       {children}
     </WorkspaceShell>
   );

@@ -673,3 +673,48 @@ model ConversationMember {
   @@index([participantKey])
   @@map("conversation_members")
 }
+
+// ---------- Profiles (Faroz, 2026-10-30, owner-approved, D-25) ----------
+// One profile per person, keyed like communications: "user:<userId>" (learner) or "staff:<slug>"
+// (demo staff slug or "acct:<accountId>"). The name comes from the account and is not edited here.
+// What others see is decided on the server per block and per viewer (profiles service).
+
+model Profile {
+  participantKey  String   @id
+  /// Public address /u/<handle>: 3–24 of a-z, 0-9, "." and "_", stored lower-case
+  handle          String   @unique
+  headline        String   @default("")
+  bio             String   @default("")
+  city            String   @default("")
+  languages       Locale[]
+  interests       String[]
+  /// [{ "label": string, "url": "https://…" }], at most 4 (validated with the shared Zod schema)
+  links           Json     @default("[]")
+  /// Teachers only
+  subject         String   @default("")
+  experienceYears Int?
+  officeHours     String   @default("")
+  /// Design preset names (shared constants PROFILE_COVERS / PROFILE_ACCENTS)
+  cover           String   @default("aurora")
+  accent          String   @default("mint")
+  /// { about, links, learning, teaching, groups }: "everyone" | "groups" | "me"
+  visibility      Json
+  showOnline      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  avatar ProfileAvatar?
+
+  @@map("profiles")
+}
+
+/// Profile photo, cropped to a square in the browser (webp/jpeg/png, at most 1 MB).
+model ProfileAvatar {
+  participantKey String   @id
+  profile        Profile  @relation(fields: [participantKey], references: [participantKey], onDelete: Cascade)
+  mimeType       String
+  data           Bytes
+  updatedAt      DateTime @updatedAt
+
+  @@map("profile_avatars")
+}

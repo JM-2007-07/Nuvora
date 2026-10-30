@@ -4,6 +4,7 @@ import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSqua
 import { useTranslations } from 'next-intl';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
 import { useLeave, useLearner } from '@/features/learning/hooks';
+import { useMyProfile } from '@/features/profile/hooks';
 import { usePathname } from '@/i18n/navigation';
 import { SidebarLevel } from './stats-bits';
 import { PersonCard, WorkspaceShell } from './workspace-shell';
@@ -55,7 +56,10 @@ function LearnerCard() {
   const tLearner = useTranslations('Learner');
   const learner = useLearner();
   const leave = useLeave();
+  const tp = useTranslations('Profile');
   const current = learner.data;
+  // Guests keep no profile, so their card has no profile link.
+  const profile = useMyProfile(!!current && current.kind !== 'GUEST');
   if (!current) return null;
   return (
     <PersonCard
@@ -64,6 +68,9 @@ function LearnerCard() {
       switchLabel={t('switchLearner')}
       onSwitch={() => leave.mutate()}
       pending={leave.isPending}
+      avatarUrl={profile.data?.avatarUrl}
+      profileHref={current.kind === 'GUEST' ? undefined : '/app/profile'}
+      profileLabel={tp('nav')}
     />
   );
 }

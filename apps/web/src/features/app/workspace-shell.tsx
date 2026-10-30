@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Logo } from '@/components/brand/logo';
 import { LocaleButtons } from '@/components/locale-buttons';
 import { PageTransition } from '@/components/page-transition';
+import { Avatar } from '@/features/comms/avatar';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link, usePathname } from '@/i18n/navigation';
 
@@ -116,23 +117,47 @@ export function WorkspaceShell({ items, chip, person, children }: { items: NavIt
   );
 }
 
-/** Current person at the bottom of the sidebar, with a sign-out (switch) button. */
-export function PersonCard({ name, note, switchLabel, onSwitch, pending }: { name: string; note: string; switchLabel: string; onSwitch: () => void; pending: boolean }) {
-  const initials = name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-  return (
-    <div className="flex items-center gap-3 rounded-[16px] border border-(--line) bg-(--panel) p-3">
-      <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-[10px] [background:var(--avatar)] text-xs font-bold text-(--on-blue)">
-        {initials}
-      </span>
+/**
+ * Current person at the bottom of the sidebar, with a sign-out (switch) button. With `profileHref`,
+ * the photo and name open "My profile" (D-25).
+ */
+export function PersonCard({
+  name,
+  note,
+  switchLabel,
+  onSwitch,
+  pending,
+  avatarUrl,
+  profileHref,
+  profileLabel,
+}: {
+  name: string;
+  note: string;
+  switchLabel: string;
+  onSwitch: () => void;
+  pending: boolean;
+  avatarUrl?: string | null;
+  profileHref?: string;
+  profileLabel?: string;
+}) {
+  const who = (
+    <>
+      <Avatar name={name} src={avatarUrl} size={36} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm font-semibold text-(--text)">{name}</span>
-        <span className="block text-xs text-(--faint)">{note}</span>
+        <span className="block truncate text-xs text-(--faint)">{note}</span>
       </span>
+    </>
+  );
+  return (
+    <div className="flex items-center gap-1 rounded-[16px] border border-(--line) bg-(--panel) p-1.5">
+      {profileHref ? (
+        <Link href={profileHref} aria-label={profileLabel ? `${profileLabel}: ${name}` : undefined} title={profileLabel} className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1.5 no-underline transition-colors hover:bg-(--panel2) motion-reduce:transition-none">
+          {who}
+        </Link>
+      ) : (
+        <span className="flex min-w-0 flex-1 items-center gap-3 p-1.5">{who}</span>
+      )}
       <button type="button" onClick={onSwitch} disabled={pending} aria-label={switchLabel} title={switchLabel} className="grid size-11 shrink-0 place-items-center rounded-xl text-(--faint) transition-colors duration-150 hover:bg-(--panel2) hover:text-(--text) motion-reduce:transition-none">
         <LogOutIcon aria-hidden="true" className="size-4" />
       </button>

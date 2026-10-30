@@ -30,6 +30,8 @@ export const ContactSchema = ParticipantSchema.extend({
   /** Group codes shared with me */
   groups: z.array(z.string()),
   online: z.boolean(),
+  /** Profile photo (D-25), or null for initials */
+  avatarUrl: z.string().nullable(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 

@@ -58,6 +58,7 @@ Run from the root as `pnpm <script>` (pnpm, [D-17](docs/01-architecture/decision
 | Motion for React (`motion`) | 14.6.0 (web) | D-22. Installed 2026-10-26; use `motion/react`, `LazyMotion` + `motion/react-m` |
 | shadcn/ui | 4.22.1, preset `radix-vega` | Colours mapped to Faroz tokens in `apps/web/src/app/globals.css` |
 | Playwright | `@playwright/test` 1.64.1 (web, dev only) | `channel: 'msedge'`: runs on the installed Microsoft Edge, no browser download |
+| Profiles (D-25) | no new package: the photo crop is canvas in the browser | Public profile pages at `/u/<handle>`; editor at `/app/profile`, `/teach/profile`, `/center/profile` |
 | Socket.IO | `socket.io` / `socket.io-client` 4.8.4, `@nestjs/websockets` + `@nestjs/platform-socket.io` 12.2.0 (matches NestJS 12.2.0; 12.3.x needs a newer core) | D-24: chat and call signalling. Calls are WebRTC in the browser, no media server |
 
 Homepage visual direction and Motion for React are approved in D-22 ([decisions](docs/01-architecture/decisions.md)); 3D libraries stay conditional, GSAP is not used.

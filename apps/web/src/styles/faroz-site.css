@@ -765,3 +765,72 @@ button:focus-visible,
     animation: fz-bubble-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
+
+/*
+ * Profile covers and accents (features/profile; presets PROFILE_COVERS / PROFILE_ACCENTS in
+ * @nuvora/shared). Built only from Faroz tokens, so both themes stay on palette.
+ */
+@layer components {
+  .fz-cover-aurora {
+    background:
+      radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--orbit-cyan) 55%, transparent), transparent 55%),
+      radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--orbit-violet) 60%, transparent), transparent 60%),
+      var(--hud);
+  }
+  .fz-cover-orbit {
+    background:
+      radial-gradient(70% 120% at 70% 50%, color-mix(in srgb, var(--blue) 55%, transparent), transparent 70%),
+      repeating-radial-gradient(circle at 70% 50%, transparent 0 22px, color-mix(in srgb, var(--hud-text) 10%, transparent) 22px 23px),
+      var(--hud);
+  }
+  .fz-cover-dusk {
+    background:
+      linear-gradient(160deg, color-mix(in srgb, var(--orbit-violet) 70%, transparent), transparent 60%),
+      linear-gradient(20deg, color-mix(in srgb, var(--mag) 55%, transparent), transparent 55%),
+      var(--hud);
+  }
+  .fz-cover-meadow {
+    background:
+      radial-gradient(110% 120% at 20% 100%, color-mix(in srgb, var(--mint) 55%, transparent), transparent 60%),
+      radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--orbit-cyan) 40%, transparent), transparent 60%),
+      var(--hud);
+  }
+  .fz-cover-ember {
+    background:
+      radial-gradient(110% 130% at 100% 100%, color-mix(in srgb, var(--gold) 60%, transparent), transparent 60%),
+      radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--mag) 45%, transparent), transparent 60%),
+      var(--hud);
+  }
+  .fz-accent-mint {
+    --accent: var(--mint);
+    --accent-ink: var(--mint-ink);
+    --accent-tint: var(--mint-tint);
+  }
+  .fz-accent-blue {
+    --accent: var(--blue);
+    --accent-ink: var(--blue-ink);
+    --accent-tint: var(--blue-tint);
+  }
+  .fz-accent-violet {
+    --accent: var(--orbit-violet);
+    --accent-ink: var(--orbit-violet);
+    --accent-tint: color-mix(in srgb, var(--orbit-violet) 16%, transparent);
+  }
+  .fz-accent-gold {
+    --accent: var(--gold);
+    --accent-ink: var(--gold-ink);
+    --accent-tint: var(--gold-tint);
+  }
+  .fz-accent-magenta {
+    --accent: var(--mag);
+    --accent-ink: var(--mag-ink);
+    --accent-tint: var(--mag-tint);
+  }
+  /* Photo ring in the accent colour, lifted off the cover. */
+  .fz-profile-ring {
+    box-shadow:
+      0 0 0 4px var(--panel),
+      0 0 0 7px var(--accent),
+      0 18px 40px -18px var(--accent);
+  }
+}

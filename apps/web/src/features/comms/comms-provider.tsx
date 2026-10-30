@@ -23,6 +23,8 @@ export interface Incoming {
   from: { key: string; name: string };
   kind: 'DIRECT' | 'GROUP';
   title: string;
+  /** Caller's photo, when they have one */
+  photo: string | null;
 }
 
 interface CommsContextValue {
@@ -163,10 +165,12 @@ export function CommsProvider({ identity, children }: { identity: string | null;
     socket.on(COMMS_EVENTS.callUpdated, ({ conversationId, call }: { conversationId: string; call: ActiveCall | null }) => {
       patchOverview((o) => ({ ...o, conversations: o.conversations.map((c) => (c.id === conversationId ? { ...c, activeCall: call } : c)) }));
     });
-    socket.on(COMMS_EVENTS.callIncoming, (payload: Omit<Incoming, 'title'>) => {
+    socket.on(COMMS_EVENTS.callIncoming, (payload: Omit<Incoming, 'title' | 'photo'>) => {
       if (engine.busy) return;
       const conversation = queryClient.getQueryData<CommsOverview>([...overviewKey(locale), identity])?.conversations.find((c) => c.id === payload.call.conversationId);
-      setIncoming({ ...payload, title: conversation?.kind === 'GROUP' ? conversation.title : payload.from.name });
+      const overviewNow = queryClient.getQueryData<CommsOverview>([...overviewKey(locale), identity]);
+      const photo = overviewNow?.contacts.find((c) => c.key === payload.from.key)?.avatarUrl ?? null;
+      setIncoming({ ...payload, title: conversation?.kind === 'GROUP' ? conversation.title : payload.from.name, photo });
     });
     const clearIfSame = ({ callId }: { callId: string }) => setIncoming((i) => (i?.call.callId === callId ? null : i));
     socket.on(COMMS_EVENTS.callDismissed, clearIfSame);

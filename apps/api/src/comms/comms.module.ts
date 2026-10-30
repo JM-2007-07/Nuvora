@@ -12,5 +12,6 @@ import { RealtimeHub } from './realtime-hub.js';
   imports: [PrismaModule],
   controllers: [CommsController],
   providers: [CommsDirectory, CommsService, CallsRegistry, RealtimeHub, CommsGateway, CommsGuard],
+  exports: [CommsDirectory, RealtimeHub],
 })
 export class CommsModule {}

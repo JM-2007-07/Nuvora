@@ -7,5 +7,6 @@ import { ProgressService } from './progress.service.js';
   imports: [PrismaModule],
   controllers: [ProgressController],
   providers: [ProgressService],
+  exports: [ProgressService],
 })
 export class ProgressModule {}
