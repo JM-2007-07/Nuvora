@@ -476,8 +476,24 @@ button:focus-visible,
   }
   /* Specular highlight on the sphere; it drifts slowly with the light (see animations below). */
   .fz-orbit-core-shine {
-    background: radial-gradient(42% 30% at 34% 22%, rgba(255, 255, 255, 0.22), transparent 70%);
+    /* The light sits where the cursor is (--shine-x/y, written by the orbit loop). */
+    background: radial-gradient(42% 30% at var(--shine-x, 34%) var(--shine-y, 22%), rgba(255, 255, 255, 0.24), transparent 70%);
     mix-blend-mode: screen;
+  }
+  .fz-orbit-core-react {
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+  /* Halo that grows while the core is "charged" (hover, drag, focus) or pulsed by a click. */
+  .fz-orbit-core-halo {
+    background: radial-gradient(circle, color-mix(in srgb, var(--orbit-cyan) 34%, transparent) 0%, color-mix(in srgb, var(--orbit-blue) 26%, transparent) 38%, transparent 68%);
+  }
+  .fz-orbit-core-ripple {
+    border: 2px solid color-mix(in srgb, var(--orbit-cyan) 80%, transparent);
+    opacity: 0;
+  }
+  .fz-ripple-go {
+    animation: fz-core-ripple 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .fz-orbit-mark {
     filter: drop-shadow(0 0 18px var(--orbit-logo-glow));
@@ -551,6 +567,16 @@ button:focus-visible,
   50% {
     transform: translate(14%, 6%) rotate(8deg);
     opacity: 1;
+  }
+}
+@keyframes fz-core-ripple {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.1);
   }
 }
 /* Centring comes from Tailwind's `translate` property on the element; this only adds sway and scale. */

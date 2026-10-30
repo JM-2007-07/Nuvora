@@ -156,6 +156,10 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
   const haloRefs = useRef<(SVGPathElement | null)[]>([]);
   const electronRefs = useRef<(SVGCircleElement | null)[]>([]);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const coreRef = useRef<HTMLDivElement>(null);
+  const haloRef = useRef<HTMLSpanElement>(null);
+  const rippleRef = useRef<HTMLSpanElement>(null);
+  const markRef = useRef<HTMLSpanElement>(null);
 
   // Narrow screens: icon-only cards, one electron per orbit.
   useEffect(() => {
@@ -185,6 +189,10 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
     let lastPitch = Number.NaN;
     let last = performance.now();
     let frame = 0;
+    // Core reaction: "energy" rises while hovered, dragged or focused; "kick" is a short burst on a click.
+    let energy = 0;
+    let kick = 0;
+    let coreDrawn = '';
     const electronList = electronsFor(compact);
     const cardSizes = cardRefs.current.map((el) => (el ? { w: el.offsetWidth, h: el.offsetHeight } : { w: 0, h: 0 }));
     // From here on the loop positions the cards by transform from the centre.
@@ -262,6 +270,30 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
       pathsDirty = false;
     };
 
+    /*
+     * The core follows the same eased orientation as the orbits (cursor or arrow keys), so the atom
+     * moves as one: it turns toward the cursor and leans in, the mark drifts further than the sphere
+     * (depth), the highlight slides toward the cursor (the light), and a halo grows with "energy".
+     */
+    const drawCore = () => {
+      const core = coreRef.current;
+      if (!core) return;
+      const ux = Math.max(-1, Math.min(1, (view.yaw - REST.yaw) / LIMIT.yaw));
+      const uy = Math.max(-1, Math.min(1, -(view.pitch - REST.pitch) / LIMIT.pitch));
+      const grow = 1 + 0.06 * energy + 0.08 * kick;
+      const key = `${ux.toFixed(3)}|${uy.toFixed(3)}|${grow.toFixed(3)}|${energy.toFixed(3)}`;
+      if (key === coreDrawn) return;
+      coreDrawn = key;
+      core.style.transform = `perspective(700px) translate3d(${(ux * 7).toFixed(2)}%, ${(uy * 7).toFixed(2)}%, 0) rotateY(${(ux * 16).toFixed(2)}deg) rotateX(${(-uy * 16).toFixed(2)}deg) scale(${grow.toFixed(3)})`;
+      core.style.setProperty('--shine-x', `${(34 + ux * 24).toFixed(1)}%`);
+      core.style.setProperty('--shine-y', `${(22 + uy * 22).toFixed(1)}%`);
+      if (markRef.current) markRef.current.style.transform = `translate3d(${(ux * 8).toFixed(2)}%, ${(uy * 8).toFixed(2)}%, 0)`;
+      if (haloRef.current) {
+        haloRef.current.style.opacity = Math.min(1, energy * 0.85 + kick * 0.6).toFixed(3);
+        haloRef.current.style.transform = `scale(${(0.88 + 0.12 * energy + 0.1 * kick).toFixed(3)})`;
+      }
+    };
+
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -282,6 +314,12 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
         nudge = 0;
         draw();
       }
+      const charged = hovered || focused || !!dragging ? 1 : 0;
+      energy += (charged - energy) * (1 - Math.exp(-dt * 6));
+      if (Math.abs(charged - energy) < 0.001) energy = charged;
+      kick *= Math.exp(-dt * 5);
+      if (kick < 0.001) kick = 0;
+      drawCore();
       frame = requestAnimationFrame(tick);
     };
     draw();
@@ -309,6 +347,17 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
     };
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
+      // Pressing the core sends a pulse: a ring of light and a short swell (not with reduced motion).
+      const core = coreRef.current?.getBoundingClientRect();
+      if (!reduce && core && Math.hypot(e.clientX - (core.left + core.width / 2), e.clientY - (core.top + core.height / 2)) <= core.width / 2) {
+        kick = 1;
+        const ripple = rippleRef.current;
+        if (ripple) {
+          ripple.classList.remove('fz-ripple-go');
+          void ripple.offsetWidth; // restart the CSS animation
+          ripple.classList.add('fz-ripple-go');
+        }
+      }
       dragging = { id: e.pointerId, lastX: e.clientX };
       box.setPointerCapture(e.pointerId);
       box.dataset.dragging = 'true';
@@ -427,11 +476,19 @@ export function FarozOrbit({ subjects, labels, quest }: FarozOrbitProps) {
           {/* The outer element only places the core and runs its entrance; the inner layers move
               gently by themselves (float, highlight, mark), off with reduced motion (faroz-site.css). */}
           <m.div aria-hidden="true" className="absolute top-1/2 left-1/2 z-[2] aspect-square w-[24%] -translate-x-1/2 -translate-y-1/2" {...enter(0)}>
-            <div className="fz-orbit-core fz-orbit-core-float absolute inset-0 overflow-hidden rounded-full">
-              <span className="fz-orbit-core-shine pointer-events-none absolute inset-0 rounded-full" />
-              <span className="fz-orbit-mark absolute top-1/2 left-1/2 w-[60%] -translate-x-1/2 -translate-y-1/2">
-                <Image src="/brand/faroz-mark-dark.svg" alt="" width={160} height={160} priority className="pointer-events-none block h-auto w-full" draggable={false} />
-              </span>
+            {/* Follows the cursor (the loop writes its transform): turns toward it, leans in, grows a little. */}
+            <div ref={coreRef} className="fz-orbit-core-react absolute inset-0">
+              <span ref={haloRef} className="fz-orbit-core-halo pointer-events-none absolute -inset-[22%] rounded-full opacity-0" />
+              <span ref={rippleRef} className="fz-orbit-core-ripple pointer-events-none absolute inset-0 rounded-full" />
+              <div className="fz-orbit-core fz-orbit-core-float absolute inset-0 overflow-hidden rounded-full">
+                <span className="fz-orbit-core-shine pointer-events-none absolute inset-0 rounded-full" />
+                {/* The mark moves further than the sphere: it seems to float in front of it. */}
+                <span ref={markRef} className="absolute inset-0">
+                  <span className="fz-orbit-mark absolute top-1/2 left-1/2 w-[60%] -translate-x-1/2 -translate-y-1/2">
+                    <Image src="/brand/faroz-mark-dark.svg" alt="" width={160} height={160} priority className="pointer-events-none block h-auto w-full" draggable={false} />
+                  </span>
+                </span>
+              </div>
             </div>
           </m.div>
 

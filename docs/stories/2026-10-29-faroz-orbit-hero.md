@@ -40,3 +40,34 @@ Not run: Lighthouse, a screen-reader pass, a real touch device (touch tested by 
 - Without a pause control, WCAG 2.2.2 (Pause, Stop, Hide) is covered only by hover, keyboard focus and the reduced-motion setting; this is an owner decision.
 - Cards can overlap each other briefly where orbits cross, and a front card crossing the middle covers part of the logo (owner: front cards stay in front).
 - Subject cards are decorative (not links); their names are read once from the figure caption.
+
+## Follow-up 2026-10-30: a living core
+
+The owner asked for a slightly moving core, then for it to react to the mouse "to be really dynamic".
+
+**Changes:**
+- **Idle motion** (CSS; none under reduced motion):
+  - The sphere floats and breathes with the aura (7 s).
+  - A highlight drifts over it (9 s).
+  - The mark sways with a pulsing glow (11 s).
+- **Reaction** (written by the existing animation loop from the same eased orientation as the orbits, so the atom moves as one):
+  - It turns toward the cursor in 3D (up to about 16°), leans toward it and grows a little.
+  - The mark drifts further than the sphere (depth).
+  - The highlight slides toward the cursor (the cursor as the light).
+  - A halo grows while the atom is hovered, dragged or focused.
+  - Arrow keys turn the core like the mouse does.
+  - Pressing the core sends a ring of light and a short swell (not under reduced motion).
+
+**Bug fixed during the change:** the mark jumped to the top-left corner of the sphere. The animation repeated the centring translate that Tailwind 4 already applies through the \`translate\` property, so the offset was doubled. The animation now only rotates and scales.
+
+**Verification:**
+- web: \`lint\`, \`typecheck\`, \`build\` pass.
+- The mark is centred on the sphere in all six samples (0 px offset).
+- Hover script, 10 of 10:
+  - upright at rest;
+  - top-right hover gives rotY +12°, rotX +11°, scale 1.06, halo 0.84; the light moves to 52%/7%; the mark moves 8 px right and 9 px up;
+  - bottom-left turns the other way;
+  - a press on the core starts the ring;
+  - leaving settles it back; arrow keys turn it;
+  - clean console.
+- The existing orbit script still passes 31 of 31.
