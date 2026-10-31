@@ -15,6 +15,9 @@ import {
 import { localizeFields } from '../common/i18n/locale.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { GroupsService } from '../groups/groups.service.js';
+import { shortWhen } from '../notifications/notification-rules.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { groupLearnerSubjects } from '../notifications/recipients.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type DemoStaff, DEMO_GROUPS, type DemoGroup } from '../staff/demo-org.js';
 import { TeachingService } from '../teaching/teaching.service.js';
@@ -50,6 +53,7 @@ export class AssessmentsService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(TeachingService) private readonly teaching: TeachingService,
     @Inject(GroupsService) private readonly groups: GroupsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   /** Overridable in tests. */
@@ -159,7 +163,15 @@ export class AssessmentsService {
     const draft = toDraft(existing);
     if (!canPublish(draft)) throw checksFailed(draft);
     const updated = await this.prisma.assessment.update({ where: { id }, data: { publishedAt: this.now() }, include: withQuestions });
+    this.notifications.later(() => this.notifyAssigned(updated.id, updated.title, updated.groupCode, updated.opensAt));
     return toAssessment(updated, this.now());
+  }
+
+  /** The group's learners hear about a newly published test (title and opening time only). */
+  private async notifyAssigned(id: string, title: string, groupCode: string, opensAt: Date | null): Promise<void> {
+    const learners = await groupLearnerSubjects(this.prisma, groupCode);
+    const later = opensAt && opensAt > this.now();
+    await this.notifications.notifyMany(learners, { category: 'assessment_assigned', dedupeKey: `assessment-assigned:${id}`, params: { title, ...(later ? { when: shortWhen(opensAt) } : {}) }, path: '/tests' });
   }
 
   /** Back to a draft; only before it opens. */

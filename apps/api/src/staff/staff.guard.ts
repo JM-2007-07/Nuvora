@@ -46,13 +46,17 @@ export async function staffFromAccount(prisma: PrismaService, accountId: string)
   };
 }
 
-/** The staff member for a cookie value, or null if missing, forged, or not a staff value (a learner cookie never passes). */
-export async function staffFromCookie(identity: IdentityService, prisma: PrismaService, cookie: string | undefined): Promise<DemoStaff | null> {
-  const value = (await identity.sessions.resolve(cookie))?.subject;
-  if (!value?.startsWith(PREFIX)) return null;
-  const id = value.slice(PREFIX.length);
+/** The staff member for a session subject ("staff:<slug>" or "staff:acct:<id>"); null for learners and unknown staff. */
+export async function staffFromSubject(prisma: PrismaService, subject: string | undefined): Promise<DemoStaff | null> {
+  if (!subject?.startsWith(PREFIX)) return null;
+  const id = subject.slice(PREFIX.length);
   if (id.startsWith(ACCOUNT_PREFIX)) return staffFromAccount(prisma, id.slice(ACCOUNT_PREFIX.length));
   return findStaff(id) ?? null;
+}
+
+/** The staff member for a cookie value, or null if missing, forged, or not a staff value (a learner cookie never passes). */
+export async function staffFromCookie(identity: IdentityService, prisma: PrismaService, cookie: string | undefined): Promise<DemoStaff | null> {
+  return staffFromSubject(prisma, (await identity.sessions.resolve(cookie))?.subject);
 }
 
 const ROLES = 'staffRoles';

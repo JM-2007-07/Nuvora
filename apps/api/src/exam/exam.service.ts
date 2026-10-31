@@ -17,8 +17,11 @@ import { AuditService } from '../common/audit/audit.service.js';
 import { localizeFields } from '../common/i18n/locale.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { LearnerRecord } from '../identity/identity.service.js';
+import { groupMembers } from '../groups/group-members.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { ownerSubject } from '../notifications/recipients.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { type DemoStaff, DEMO_GROUPS, findGroup } from '../staff/demo-org.js';
+import { type DemoStaff, DEMO_GROUPS } from '../staff/demo-org.js';
 import { ExamHub } from './exam-hub.js';
 import { EVENT_DEBOUNCE_MS, examWindow, teacherText, initialDeadline, revealState, scoreAnswers, shuffled, violationOutcome } from './exam-rules.js';
 
@@ -42,6 +45,7 @@ export class ExamService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(ExamHub) private readonly hub: ExamHub,
     @Inject(AuditService) private readonly audit: AuditService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   /** Overridable clock (tests). */
@@ -59,16 +63,8 @@ export class ExamService {
   }
 
   /** Learners of a group: key (demo slug or user id), user id (empty if a demo learner has no row) and name. */
-  async membersOf(groupCode: string): Promise<{ key: string; userId: string; name: string }[]> {
-    const demo = findGroup(groupCode);
-    if (demo) {
-      const slugs = demo.roster ?? [];
-      const users = await this.prisma.user.findMany({ where: { kind: 'DEMO', demoSlug: { in: slugs } }, select: { id: true, demoSlug: true, displayName: true } });
-      const bySlug = new Map(users.map((u) => [u.demoSlug!, u]));
-      return slugs.map((slug) => ({ key: slug, userId: bySlug.get(slug)?.id ?? '', name: bySlug.get(slug)?.displayName ?? slug }));
-    }
-    const group = await this.prisma.studyGroup.findUnique({ where: { joinCode: groupCode }, select: { members: { orderBy: { joinedAt: 'asc' }, select: { userId: true, user: { select: { displayName: true } } } } } });
-    return (group?.members ?? []).map((m) => ({ key: m.userId, userId: m.userId, name: m.user.displayName }));
+  membersOf(groupCode: string): Promise<{ key: string; userId: string; name: string }[]> {
+    return groupMembers(this.prisma, groupCode);
   }
 
   // ---------- learner ----------
@@ -274,6 +270,7 @@ export class ExamService {
         await this.event(tx, attempt.id, 'SUBMITTED', 'server', null);
       });
       this.hub.live(attempt.assessmentId, 'submitted');
+      this.notifications.later(() => this.notifySubmission(attempt.assessmentId, attempt.id));
     } else if (attempt.status === 'PAUSED') {
       throw new ConflictException({ code: 'ATTEMPT_PAUSED', message: 'Your teacher paused this test' });
     }
@@ -464,6 +461,7 @@ export class ExamService {
     const sent = command as { kind: 'WARNING' | 'PAUSED' | 'RESUMED' | 'TIME_EXTENDED' | 'ENDED' | 'RESET' | 'READMITTED'; message: string | null } | null;
     if (sent) this.hub.command({ attemptId, kind: sent.kind, message: sent.message, deadlineAt: after.deadlineAt?.toISOString() ?? null, serverNow: now.toISOString() });
     this.hub.live(attempt.assessmentId, request.action.toLowerCase());
+    if (request.action === 'END') this.notifications.later(() => this.notifyResult(attemptId));
     return { status: after.status, deadlineAt: after.deadlineAt?.toISOString() ?? null };
   }
 
@@ -509,7 +507,30 @@ export class ExamService {
       await this.event(tx, attemptId, 'EXPIRED', 'server', null);
       return row.assessmentId;
     });
-    if (done) this.hub.live(done, 'expired');
+    if (done) {
+      this.hub.live(done, 'expired');
+      this.notifications.later(() => this.notifyResult(attemptId));
+    }
+  }
+
+  // ---------- notifications (counts and titles only; never scores or answers) ----------
+
+  /** Tells the teacher a work came in, with how many of the group have submitted. */
+  private async notifySubmission(assessmentId: string, attemptId: string): Promise<void> {
+    const a = await this.prisma.assessment.findUnique({ where: { id: assessmentId }, select: { ownerKey: true, title: true, groupCode: true } });
+    if (!a) return;
+    const [submitted, members] = await Promise.all([
+      this.prisma.assessmentAttempt.findMany({ where: { assessmentId, status: 'SUBMITTED', resetAt: null }, distinct: ['userId'], select: { userId: true } }),
+      groupMembers(this.prisma, a.groupCode),
+    ]);
+    await this.notifications.notify({ subject: ownerSubject(a.ownerKey), category: 'submission', dedupeKey: `submission:${attemptId}`, params: { title: a.title, group: a.groupCode, done: submitted.length, total: members.length }, path: `/live/${assessmentId}` });
+  }
+
+  /** Tells the learner their result is ready when the attempt was closed for them (time up, or ended by the teacher). */
+  private async notifyResult(attemptId: string): Promise<void> {
+    const row = await this.prisma.assessmentAttempt.findUnique({ where: { id: attemptId }, select: { userId: true, assessmentId: true, assessment: { select: { title: true } } } });
+    if (!row) return;
+    await this.notifications.notify({ subject: row.userId, category: 'assessment_result', dedupeKey: `result:${attemptId}`, params: { title: row.assessment.title }, path: `/exam/${row.assessmentId}?result=${attemptId}` });
   }
 
   /** Scores the saved answers on the server and closes the attempt. */

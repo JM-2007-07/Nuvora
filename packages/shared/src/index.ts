@@ -14,3 +14,4 @@ export * from './profile-api.js';
 export * from './auth-api.js';
 export * from './admin-api.js';
 export * from './exam-api.js';
+export * from './notifications-api.js';

@@ -16,6 +16,15 @@ const EnvSchema = z.object({
   ALLOWED_ORIGINS: z.string().optional(),
   /** "production" turns off the any-localhost-port allowance for origins. */
   NODE_ENV: z.string().optional(),
+  /**
+   * Push delivery (D-30): "log" (default) only logs and sends nothing; "expo" sends through the
+   * Expo push service (needs a build with push credentials); "off" drops notifications.
+   */
+  PUSH_DELIVERY: z.enum(['log', 'expo', 'off']).optional(),
+  /** Optional Expo access token, only when "enhanced push security" is on for the Expo project. */
+  EXPO_ACCESS_TOKEN: z.string().min(10).optional(),
+  /** "on" runs scheduled notifications (reminders, upcoming tests, summaries) every 10 minutes. Default: off. */
+  PUSH_SCHEDULER: z.enum(['on', 'off']).optional(),
   /** Optional STUN/TURN servers for calls across networks, as a JSON array (see comms). */
   COMMS_ICE_SERVERS: z
     .string()

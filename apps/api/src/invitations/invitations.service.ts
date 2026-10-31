@@ -1,5 +1,7 @@
 import { ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Invitation, InvitationLink, InviteRequest, PublicInvitation } from '@nuvora/shared';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { centerAdminSubjects } from '../notifications/recipients.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { DemoStaff } from '../staff/demo-org.js';
 import { expiryFrom, hashToken, invitationStatus, newToken, orgKeyOf, orgNameOf } from './invitation-rules.js';
@@ -29,7 +31,10 @@ type Row = {
  */
 @Injectable()
 export class InvitationsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
+  ) {}
 
   /** Overridable in tests. */
   now = () => new Date();
@@ -113,6 +118,9 @@ export class InvitationsService {
       data: { declinedAt: this.now() },
     });
     if (!done.count) throw new ConflictException({ code: 'INVITATION_CHANGED', message: 'The invitation changed meanwhile. Reload the page.' });
+    this.notifications.later(async () =>
+      this.notifications.notifyMany(await centerAdminSubjects(this.prisma, row.orgKey), { category: 'center_event', dedupeKey: `invitation-accepted:${row.id}`, params: { name: row.name }, path: '/' }),
+    );
     return this.publicView(token);
   }
 

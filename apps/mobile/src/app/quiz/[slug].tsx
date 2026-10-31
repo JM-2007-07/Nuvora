@@ -1,4 +1,4 @@
-import { type AttemptResult, AttemptResultSchema, type PublicQuiz } from '@nuvora/shared';
+import { type AttemptResult, AttemptResultSchema, IDEMPOTENCY_KEY_HEADER, type PublicQuiz } from '@nuvora/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, ArrowRight, BookOpenText, Check, CloudUpload, RotateCcw, Send, X } from 'lucide-react-native';
@@ -8,7 +8,7 @@ import Animated, { FadeIn, FadeInRight, useReducedMotion, ZoomIn } from 'react-n
 import { Markdown } from '@/components/markdown';
 import { Bar, Button, Card, Empty, ErrorBox, Hud, IconBadge, Loading, Pill, Ring, Row, Screen, Section, T, tap } from '@/components/ui';
 import { api, ApiError } from '@/lib/api';
-import { enqueuePractice, savedQuiz } from '@/lib/offline';
+import { enqueuePractice, newSubmissionKey, savedQuiz } from '@/lib/offline';
 import { usePrefs } from '@/lib/prefs';
 import { STATUS_TONE, useQuiz } from '@/lib/queries';
 
@@ -60,8 +60,11 @@ function Player({ quiz, onResult, onQueued }: { quiz: PublicQuiz; onResult: (r: 
     const list = quiz.questions.filter((x) => answers[x.key]).map((x) => ({ questionKey: x.key, optionKey: answers[x.key]! }));
     setSending(true);
     setError(null);
+    // One key for this submission: if the answer is lost on the way back, the queued retry
+    // carries the same key and the server returns the attempt it already stored.
+    const key = newSubmissionKey();
     try {
-      const r = await api(`/quizzes/${quiz.slug}/attempts`, AttemptResultSchema, { method: 'POST', body: { answers: list }, locale });
+      const r = await api(`/quizzes/${quiz.slug}/attempts`, AttemptResultSchema, { method: 'POST', body: { answers: list }, locale, headers: { [IDEMPOTENCY_KEY_HEADER]: key } });
       tap('success');
       void queryClient.invalidateQueries({ queryKey: ['progress'] });
       void queryClient.invalidateQueries({ queryKey: ['stats'] });
@@ -69,7 +72,7 @@ function Player({ quiz, onResult, onQueued }: { quiz: PublicQuiz; onResult: (r: 
     } catch (e) {
       if (e instanceof ApiError) setError(e.code === 'QUIZ_INCOMPLETE' ? t('quiz.unanswered', { n: total - answered }) : t('common.error'));
       else {
-        await enqueuePractice(quiz, list);
+        await enqueuePractice(quiz, list, key);
         onQueued();
       }
     } finally {

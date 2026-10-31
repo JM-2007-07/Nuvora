@@ -3,6 +3,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { ArrowRight, ClipboardCheck, CloudUpload, Flame, Radar, Sparkles } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { PushOffer } from '@/components/notifications-card';
 import { Bar, Button, Card, ErrorBox, Hud, IconBadge, Loading, Pill, Ring, Screen, Section, T } from '@/components/ui';
 import { flushQueue, queue, type QueueItem } from '@/lib/offline';
 import { usePrefs } from '@/lib/prefs';
@@ -43,6 +44,8 @@ export default function Home() {
             </T>
             <T variant="display">{t('home.hello', { name: p.learner.displayName.split(' ')[0]! })}</T>
           </View>
+
+          <PushOffer />
 
           <Hud>
             <View style={styles.hudRow}>

@@ -1,8 +1,10 @@
-import { type AttemptResult, AttemptResultSchema, type LessonDetail, LessonDetailSchema, type PublicQuiz, PublicQuizSchema } from '@nuvora/shared';
+import { type AttemptResult, AttemptResultSchema, IDEMPOTENCY_KEY_HEADER, type LessonDetail, LessonDetailSchema, type PublicQuiz, PublicQuizSchema } from '@nuvora/shared';
+import { randomUUID } from 'expo-crypto';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 import { z } from 'zod';
 import { api, ApiError } from './api';
+import { addToQueue, afterFailure, ensureKeys } from './queue-rules';
 import { getItem, setItem } from './storage';
 
 /**
@@ -85,6 +87,8 @@ export async function removeLesson(slug: string, locale: string): Promise<void> 
 
 const QueueItemSchema = z.object({
   id: z.string(),
+  /** One key per submission, reused on every retry (older entries get one before their first send). */
+  idempotencyKey: z.string().optional(),
   quizSlug: z.string(),
   quizTitle: z.string(),
   answers: z.array(z.object({ questionKey: z.string(), optionKey: z.string() })),
@@ -100,9 +104,18 @@ export async function queue(): Promise<QueueItem[]> {
   return parsed.success ? parsed.data : [];
 }
 
-export async function enqueuePractice(quiz: PublicQuiz, answers: { questionKey: string; optionKey: string }[]): Promise<QueueItem> {
-  const item: QueueItem = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, quizSlug: quiz.slug, quizTitle: quiz.title, answers, createdAt: new Date().toISOString(), status: 'pending', error: null, result: null };
-  await writeJson('queue.json', [item, ...(await queue())].slice(0, 50));
+/** A new key for one practice submission. */
+export function newSubmissionKey(): string {
+  return randomUUID();
+}
+
+/**
+ * Queues practice answered offline. Pass the key of a send that already went out (the server may
+ * have stored it before the connection dropped), so the queued retry can never store it twice.
+ */
+export async function enqueuePractice(quiz: PublicQuiz, answers: { questionKey: string; optionKey: string }[], idempotencyKey: string = newSubmissionKey()): Promise<QueueItem> {
+  const item: QueueItem = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, idempotencyKey, quizSlug: quiz.slug, quizTitle: quiz.title, answers, createdAt: new Date().toISOString(), status: 'pending', error: null, result: null };
+  await writeJson('queue.json', addToQueue(await queue(), item));
   return item;
 }
 
@@ -113,24 +126,28 @@ export async function clearSynced(): Promise<void> {
 let flushing: Promise<number> | null = null;
 
 /**
- * Sends pending practice to the server one by one. Network problems leave the item pending for
- * the next try; a refusal by the server (4xx) marks it failed with the error code. Returns how
- * many were scored. Known limit: if the connection drops after the server stored an attempt but
- * before the answer arrives, a retry stores it again (the API has no idempotency key yet).
+ * Sends pending practice to the server one by one, each with its own idempotency key. Network
+ * problems leave the item pending for the next try; a refusal by the server (4xx) marks it failed
+ * with the error code. If the connection dropped after the server stored an attempt, the retry
+ * gets that same attempt back instead of a second one. Returns how many were scored.
  */
 export function flushQueue(locale: string): Promise<number> {
   flushing ??= (async () => {
     try {
-      const items = await queue();
+      const keyed = ensureKeys(await queue(), newSubmissionKey);
+      const items = keyed.items;
+      // Keys are on disk before anything is sent, so a crash mid-send retries with the same key.
+      if (keyed.changed) await writeJson('queue.json', items);
       let sent = 0;
       for (const item of items) {
         if (item.status !== 'pending') continue;
         try {
-          const result: AttemptResult = await api(`/quizzes/${item.quizSlug}/attempts`, AttemptResultSchema, { method: 'POST', body: { answers: item.answers }, locale });
+          const result: AttemptResult = await api(`/quizzes/${item.quizSlug}/attempts`, AttemptResultSchema, { method: 'POST', body: { answers: item.answers }, locale, headers: { [IDEMPOTENCY_KEY_HEADER]: item.idempotencyKey } });
           Object.assign(item, { status: 'synced', error: null, result: { correct: result.correctCount, total: result.totalCount, percent: result.scorePercent, attemptId: result.attemptId } });
           sent++;
+          await writeJson('queue.json', items);
         } catch (error) {
-          if (error instanceof ApiError && error.status >= 400 && error.status < 500 && error.status !== 401 && error.status !== 429) Object.assign(item, { status: 'failed', error: error.code });
+          if (afterFailure(error instanceof ApiError ? error.status : null) === 'failed') Object.assign(item, { status: 'failed', error: (error as ApiError).code });
           else break; // offline or server trouble: try again later
         }
       }

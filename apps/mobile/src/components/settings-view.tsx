@@ -8,9 +8,10 @@ import { api, API_URL } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useLock } from '@/lib/lock';
 import { type ThemeChoice, usePrefs } from '@/lib/prefs';
+import { NotificationsCard } from './notifications-card';
 import { Button, Card, IconBadge, Pill, Row, Screen, Section, Segmented, T } from './ui';
 
-/** Appearance, language, app lock (biometrics and passcode), devices and sign-out. */
+/** Appearance, language, notifications, app lock (biometrics and passcode), devices and sign-out. */
 export function SettingsView() {
   const { t, theme, setTheme, locale, setLocale, colors } = usePrefs();
   const { signOut, signOutEverywhere } = useAuth();
@@ -36,6 +37,10 @@ export function SettingsView() {
           </T>
           <Segmented<AppLocale> label={t('settings.language')} value={locale} onChange={setLocale} options={[{ key: 'ru', label: 'Русский' }, { key: 'tg', label: 'Тоҷикӣ' }, { key: 'en', label: 'English' }]} />
         </Card>
+      </Section>
+
+      <Section title={t('push.title')}>
+        <NotificationsCard />
       </Section>
 
       <Section title={t('settings.security')}>

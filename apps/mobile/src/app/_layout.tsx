@@ -7,11 +7,13 @@ import { Unbounded_700Bold } from '@expo-google-fonts/unbounded/700Bold';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { useNetworkState } from 'expo-network';
-import { Stack } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { LockScreen } from '@/components/lock-screen';
@@ -20,6 +22,7 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { LockProvider, useLock } from '@/lib/lock';
 import { flushQueue } from '@/lib/offline';
 import { PrefsProvider, usePrefs } from '@/lib/prefs';
+import { pathFromNotification, refreshPush } from '@/lib/push';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -39,6 +42,34 @@ function OfflineSync() {
   return null;
 }
 
+/**
+ * Push: registers this phone again after sign-in and when the language changes, and opens the
+ * screen of a tapped notification (also when the tap started the app). Only plain in-app paths
+ * open; the screen then loads its own data through the signed-in API.
+ */
+function PushBridge() {
+  const { kind } = useAuth();
+  const { locale } = usePrefs();
+  const signedIn = kind === 'learner' || kind === 'staff';
+  useEffect(() => {
+    if (signedIn) void refreshPush(locale);
+  }, [signedIn, locale]);
+  return signedIn && Platform.OS !== 'web' ? <PushTaps /> : null;
+}
+
+function PushTaps() {
+  const response = Notifications.useLastNotificationResponse();
+  const handled = useRef<string | null>(null);
+  useEffect(() => {
+    const id = response?.notification.request.identifier ?? null;
+    const path = pathFromNotification(response ?? null);
+    if (!id || !path || handled.current === id) return;
+    handled.current = id;
+    router.push(path as never);
+  }, [response]);
+  return null;
+}
+
 function Shell() {
   const { colors, dark, fonts } = usePrefs();
   const { locked } = useLock();
@@ -49,6 +80,7 @@ function Shell() {
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
       <OfflineSync />
+      <PushBridge />
       <Stack
         screenOptions={{
           headerShown: false,

@@ -53,7 +53,9 @@ This is the authoritative list of decisions and their status. Read it before bui
 
 ## Proposed
 
-None.
+| ID | Decision | Status |
+| --- | --- | --- |
+| D-30 | **Push notifications** through the Expo push service (free, no paid plan): Expo push tokens stored per session in `push_devices`, categories per role with per-person switches, one delivery row per notification for duplicate protection, payloads without scores or answers, delivery mode `PUSH_DELIVERY` (`log` by default, `expo` for real sends), scheduled notifications behind `PUSH_SCHEDULER`. New mobile packages `expo-notifications` 58.1.7 and `expo-device` 58.0.5. The owner asked for push in the chat on 2026-10-31; the design details above are proposed | Proposed 2026-10-31 |
 
 ## Open
 

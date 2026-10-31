@@ -41,6 +41,7 @@ export async function recordAttempt(
   quizSlug: string,
   answers: SubmittedAnswer[],
   submittedAt?: Date,
+  idempotency?: { key: string; requestHash: string },
 ): Promise<RecordedAttempt> {
   const quiz = await tx.quiz.findUnique({ where: { slug: quizSlug }, select: quizForScoringSelect });
   if (!quiz || !quiz.subject.isPublished) throw new NotFoundException({ code: 'QUIZ_NOT_FOUND', message: `Quiz "${quizSlug}" not found` });
@@ -60,6 +61,7 @@ export async function recordAttempt(
       totalCount: score.totalCount,
       scorePercent: score.scorePercent,
       ...(submittedAt ? { submittedAt } : {}),
+      ...(idempotency ? { idempotencyKey: idempotency.key, requestHash: idempotency.requestHash } : {}),
       answers: {
         create: score.questions.map((s) => {
           const q = questionByKey.get(s.key)!;

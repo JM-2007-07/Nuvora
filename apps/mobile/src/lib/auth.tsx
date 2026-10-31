@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { z } from 'zod';
 import { api, clearTokens, loadTokens, publicApi, saveTokens, type SessionKind, setSignedOutHandler } from './api';
 import { forgetAccountQueue } from './offline';
+import { unregisterPush } from './push';
 
 interface Auth {
   /** null while loading from secure storage */
@@ -58,6 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [queryClient]);
 
   const signOut = useCallback(async () => {
+    // While the session still works: this phone stops getting the account's notifications.
+    await unregisterPush();
     await api('/auth/token/revoke', z.undefined(), { method: 'POST' }).catch(() => undefined);
     await Promise.all([clearTokens(), forgetAccountQueue()]);
     queryClient.clear();
@@ -65,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [queryClient]);
 
   const signOutEverywhere = useCallback(async () => {
+    await unregisterPush();
     await api('/auth/logout-all', z.undefined(), { method: 'POST' }).catch(() => undefined);
     await Promise.all([clearTokens(), forgetAccountQueue()]);
     queryClient.clear();

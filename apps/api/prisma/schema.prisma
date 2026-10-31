@@ -281,6 +281,10 @@ model QuizAttempt {
   totalCount   Int
   /// Integer 0–100
   scorePercent Int
+  /// Client-chosen key for one logical submission (Idempotency-Key header); null for attempts sent without one
+  idempotencyKey String?
+  /// SHA-256 of the quiz slug and the answers: the same key with a different request is refused
+  requestHash    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -290,6 +294,8 @@ model QuizAttempt {
   answers   AttemptAnswer[]
   masteries TopicMastery[]
 
+  /// One attempt per learner and key: a retry, or two copies arriving at once, can never store it twice
+  @@unique([userId, idempotencyKey])
   @@index([userId, submittedAt])
   @@index([quizId])
   @@map("quiz_attempts")
@@ -788,6 +794,7 @@ model AuthSession {
   deviceLabel     String?
 
   refreshTokens AuthRefreshToken[]
+  pushDevices   PushDevice[]
 
   @@index([subject])
   @@map("auth_sessions")
@@ -921,4 +928,59 @@ model ExamEvent {
 
   @@index([attemptId, at])
   @@map("exam_events")
+}
+
+/// A phone that receives push notifications (D-30). Tied to the session that registered it:
+/// signing out, "sign out everywhere" or an expired session stops pushes to it.
+model PushDevice {
+  id             String    @id @default(cuid())
+  /// Session subject of the owner (learner user id or "staff:…")
+  subject        String
+  sessionId      String
+  /// Expo push token; one row per app install (a token that changes hands moves to the new owner)
+  token          String    @unique
+  /// android | ios
+  platform       String
+  /// Language of the notifications (ru | tg | en)
+  locale         String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastSeenAt     DateTime  @default(now())
+  /// Set when the push service reports the token as no longer valid
+  disabledAt     DateTime?
+  disabledReason String?
+
+  session AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([subject])
+  @@index([sessionId])
+  @@map("push_devices")
+}
+
+/// Categories a person switched off (everything else is on).
+model NotificationPreference {
+  /// Session subject (learner user id or "staff:…")
+  subject   String   @id
+  disabled  String[]
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_preferences")
+}
+
+/// One row per notification per person: the unique dedupe key keeps a notification from being
+/// sent twice (retries, overlapping scheduler runs). Holds no message text and no answers.
+model NotificationDelivery {
+  id        String   @id @default(cuid())
+  subject   String
+  category  String
+  dedupeKey String
+  createdAt DateTime @default(now())
+  /// sent | partial | failed | no-devices | muted | logged
+  outcome   String
+  devices   Int      @default(0)
+  accepted  Int      @default(0)
+
+  @@unique([subject, dedupeKey])
+  @@index([createdAt])
+  @@map("notification_deliveries")
 }

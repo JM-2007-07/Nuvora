@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Building2, ShieldCheck, Users } from 'lucide-react-native';
 import { View } from 'react-native';
+import { PushOffer } from '@/components/notifications-card';
 import { Bar, Card, ErrorBox, Hud, IconBadge, Loading, Pill, Ring, Screen, Section, T } from '@/components/ui';
 import { usePrefs } from '@/lib/prefs';
 import { useCenterOverview, useStaffSession, useTeacherOverview } from '@/lib/staff-queries';
@@ -23,6 +24,7 @@ export default function StaffOverview() {
     <Screen title={t('tabs.overview')} refreshing={active.isRefetching} onRefresh={refresh}>
       {me.isPending || (role && active.isPending) ? <Loading /> : null}
       {me.isError || active.isError ? <ErrorBox onRetry={refresh} /> : null}
+      <PushOffer />
       {staff ? (
         <Hud>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>

@@ -23,6 +23,7 @@
       "expo-router",
       "expo-secure-store",
       "expo-localization",
+      "expo-notifications",
       ["expo-local-authentication", { "faceIDPermission": "Faroz uses Face ID to unlock the app on this device. Your face data stays with iOS." }]
     ],
     "experiments": { "typedRoutes": false },

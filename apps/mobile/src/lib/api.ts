@@ -76,7 +76,7 @@ export function currentAccessToken(): string | null {
   return memory.access;
 }
 
-async function raw(path: string, init: { method?: string; body?: unknown; token?: string | null; locale?: string }): Promise<Response> {
+async function raw(path: string, init: { method?: string; body?: unknown; token?: string | null; locale?: string; headers?: Record<string, string> }): Promise<Response> {
   return fetch(`${API_URL}${path}`, {
     method: init.method ?? 'GET',
     headers: {
@@ -84,6 +84,7 @@ async function raw(path: string, init: { method?: string; body?: unknown; token?
       ...(init.locale ? { 'Accept-Language': init.locale } : {}),
       ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
       ...(init.token ? { Authorization: `Bearer ${init.token}` } : {}),
+      ...init.headers,
     },
     body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
   });
@@ -118,7 +119,7 @@ async function fail(res: Response): Promise<never> {
 }
 
 /** Authenticated request, validated with the shared Zod schema; renews the access token once on 401. */
-export async function api<T>(path: string, schema: z.ZodType<T>, init: { method?: string; body?: unknown; locale?: string } = {}): Promise<T> {
+export async function api<T>(path: string, schema: z.ZodType<T>, init: { method?: string; body?: unknown; locale?: string; headers?: Record<string, string> } = {}): Promise<T> {
   await ensureLoaded();
   let res = await raw(path, { ...init, token: memory.access });
   if (res.status === 401 && (await refresh())) res = await raw(path, { ...init, token: memory.access });
