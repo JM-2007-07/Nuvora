@@ -29,6 +29,9 @@ export async function SiteFooter() {
           <Link href="/start?role=center" className="no-underline py-1.5 hover:text-(--text)">
             {t('centers')}
           </Link>
+          <Link href="/download" className="no-underline py-1.5 hover:text-(--text)">
+            {t('app')}
+          </Link>
           <Link href="/privacy" className="no-underline py-1.5 hover:text-(--text)">
             {t('privacy')}
           </Link>

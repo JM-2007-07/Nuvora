@@ -12,6 +12,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "start:hosted": "node scripts/render-start.mjs",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run && vitest run --config ./vitest.config.e2e.ts",
     "test:watch": "vitest",

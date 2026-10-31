@@ -14,6 +14,7 @@ import {
   COMMS_SOCKET_PATH,
 } from '@nuvora/shared';
 import { io, type Socket } from 'socket.io-client';
+import { apiOrigin, realtimeAuth } from '@/lib/realtime';
 import { z } from 'zod';
 import { clientFetch } from '@/lib/client-api';
 
@@ -35,17 +36,11 @@ export const examApi = {
     clientFetch(`/teach/assessment-attempts/${id(attemptId)}/actions`, z.unknown(), { locale, method: 'POST', body }),
 };
 
-/** Sockets go straight to the API origin (Next rewrites do not carry WebSocket upgrades); same as comms. */
-function apiOrigin(): string {
-  const configured = process.env.NEXT_PUBLIC_API_URL;
-  if (configured) return new URL(configured).origin;
-  return `${window.location.protocol}//${window.location.hostname}:4000`;
-}
-
 export function connectExam(): Socket {
   return io(`${apiOrigin()}${EXAM_NAMESPACE}`, {
     path: COMMS_SOCKET_PATH,
     withCredentials: true,
+    auth: realtimeAuth,
     transports: ['websocket', 'polling'],
     reconnectionDelayMax: 4000,
   });

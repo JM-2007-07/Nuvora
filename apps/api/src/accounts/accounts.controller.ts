@@ -30,11 +30,13 @@ import type { Request, Response } from 'express';
 import type { z } from 'zod';
 import { AuditService } from '../common/audit/audit.service.js';
 import { clientAddress } from '../common/security/http-security.js';
+import { APP_ENV, type AppEnv, demoLoginsEnabled } from '../config/env.js';
+import { demoDisabled } from '../identity/identity.controller.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import { currentSession } from '../identity/current-session.js';
 import { IdentityService } from '../identity/identity.service.js';
 import { sessionMeta } from '../identity/request-meta.js';
-import { readCookie, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
+import { cookieOptions, readCookie, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
 import type { IssuedTokens } from '../identity/session-store.js';
 import { describeDevice } from '../identity/session-tokens.js';
 import { findStaff } from '../staff/demo-org.js';
@@ -42,7 +44,6 @@ import { STAFF_COOKIE, staffAccountSubject, staffSubject } from '../staff/staff.
 import { accountSubjects, AccountsService, PLANS, toAccountView } from './accounts.service.js';
 import { ResetLinkDelivery } from './reset-delivery.js';
 
-const cookieOptions = { httpOnly: true, sameSite: 'lax', path: '/' } as const;
 const STAFF_ACCOUNT = 'staff:acct:';
 
 /**
@@ -57,6 +58,7 @@ export class AccountsController {
     @Inject(IdentityService) private readonly identity: IdentityService,
     @Inject(AuditService) private readonly audit: AuditService,
     @Inject(ResetLinkDelivery) private readonly resetLinks: ResetLinkDelivery,
+    @Inject(APP_ENV) private readonly env: AppEnv,
   ) {}
 
   @Get('plans')
@@ -86,8 +88,8 @@ export class AccountsController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     await this.identity.sessions.revokeToken(readCookie(req.headers.cookie, SESSION_COOKIE), 'logout');
     await this.identity.sessions.revokeToken(readCookie(req.headers.cookie, STAFF_COOKIE), 'logout');
-    res.clearCookie(SESSION_COOKIE, cookieOptions);
-    res.clearCookie(STAFF_COOKIE, cookieOptions);
+    res.clearCookie(SESSION_COOKIE, cookieOptions());
+    res.clearCookie(STAFF_COOKIE, cookieOptions());
   }
 
   /** The password account behind the current session, or null (demo profiles and guests have none). */
@@ -132,8 +134,8 @@ export class AccountsController {
   async logoutAll(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     const current = await this.requireSession(req);
     const count = await this.identity.sessions.revokeAll([current.session.subject], 'logout-all');
-    res.clearCookie(SESSION_COOKIE, cookieOptions);
-    res.clearCookie(STAFF_COOKIE, cookieOptions);
+    res.clearCookie(SESSION_COOKIE, cookieOptions());
+    res.clearCookie(STAFF_COOKIE, cookieOptions());
     await this.audit.record({ actorKey: current.session.subject, action: 'auth.logout_all', ip: clientAddress(req), meta: { sessions: count } });
   }
 
@@ -151,6 +153,7 @@ export class AccountsController {
   @Post('auth/token/demo')
   @HttpCode(200)
   async demoToken(@Body(new ZodValidationPipe(DemoTokenRequestSchema)) body: DemoTokenRequest, @Req() req: Request): Promise<TokenPair> {
+    if (!('guest' in body) && !demoLoginsEnabled(this.env)) throw demoDisabled();
     let subject: string;
     if ('staff' in body) {
       const staff = findStaff(body.staff);
@@ -289,11 +292,11 @@ export class AccountsController {
     await this.identity.sessions.revokeToken(readCookie(req.headers.cookie, SESSION_COOKIE), 'switch');
     await this.identity.sessions.revokeToken(readCookie(req.headers.cookie, STAFF_COOKIE), 'switch');
     if (account.role === 'LEARNER' && account.userId) {
-      res.clearCookie(STAFF_COOKIE, cookieOptions);
-      res.cookie(SESSION_COOKIE, (await this.identity.sessions.issueWeb(account.userId, sessionMeta(req))).token, { ...cookieOptions, maxAge });
+      res.clearCookie(STAFF_COOKIE, cookieOptions());
+      res.cookie(SESSION_COOKIE, (await this.identity.sessions.issueWeb(account.userId, sessionMeta(req))).token, { ...cookieOptions(), maxAge });
     } else {
-      res.clearCookie(SESSION_COOKIE, cookieOptions);
-      res.cookie(STAFF_COOKIE, (await this.identity.sessions.issueWeb(staffAccountSubject(account.id), sessionMeta(req))).token, { ...cookieOptions, maxAge });
+      res.clearCookie(SESSION_COOKIE, cookieOptions());
+      res.cookie(STAFF_COOKIE, (await this.identity.sessions.issueWeb(staffAccountSubject(account.id), sessionMeta(req))).token, { ...cookieOptions(), maxAge });
     }
   }
 }

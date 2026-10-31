@@ -56,6 +56,7 @@ This is the authoritative list of decisions and their status. Read it before bui
 | ID | Decision | Status |
 | --- | --- | --- |
 | D-30 | **Push notifications** through the Expo push service (free, no paid plan): Expo push tokens stored per session in `push_devices`, categories per role with per-person switches, one delivery row per notification for duplicate protection, payloads without scores or answers, delivery mode `PUSH_DELIVERY` (`log` by default, `expo` for real sends), scheduled notifications behind `PUSH_SCHEDULER`. New mobile packages `expo-notifications` 58.1.7 and `expo-device` 58.0.5. The owner asked for push in the chat on 2026-10-31; the design details above are proposed | Proposed 2026-10-31 |
+| D-31 | **Hosting for the defense on Render** ([DEPLOYMENT.md](../engineering/DEPLOYMENT.md)): Blueprint `render.yaml` with free PostgreSQL, API and website as two web services; the API start script migrates and seeds (demo data on the first start); production refuses to start without `SESSION_SECRET` or an https site address; Secure cookies; `TRUST_PROXY`; demo sign-in switched on explicitly with `DEMO_LOGINS=on` for the defense (anyone with the address can open the demo profiles), off by default in production; sockets across the two domains use two-minute tickets. Later move to a VPS with the same commands. The owner asked for Render in the chat on 2026-10-31; this lifts "not for public deployment" (D-10) for the defense demo only. Details proposed | Proposed 2026-10-31 |
 
 ## Open
 

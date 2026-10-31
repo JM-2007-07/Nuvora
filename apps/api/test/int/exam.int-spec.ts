@@ -221,4 +221,23 @@ describe.skipIf(!url)('exam mode (real database)', () => {
     const audit = await prisma.auditEvent.findMany({ where: { action: { startsWith: 'exam.' } }, select: { action: true } });
     expect(audit.map((a) => a.action)).toEqual(expect.arrayContaining(['exam.warn', 'exam.pause', 'exam.resume', 'exam.extend', 'exam.reset']));
   });
+  it('a realtime ticket (website on another domain) opens the socket for the session it names, and only while it is live', async () => {
+    const ticketOf = async (who: string) => (await http().post('/api/v1/realtime/ticket').set('Origin', ORIGIN).set('Cookie', cookie[who]!).expect(200)).body as { ticket: string; expiresAt: string };
+    await http().post('/api/v1/realtime/ticket').set('Origin', ORIGIN).expect(401);
+    const teacherTicket = await ticketOf('teacher');
+    expect(teacherTicket.ticket.startsWith('fzt_')).toBe(true);
+    expect(new Date(teacherTicket.expiresAt).getTime() - Date.now()).toBeLessThanOrEqual(120_000);
+    const viaTicket = (ticket: string) => {
+      const socket = io(`${base}/exam`, { path: '/realtime', auth: { token: ticket }, transports: ['websocket'], forceNew: true });
+      sockets.push(socket);
+      return socket;
+    };
+    expect(await emit(viaTicket(teacherTicket.ticket), 'exam:watch', { assessmentId })).toEqual({ ok: true });
+    expect(await emit(viaTicket((await ticketOf('bibi')).ticket), 'exam:watch', { assessmentId })).toEqual({ ok: false, error: 'NOT_FOUND' });
+    expect(await emit(viaTicket('fzt_forged.ticket'), 'exam:watch', { assessmentId })).toEqual({ ok: false, error: 'NOT_FOUND' });
+    // Signing out ends the session; its ticket stops working at once.
+    const fresh = await ticketOf('teacher');
+    await app.get(SessionStore).revokeToken(token.teacher, 'logout');
+    expect(await emit(viaTicket(fresh.ticket), 'exam:watch', { assessmentId })).toEqual({ ok: false, error: 'NOT_FOUND' });
+  });
 });

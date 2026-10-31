@@ -98,7 +98,7 @@ sequenceDiagram
 
 **Roles:** none in the MVP. Every learner has the same permissions. Roles (e.g. admin, teacher) arrive with real accounts.
 
-**Not for public deployment:** demo profiles can be opened by anyone using the app. This is acceptable for the local presentation (D-10) only.
+**Not for public deployment:** demo profiles can be opened by anyone using the app. This is acceptable for the local presentation (D-10) and, with `DEMO_LOGINS=on`, for the hosted defense demo on Render (D-31, proposed). Production servers keep demo sign-in off unless it is switched on ([DEPLOYMENT.md](../engineering/DEPLOYMENT.md)).
 
 ## Localization
 

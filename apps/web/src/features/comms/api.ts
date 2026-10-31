@@ -9,6 +9,7 @@ import {
   MessagesPageSchema,
 } from '@nuvora/shared';
 import { io, type Socket } from 'socket.io-client';
+import { apiOrigin, realtimeAuth } from '@/lib/realtime';
 import { z } from 'zod';
 import { ApiRequestError, clientFetch } from '@/lib/client-api';
 
@@ -35,20 +36,11 @@ export const commsApi = {
   },
 };
 
-/**
- * The API origin for the live connection. Sockets go straight to the API (Next rewrites do not
- * carry WebSocket upgrades); the session cookie still travels (same site, another port).
- */
-function apiOrigin(): string {
-  const configured = process.env.NEXT_PUBLIC_API_URL;
-  if (configured) return new URL(configured).origin;
-  return `${window.location.protocol}//${window.location.hostname}:4000`;
-}
-
 export function connectComms(): Socket {
   return io(`${apiOrigin()}${COMMS_NAMESPACE}`, {
     path: COMMS_SOCKET_PATH,
     withCredentials: true,
+    auth: realtimeAuth,
     transports: ['websocket', 'polling'],
     reconnectionDelayMax: 4000,
   });

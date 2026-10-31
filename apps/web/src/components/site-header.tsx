@@ -19,6 +19,7 @@ export async function SiteHeader() {
     { href: '/library', label: t('navLibrary') },
     { href: '/#teachers', label: t('navTeachers') },
     { href: '/#centers', label: t('navCenters') },
+    { href: '/download', label: t('navApp') },
   ];
 
   const bar = (

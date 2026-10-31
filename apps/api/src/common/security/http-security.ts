@@ -51,10 +51,17 @@ export function securityHeaders() {
  * own server (Next.js rewrite), so a request from loopback may carry the browser's address
  * in X-Forwarded-For; it is trusted only from loopback.
  */
+let trustProxy = false;
+
+/** Behind a hosting proxy (TRUST_PROXY=on) the client address comes from X-Forwarded-For. */
+export function setTrustProxy(on: boolean): void {
+  trustProxy = on;
+}
+
 export function clientAddress(req: Request): string {
   const peer = req.socket.remoteAddress ?? 'unknown';
   const forwarded = req.headers['x-forwarded-for'];
-  if (LOOPBACK.test(peer) && typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0]!.trim();
+  if ((trustProxy || LOOPBACK.test(peer)) && typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0]!.trim();
   return peer;
 }
 

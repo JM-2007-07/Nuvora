@@ -3,10 +3,10 @@ import { IoAdapter } from '@nestjs/platform-socket.io';
 import { COMMS_SOCKET_PATH } from '@nuvora/shared';
 import type { Server, ServerOptions } from 'socket.io';
 
-/** Local web origins (dev server, production preview on another port) may connect with cookies. */
-export function allowedOrigin(origin: string | undefined, webOrigin: string): boolean {
+/** The web origin(s) may connect; in development also any localhost port. Native apps send no Origin. */
+export function allowedOrigin(origin: string | undefined, allowed: string[], allowLocalhost = true): boolean {
   if (!origin) return true; // native apps send no Origin; they authenticate with a token
-  return origin === webOrigin || /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  return allowed.includes(origin) || (allowLocalhost && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin));
 }
 
 /**
@@ -16,7 +16,8 @@ export function allowedOrigin(origin: string | undefined, webOrigin: string): bo
 export class CommsIoAdapter extends IoAdapter {
   constructor(
     app: INestApplicationContext,
-    private readonly webOrigin: string,
+    private readonly allowed: string[],
+    private readonly allowLocalhost: boolean,
   ) {
     super(app);
   }
@@ -26,7 +27,7 @@ export class CommsIoAdapter extends IoAdapter {
       ...options,
       path: COMMS_SOCKET_PATH,
       maxHttpBufferSize: 512 * 1024,
-      cors: { origin: (origin: string | undefined, done: (err: Error | null, allow?: boolean) => void) => done(null, allowedOrigin(origin, this.webOrigin)), credentials: true },
+      cors: { origin: (origin: string | undefined, done: (err: Error | null, allow?: boolean) => void) => done(null, allowedOrigin(origin, this.allowed, this.allowLocalhost)), credentials: true },
     } as ServerOptions) as Server;
   }
 }
