@@ -26,7 +26,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "primaryNav": "Primary",
-    "openWorkspace": "Open my workspace"
+    "openWorkspace": "Open my workspace",
+    "navApp": "App"
   },
   "Learner": {
     "menu": "Learner",
@@ -198,7 +199,8 @@
     "centers": "Centers",
     "privacy": "Privacy",
     "terms": "Terms",
-    "note": "© 2026 Faroz · course project concept · EN · RU · TJ (Tajik copy is a draft for native review)"
+    "note": "© 2026 Faroz · course project concept · EN · RU · TJ (Tajik copy is a draft for native review)",
+    "app": "App"
   },
   "App": {
     "nav": {
@@ -1040,5 +1042,39 @@
     "photoAlt": "Photo of {name}",
     "guestTitle": "Profiles are for signed-in learners",
     "guestBody": "Guests do not keep a profile. Choose a demo learner or create an account to set up yours."
+  },
+  "Download": {
+    "metaTitle": "Faroz app for Android",
+    "metaDescription": "Lessons, practice and your teacher’s tests on your phone. Lessons work offline.",
+    "eyebrow": "Faroz app",
+    "title": "Faroz on your phone",
+    "sub": "Lessons, practice and your teacher’s tests in an Android app. Save a lesson and study without internet.",
+    "android": "Download for Android",
+    "apk": "APK",
+    "version": "Version {version}",
+    "unavailable": "The Android build will be on this page soon. Until then, Faroz works in your phone’s browser.",
+    "openSite": "Open the website",
+    "ios": "iPhone: coming soon. The website already works in Safari.",
+    "roles": "For learners, teachers and learning centers: the same account as on the website.",
+    "featuresTitle": "What the app does",
+    "f1Title": "Lessons offline",
+    "f1Text": "Save a lesson with its practice. Answers are sent by themselves when you are back online, and none is counted twice.",
+    "f2Title": "Your teacher’s tests",
+    "f2Text": "The server keeps the time and the score; answers are saved at once, even if the connection drops for a minute.",
+    "f3Title": "Notifications",
+    "f3Text": "About new tests and ready results. Scores and answers never show on the lock screen.",
+    "f4Title": "Code or fingerprint",
+    "f4Text": "Quick sign-in with a 4-digit code or your fingerprint on this phone.",
+    "stepsTitle": "How to install",
+    "s1": "Open this page on your phone and tap “Download for Android”.",
+    "s2": "If Android asks, allow installing from this source.",
+    "s3": "Open Faroz and sign in with the same account as on the website, or pick a demo profile.",
+    "note": "The app installs directly (APK), not from Google Play. Download it only from this page.",
+    "phoneLabel": "Faroz app screen: a learner’s next step and skills",
+    "phoneHello": "Hi, Amina",
+    "phoneLevel": "Level 2",
+    "phoneNext": "Next step",
+    "phoneTopic": "Improve “Functions”",
+    "phoneOffline": "Saved for offline"
   }
 }

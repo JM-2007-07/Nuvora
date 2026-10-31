@@ -74,3 +74,10 @@ export const MfaSetupSchema = z.strictObject({ secret: z.string(), otpauthUrl: z
 export type MfaSetup = z.infer<typeof MfaSetupSchema>;
 export const MfaCodeRequestSchema = z.strictObject({ code: TotpCodeSchema });
 export const MfaDisableRequestSchema = z.strictObject({ code: TotpCodeSchema, password: z.string().min(1).max(200) });
+
+/**
+ * POST /realtime/ticket: a two-minute ticket the website passes as `auth.token` when it opens a
+ * Socket.IO connection (its session cookie belongs to the site's own origin, not the API's).
+ */
+export const RealtimeTicketSchema = z.strictObject({ ticket: z.string(), expiresAt: z.string() });
+export type RealtimeTicket = z.infer<typeof RealtimeTicketSchema>;

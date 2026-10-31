@@ -2,6 +2,7 @@
   "expo": {
     "name": "Faroz",
     "slug": "faroz",
+    "owner": "asiljms-team",
     "scheme": "faroz",
     "version": "0.1.0",
     "orientation": "default",
@@ -11,6 +12,7 @@
     "newArchEnabled": true,
     "android": {
       "package": "tj.faroz.app",
+      "versionCode": 1,
       "adaptiveIcon": { "foregroundImage": "./assets/icon.png", "backgroundColor": "#0A0B14" },
       "edgeToEdgeEnabled": true
     },
@@ -27,6 +29,6 @@
       ["expo-local-authentication", { "faceIDPermission": "Faroz uses Face ID to unlock the app on this device. Your face data stays with iOS." }]
     ],
     "experiments": { "typedRoutes": false },
-    "extra": { "apiUrl": null }
+    "extra": { "apiUrl": null, "eas": { "projectId": "fe231c6a-f872-4754-859e-2a2af8ef4116" } }
   }
 }

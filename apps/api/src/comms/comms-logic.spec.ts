@@ -34,10 +34,12 @@ describe('contacts', () => {
 
 describe('socket origins', () => {
   it('allows the web origin, local ports and native apps; rejects other sites', () => {
-    expect(allowedOrigin('http://localhost:3000', 'http://localhost:3000')).toBe(true);
-    expect(allowedOrigin('http://localhost:3001', 'http://localhost:3000')).toBe(true);
-    expect(allowedOrigin(undefined, 'http://localhost:3000')).toBe(true);
-    expect(allowedOrigin('https://evil.example', 'http://localhost:3000')).toBe(false);
+    const web = ['https://faroz-web.onrender.com'];
+    expect(allowedOrigin('https://faroz-web.onrender.com', web, false)).toBe(true);
+    expect(allowedOrigin('http://localhost:3001', web, true)).toBe(true);
+    expect(allowedOrigin('http://localhost:3001', web, false)).toBe(false);
+    expect(allowedOrigin(undefined, web, false)).toBe(true);
+    expect(allowedOrigin('https://evil.example', web, true)).toBe(false);
   });
 });
 

@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { APP_ENV, type AppEnv } from '../config/env.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { TICKET_PREFIX, ticketSecret, verifyTicket } from './realtime-ticket.js';
 import {
   ACCESS_TOKEN_MS,
   ACCESS_TOKEN_PREFIX,
@@ -72,7 +74,10 @@ const clip = (value: string | undefined, max: number) => (value ? value.slice(0,
 
 @Injectable()
 export class DbSessionStore extends SessionStore {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(APP_ENV) private readonly env: AppEnv,
+  ) {
     super();
   }
 
@@ -144,6 +149,7 @@ export class DbSessionStore extends SessionStore {
   }
 
   async resolve(token: string | undefined): Promise<ResolvedSession | null> {
+    if (token?.startsWith(TICKET_PREFIX)) return this.resolveTicket(token);
     if (!looksLikeToken(token, [WEB_TOKEN_PREFIX, ACCESS_TOKEN_PREFIX])) return null;
     const row = await this.prisma.authSession.findUnique({
       where: { tokenHash: hashToken(token) },
@@ -154,6 +160,15 @@ export class DbSessionStore extends SessionStore {
     if (now - row.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
       await this.prisma.authSession.update({ where: { id: row.id }, data: { lastSeenAt: new Date(now) } }).catch(() => undefined);
     }
+    return { id: row.id, subject: row.subject };
+  }
+
+  /** A real-time ticket (see realtime-ticket.ts): valid only while its session is still live. */
+  private async resolveTicket(ticket: string): Promise<ResolvedSession | null> {
+    const sessionId = verifyTicket(ticket, ticketSecret(this.env.SESSION_SECRET), Date.now());
+    if (!sessionId) return null;
+    const row = await this.prisma.authSession.findUnique({ where: { id: sessionId }, select: { id: true, subject: true, expiresAt: true, revokedAt: true } });
+    if (!row || row.revokedAt || row.expiresAt.getTime() <= Date.now()) return null;
     return { id: row.id, subject: row.subject };
   }
 

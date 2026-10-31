@@ -1,5 +1,13 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
+/**
+ * Options of every session cookie (learner and staff): httpOnly and SameSite=Lax always; Secure in
+ * production, where the site is served over HTTPS. A function, so it reads NODE_ENV after .env is loaded.
+ */
+export function cookieOptions(): { httpOnly: true; sameSite: 'lax'; path: '/'; secure: boolean } {
+  return { httpOnly: true, sameSite: 'lax', path: '/', secure: process.env.NODE_ENV === 'production' };
+}
+
 /** Learner session cookie (ADR-0006): `<userId>.<HMAC-SHA256(userId)>`, httpOnly. */
 export const SESSION_COOKIE = 'nv_session';
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;

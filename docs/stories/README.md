@@ -72,3 +72,4 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-30 | [Site copy pass and the Faroz writing voice](2026-10-30-site-copy-voice.md) | implemented and verified; ru/tg need native review |
 | 2026-10-30 | [Platform implementation: security, sessions, admin, exam mode, mobile foundation](2026-10-30-platform-implementation.md) | implemented; API integration-tested on real PostgreSQL; full exam browser run and device run of the app pending |
 | 2026-10-31 | [Native mobile app: learner, teacher, center, exam, offline, PIN](2026-10-31-mobile-app.md) | implemented; idempotent sync and push integration-tested; verified in the web preview and an Android bundle export; device run and real push delivery pending |
+| 2026-10-31 | [Ready to deploy on Render, and an app download page](2026-10-31-render-deployment.md) | deployed on Render and verified live; APK build pending |
