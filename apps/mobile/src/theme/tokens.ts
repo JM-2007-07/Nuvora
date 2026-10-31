@@ -100,3 +100,38 @@ export const lightTokens = {
 } as const;
 
 export type Tokens = { [K in keyof typeof darkTokens]: string };
+
+/** Gradient stops for the gradient tokens (two or more colours). */
+export const darkGradients = {
+  "hud": [
+    "#1E2A6B",
+    "#14162A"
+  ],
+  "avatar": [
+    "#3D7BFF",
+    "#FF4FD8"
+  ],
+  "shimmer": [
+    "#14162A",
+    "#1F2340",
+    "#14162A"
+  ]
+} as const;
+
+export const lightGradients = {
+  "hud": [
+    "#12142A",
+    "#12142A"
+  ],
+  "avatar": [
+    "#2F5BEA",
+    "#2F5BEA"
+  ],
+  "shimmer": [
+    "#EEF0F5",
+    "#FAFBFD",
+    "#EEF0F5"
+  ]
+} as const;
+
+export type Gradients = { [K in keyof typeof darkGradients]: readonly [string, string, ...string[]] };

@@ -2,7 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { API_PREFIX } from '@nuvora/shared';
 import { CommsIoAdapter } from './comms/io-adapter.js';
 import { ApiExceptionFilter } from './common/errors/api-exception.filter.js';
-import { originCheck, rateLimit, securityHeaders } from './common/security/http-security.js';
+import { isAllowedOrigin, originCheck, rateLimit, securityHeaders } from './common/security/http-security.js';
 import { RateLimiter } from './common/security/rate-limit.js';
 import type { AppEnv } from './config/env.js';
 
@@ -16,7 +16,8 @@ export function configureApp(app: INestApplication, env: AppEnv): void {
   if (env.RATE_LIMIT !== 'off') app.use(rateLimit(new RateLimiter(), `/${API_PREFIX}`));
   app.use(originCheck(allowed, allowLocalhost));
   app.useGlobalFilters(new ApiExceptionFilter());
-  app.enableCors({ origin: env.WEB_ORIGIN, credentials: true });
+  // CORS: the web origin(s); in development also any localhost port (Expo web preview of the app).
+  app.enableCors({ origin: (origin: string | undefined, done: (err: Error | null, allow?: boolean) => void) => done(null, !origin || isAllowedOrigin(origin, allowed, allowLocalhost)), credentials: true });
   // Socket.IO for chat and calls at /realtime (comms module).
   app.useWebSocketAdapter(new CommsIoAdapter(app, env.WEB_ORIGIN));
 }

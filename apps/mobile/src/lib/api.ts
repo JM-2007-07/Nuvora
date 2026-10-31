@@ -1,6 +1,6 @@
 import { ApiErrorSchema, type TokenPair, TokenPairSchema } from '@nuvora/shared';
 import Constants from 'expo-constants';
-import * as SecureStore from 'expo-secure-store';
+import { deleteItem, getItem, setItem } from './storage';
 import { Platform } from 'react-native';
 import type { z } from 'zod';
 
@@ -10,10 +10,16 @@ import type { z } from 'zod';
  * (the Android emulator reaches the computer at 10.0.2.2). A real phone needs the computer's
  * LAN address or an HTTPS host.
  */
-export const API_URL: string =
-  process.env.EXPO_PUBLIC_API_URL ??
-  (Constants.expoConfig?.extra as { apiUrl?: string | null } | undefined)?.apiUrl ??
-  (Platform.OS === 'android' ? 'http://10.0.2.2:4000/api/v1' : 'http://localhost:4000/api/v1');
+const fromEnv: unknown = process.env.EXPO_PUBLIC_API_URL;
+const fromConfig: unknown = (Constants.expoConfig?.extra as { apiUrl?: unknown } | undefined)?.apiUrl;
+const isUrl = (v: unknown): v is string => typeof v === 'string' && /^https?:\/\//.test(v);
+export const API_URL: string = isUrl(fromEnv)
+  ? fromEnv.replace(/\/$/, '')
+  : isUrl(fromConfig)
+    ? fromConfig.replace(/\/$/, '')
+    : Platform.OS === 'android'
+      ? 'http://10.0.2.2:4000/api/v1'
+      : 'http://localhost:4000/api/v1';
 
 /** Secure storage keys (Keychain on iOS, Keystore-backed on Android). Tokens never go to plain storage. */
 const ACCESS = 'faroz.access';
@@ -33,20 +39,33 @@ export type SessionKind = 'learner' | 'staff';
 let memory: { access: string | null; refresh: string | null; kind: SessionKind | null } = { access: null, refresh: null, kind: null };
 let onSignedOut: (() => void) | null = null;
 
+/**
+ * Reads the saved tokens once. Every request waits for it, so a screen that renders before the
+ * session is restored (a cold start or a deep link) never goes out without its token.
+ */
+let loading: Promise<void> | null = null;
+function ensureLoaded(): Promise<void> {
+  loading ??= Promise.all([getItem(ACCESS), getItem(REFRESH), getItem(KIND)]).then(([access, refresh, kind]) => {
+    memory = { access, refresh, kind: kind === 'learner' || kind === 'staff' ? kind : null };
+  });
+  return loading;
+}
+
 export async function loadTokens(): Promise<SessionKind | null> {
-  const [access, refresh, kind] = await Promise.all([SecureStore.getItemAsync(ACCESS), SecureStore.getItemAsync(REFRESH), SecureStore.getItemAsync(KIND)]);
-  memory = { access, refresh, kind: kind === 'learner' || kind === 'staff' ? kind : null };
+  await ensureLoaded();
   return memory.refresh ? memory.kind : null;
 }
 
 export async function saveTokens(pair: TokenPair): Promise<void> {
+  loading ??= Promise.resolve();
   memory = { access: pair.accessToken, refresh: pair.refreshToken, kind: pair.kind };
-  await Promise.all([SecureStore.setItemAsync(ACCESS, pair.accessToken), SecureStore.setItemAsync(REFRESH, pair.refreshToken), SecureStore.setItemAsync(KIND, pair.kind)]);
+  await Promise.all([setItem(ACCESS, pair.accessToken), setItem(REFRESH, pair.refreshToken), setItem(KIND, pair.kind)]);
 }
 
 export async function clearTokens(): Promise<void> {
+  loading ??= Promise.resolve();
   memory = { access: null, refresh: null, kind: null };
-  await Promise.all([SecureStore.deleteItemAsync(ACCESS), SecureStore.deleteItemAsync(REFRESH), SecureStore.deleteItemAsync(KIND)]);
+  await Promise.all([deleteItem(ACCESS), deleteItem(REFRESH), deleteItem(KIND)]);
 }
 
 export function setSignedOutHandler(handler: (() => void) | null): void {
@@ -100,6 +119,7 @@ async function fail(res: Response): Promise<never> {
 
 /** Authenticated request, validated with the shared Zod schema; renews the access token once on 401. */
 export async function api<T>(path: string, schema: z.ZodType<T>, init: { method?: string; body?: unknown; locale?: string } = {}): Promise<T> {
+  await ensureLoaded();
   let res = await raw(path, { ...init, token: memory.access });
   if (res.status === 401 && (await refresh())) res = await raw(path, { ...init, token: memory.access });
   if (!res.ok) return fail(res);

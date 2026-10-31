@@ -1,10 +1,11 @@
 import { type DemoTokenRequest, TokenPairSchema } from '@nuvora/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import * as Device from 'expo-constants';
+import Constants from 'expo-constants';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 import { z } from 'zod';
 import { api, clearTokens, loadTokens, publicApi, saveTokens, type SessionKind, setSignedOutHandler } from './api';
+import { forgetAccountQueue } from './offline';
 
 interface Auth {
   /** null while loading from secure storage */
@@ -19,8 +20,9 @@ const AuthContext = createContext<Auth | null>(null);
 
 /** A short label for "Signed-in devices" on the website. */
 function deviceLabel(): string {
-  const name = Device.default.deviceName;
-  return `${name ?? 'Faroz app'} · ${Platform.OS === 'ios' ? 'iOS' : 'Android'}`.slice(0, 80);
+  const name = Constants.deviceName;
+  const os = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : 'Web preview';
+  return `${name ?? 'Faroz app'} · ${os}`.slice(0, 80);
 }
 
 /**
@@ -33,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setSignedOutHandler(() => {
+      void forgetAccountQueue();
       queryClient.clear();
       setKind('none');
     });
@@ -56,14 +59,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     await api('/auth/token/revoke', z.undefined(), { method: 'POST' }).catch(() => undefined);
-    await clearTokens();
+    await Promise.all([clearTokens(), forgetAccountQueue()]);
     queryClient.clear();
     setKind('none');
   }, [queryClient]);
 
   const signOutEverywhere = useCallback(async () => {
     await api('/auth/logout-all', z.undefined(), { method: 'POST' }).catch(() => undefined);
-    await clearTokens();
+    await Promise.all([clearTokens(), forgetAccountQueue()]);
     queryClient.clear();
     setKind('none');
   }, [queryClient]);

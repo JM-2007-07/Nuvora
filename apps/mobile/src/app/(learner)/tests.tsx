@@ -1,40 +1,48 @@
-import { LearnerAssessmentListSchema } from '@nuvora/shared';
-import { useQuery } from '@tanstack/react-query';
-import { RefreshControl, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Body, Card, ErrorBox, Loading, Pill, Title } from '@/components/ui';
-import { api } from '@/lib/api';
+import { router } from 'expo-router';
+import { ClipboardCheck, Clock, Play, RotateCw, Trophy } from 'lucide-react-native';
+import { View } from 'react-native';
+import { Button, Card, Empty, ErrorBox, IconBadge, Loading, Pill, Screen, T } from '@/components/ui';
 import { usePrefs } from '@/lib/prefs';
+import { shortDate, useAssignments } from '@/lib/queries';
 
-/**
- * Assessments the learner's teachers assigned (same data as the website). Taking an exam in the
- * app needs the native exam player with app-background signals; until then the app shows what is
- * assigned and the results, and says plainly where to take it.
- */
+/** Assessments the learner's teachers assigned, taken here in exam mode. */
 export default function Tests() {
-  const { colors, t, locale } = usePrefs();
-  const list = useQuery({ queryKey: ['assessments', locale], queryFn: () => api('/me/assessments', LearnerAssessmentListSchema, { locale }) });
+  const { t } = usePrefs();
+  const list = useAssignments();
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 14, maxWidth: 720, width: '100%', alignSelf: 'center' }} refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={colors.mint} />}>
-        <Title>{t('tests.title')}</Title>
-        {list.isPending ? <Loading /> : null}
-        {list.isError ? <ErrorBox onRetry={() => void list.refetch()} /> : null}
-        {list.data && list.data.items.length === 0 ? <Body muted>{t('tests.empty')}</Body> : null}
-        {list.data?.items.map((a, i) => (
-          <Card key={a.id} index={i}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
-              <Body style={{ fontWeight: '700', flexShrink: 1 }}>{a.title}</Body>
-              <Pill text={t(a.window === 'open' ? 'tests.open' : a.window === 'scheduled' ? 'tests.scheduled' : 'tests.closed')} tone={a.window === 'open' ? 'mint' : a.window === 'scheduled' ? 'gold' : 'neutral'} />
+    <Screen title={t('tests.title')} subtitle={t('tests.subtitle')} refreshing={list.isRefetching} onRefresh={() => void list.refetch()}>
+      {list.isPending ? <Loading /> : null}
+      {list.isError ? <ErrorBox onRetry={() => void list.refetch()} /> : null}
+      {list.data && list.data.items.length === 0 ? <Empty icon={ClipboardCheck} title={t('tests.empty')} /> : null}
+      {list.data?.items.map((a, i) => {
+        const canStart = a.window === 'open' && (!!a.activeAttemptId || a.attemptsUsed < a.attemptsAllowed);
+        const tone = a.window === 'open' ? 'mint' : a.window === 'scheduled' ? 'gold' : 'neutral';
+        return (
+          <Card key={a.id} index={i} style={{ gap: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+              <IconBadge icon={ClipboardCheck} tone={tone} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <T variant="strong">{a.title}</T>
+                <T variant="caption" ink="muted">
+                  {a.groupCode} · {a.subject.title} · {a.questionCount}
+                </T>
+              </View>
+              <Pill text={t(a.window === 'open' ? 'tests.open' : a.window === 'scheduled' ? 'tests.scheduled' : 'tests.closed')} tone={tone} />
             </View>
-            <Body muted style={{ fontSize: 14 }}>
-              {a.groupCode} · {a.timeLimitMinutes ? t('tests.minutes', { n: a.timeLimitMinutes }) : t('tests.noLimit')} · {t('tests.attempts', { used: a.attemptsUsed, allowed: a.attemptsAllowed })}
-            </Body>
-            {a.lastResult ? <Body>{t('tests.result', { correct: a.lastResult.correct, total: a.lastResult.total })}</Body> : null}
-            {a.window === 'open' ? <Body muted style={{ fontSize: 14 }}>{t('tests.webOnly')}</Body> : null}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              <Pill icon={Clock} text={a.timeLimitMinutes ? t('common.min', { n: a.timeLimitMinutes }) : t('tests.noLimit')} />
+              <Pill icon={RotateCw} text={t('tests.attempts', { used: a.attemptsUsed, allowed: a.attemptsAllowed })} />
+              {a.closesAt ? <Pill text={`→ ${shortDate(a.closesAt, true)}`} /> : null}
+              {a.lastResult ? <Pill icon={Trophy} tone="mint" text={t('tests.result', { correct: a.lastResult.correct, total: a.lastResult.total })} /> : null}
+            </View>
+            {canStart ? (
+              <Button icon={Play} label={a.activeAttemptId ? t('tests.continue') : t('tests.start')} onPress={() => router.push(a.activeAttemptId ? `/exam/${a.id}?attempt=${a.activeAttemptId}` : `/exam/${a.id}`)} />
+            ) : a.lastResult ? (
+              <Button kind="ghost" icon={Trophy} label={t('tests.view')} onPress={() => router.push(`/exam/${a.id}?result=${a.lastResult!.attemptId}`)} />
+            ) : null}
           </Card>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+        );
+      })}
+    </Screen>
   );
 }
