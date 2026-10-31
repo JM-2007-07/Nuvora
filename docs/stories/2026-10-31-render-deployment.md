@@ -48,10 +48,14 @@ Done in the owner's Render account through the built-in browser. The owner's exi
 | Socket to the API domain (`/comms`) | with a ticket: connected; without or with a forged ticket: disconnected by the server |
 | Mobile-style bearer flow (demo token → `/me/progress`, `/me/stats`) | 200 |
 
+## Android build on EAS (2026-10-31)
+
+Expo project @asiljms-team/faroz created on expo.dev in the built-in browser and linked (`app.json`: `owner`, `extra.eas.projectId`; `eas.json`: Node 24.15.0, pnpm 12.15.0), GitHub repository connected (base directory `/apps/mobile`). The owner signed in to the EAS CLI and started the first build, which generated the signing key; that build failed in "Bundle JavaScript" because `packages/shared/dist` is not in git (`exports` points to `dist`). Fixed with an `eas-build-post-install` script that builds `@nuvora/shared`; checked locally (the hook rebuilds `dist` from `apps/mobile`, the Android bundle exports). The rebuild from GitHub (`f9434ee`) succeeded in 21 min: `app-release.apk`, 97.9 MB. `ANDROID_APK_URL` and `ANDROID_APP_VERSION=0.1.0` were set on `faroz-web` in the Render dashboard (not in `render.yaml`, since the link changes with every build).
+
 ## Known limitations and follow-ups
 
 - Run the first Render deployment and the checks in DEPLOYMENT.md; the start script (migrate → content → demo data) has not run against a database here.
-- Build the APK with EAS (`eas init`, `eas build -p android --profile preview`) and set `ANDROID_APK_URL`.
+- The APK link expires with the EAS artifact (13 days on the free plan): rebuild or host the APK on a GitHub release.
 - The mobile sign-in screen still shows demo rows when the server has demo sign-in off (it then gets 403 and shows an error).
 - A QR code on `/download` would help at the defense (needs a QR library or a pre-made image).
 - With demo sign-in on, anyone with the address can act as the demo teacher or center during the defense window; switch `DEMO_LOGINS=off` afterwards.
