@@ -42,6 +42,14 @@ export const AttemptRequestSchema = z.strictObject({
 });
 export type AttemptRequest = z.infer<typeof AttemptRequestSchema>;
 
+/**
+ * Optional header on POST /quizzes/:slug/attempts. One key per logical submission, chosen by the
+ * client and reused on every retry: the server stores the attempt once per learner and key and
+ * answers retries with that same attempt. A UUID is recommended.
+ */
+export const IDEMPOTENCY_KEY_HEADER = 'Idempotency-Key';
+export const IdempotencyKeySchema = z.string().regex(/^[A-Za-z0-9_-]{16,100}$/, 'Idempotency-Key: 16–100 letters, digits, "-" or "_"');
+
 export const MasteryStatusSchema = z.enum(MASTERY_STATUSES);
 
 export const RecommendationSchema = z.strictObject({

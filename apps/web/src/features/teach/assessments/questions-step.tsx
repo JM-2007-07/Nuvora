@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Card, EmptyState, ErrorState, LoadingState } from '@/features/app/states';
 import { shortDate } from '@/features/app/bits';
 import { useBank } from './hooks';
+import { FzSelect } from '@/components/ui/fz-select';
 
 type Lang = keyof DraftText;
 const LANGS: { key: Lang; label: string }[] = [
@@ -218,11 +219,7 @@ function QuestionEditor({
           {lang !== 'en' ? <p className="text-xs text-(--faint)">{t('translateHint')}</p> : null}
           <label className="block text-sm font-semibold">
             {t('topic')}
-            <select value={q.topicSlug} onChange={(e) => setQ({ ...q, topicSlug: e.target.value })} className={`${field} min-h-12`}>
-              {topics.map((x) => (
-                <option key={x.slug} value={x.slug}>{x.title}</option>
-              ))}
-            </select>
+            <FzSelect label={t('topic')} value={q.topicSlug} onValueChange={(v) => setQ({ ...q, topicSlug: v })} options={topics.map((x) => ({ value: x.slug, label: x.title }))} />
           </label>
           <label className="block text-sm font-semibold">
             {t('prompt')}

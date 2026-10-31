@@ -1,6 +1,6 @@
 'use client';
 
-import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSquareIcon, NetworkIcon, ZapIcon } from 'lucide-react';
+import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSquareIcon, NetworkIcon, SettingsIcon, ZapIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
@@ -39,6 +39,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     { href: '/app/progress', label: t('progress'), Icon: LineChartIcon, active: on('/app/progress') },
     { href: '/app/messages', label: tc('nav'), Icon: MessagesSquareIcon, active: on('/app/messages'), badge: unread },
     { href: '/library', label: t('library'), Icon: BookmarkIcon, active: false },
+    { href: '/app/settings', label: t('settings'), Icon: SettingsIcon, active: on('/app/settings') },
   ];
   return (
     <WorkspaceShell

@@ -10,7 +10,42 @@ const EnvSchema = z.object({
   WEB_ORIGIN: z.url().default('http://localhost:3000'),
   /** Signs the learner session cookie (ADR-0006). Optional locally: a random per-process secret is used when missing. */
   SESSION_SECRET: z.string().min(32).optional(),
+  /** "off" disables request rate limits (load tests only). Default: on. */
+  RATE_LIMIT: z.enum(['on', 'off']).optional(),
+  /** Extra web origins allowed to send cookie-authenticated writes, comma separated. */
+  ALLOWED_ORIGINS: z.string().optional(),
+  /** "production" turns off the any-localhost-port allowance for origins. */
+  NODE_ENV: z.string().optional(),
+  /**
+   * Push delivery (D-30): "log" (default) only logs and sends nothing; "expo" sends through the
+   * Expo push service (needs a build with push credentials); "off" drops notifications.
+   */
+  PUSH_DELIVERY: z.enum(['log', 'expo', 'off']).optional(),
+  /** Optional Expo access token, only when "enhanced push security" is on for the Expo project. */
+  EXPO_ACCESS_TOKEN: z.string().min(10).optional(),
+  /** "on" runs scheduled notifications (reminders, upcoming tests, summaries) every 10 minutes. Default: off. */
+  PUSH_SCHEDULER: z.enum(['on', 'off']).optional(),
+  /** Optional STUN/TURN servers for calls across networks, as a JSON array (see comms). */
+  COMMS_ICE_SERVERS: z
+    .string()
+    .optional()
+    .refine((raw) => raw === undefined || parseIceServers(raw) !== null, 'must be a JSON array of { urls, username?, credential? }'),
 });
+
+const IceServersSchema = z.array(
+  z.strictObject({ urls: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]), username: z.string().optional(), credential: z.string().optional() }),
+);
+export type IceServers = z.infer<typeof IceServersSchema>;
+
+/** COMMS_ICE_SERVERS parsed and validated; null when it is not valid JSON of the right shape. */
+export function parseIceServers(raw: string): IceServers | null {
+  try {
+    const result = IceServersSchema.safeParse(JSON.parse(raw));
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+}
 
 export type AppEnv = z.infer<typeof EnvSchema>;
 

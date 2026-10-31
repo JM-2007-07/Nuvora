@@ -12,7 +12,7 @@ import { Reflector } from '@nestjs/core';
 import type { StaffRole } from '@nuvora/shared';
 import type { Request } from 'express';
 import { IdentityService } from '../identity/identity.service.js';
-import { readCookie } from '../identity/session-cookie.js';
+import { readCredential } from '../identity/session-cookie.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type DemoStaff, findStaff } from './demo-org.js';
 
@@ -24,10 +24,9 @@ export const STAFF_COOKIE = 'fz_staff';
 const PREFIX = 'staff:';
 const ACCOUNT_PREFIX = 'acct:';
 
-export function signStaff(identity: IdentityService, slug: string): string {
-  return identity.signer.sign(`${PREFIX}${slug}`);
-}
-export const signStaffAccount = (identity: IdentityService, accountId: string) => signStaff(identity, `${ACCOUNT_PREFIX}${accountId}`);
+/** Session subject for a demo staff member or a staff account. */
+export const staffSubject = (slug: string) => `${PREFIX}${slug}`;
+export const staffAccountSubject = (accountId: string) => staffSubject(`${ACCOUNT_PREFIX}${accountId}`);
 
 /** Staff view of a teacher or center-admin account (learner accounts are never staff). */
 export async function staffFromAccount(prisma: PrismaService, accountId: string): Promise<DemoStaff | null> {
@@ -47,13 +46,17 @@ export async function staffFromAccount(prisma: PrismaService, accountId: string)
   };
 }
 
-/** The staff member for a cookie value, or null if missing, forged, or not a staff value (a learner cookie never passes). */
-export async function staffFromCookie(identity: IdentityService, prisma: PrismaService, cookie: string | undefined): Promise<DemoStaff | null> {
-  const value = identity.signer.verify(cookie);
-  if (!value?.startsWith(PREFIX)) return null;
-  const id = value.slice(PREFIX.length);
+/** The staff member for a session subject ("staff:<slug>" or "staff:acct:<id>"); null for learners and unknown staff. */
+export async function staffFromSubject(prisma: PrismaService, subject: string | undefined): Promise<DemoStaff | null> {
+  if (!subject?.startsWith(PREFIX)) return null;
+  const id = subject.slice(PREFIX.length);
   if (id.startsWith(ACCOUNT_PREFIX)) return staffFromAccount(prisma, id.slice(ACCOUNT_PREFIX.length));
   return findStaff(id) ?? null;
+}
+
+/** The staff member for a cookie value, or null if missing, forged, or not a staff value (a learner cookie never passes). */
+export async function staffFromCookie(identity: IdentityService, prisma: PrismaService, cookie: string | undefined): Promise<DemoStaff | null> {
+  return staffFromSubject(prisma, (await identity.sessions.resolve(cookie))?.subject);
 }
 
 const ROLES = 'staffRoles';
@@ -76,7 +79,7 @@ export class StaffGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const staff = await staffFromCookie(this.identity, this.prisma, readCookie(request.headers.cookie, STAFF_COOKIE));
+    const staff = await staffFromCookie(this.identity, this.prisma, readCredential(request.headers, STAFF_COOKIE));
     if (!staff) throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'Choose a demo staff member first' });
     const roles = this.reflector.getAllAndOverride<StaffRole[] | undefined>(ROLES, [context.getHandler(), context.getClass()]);
     if (roles && !roles.includes(staff.role)) throw new ForbiddenException({ code: 'FORBIDDEN', message: 'Your role cannot open this' });

@@ -84,7 +84,7 @@ The contract is the Zod schemas in [`packages/shared/src/learning-api.ts`](../..
 | `POST /session` | Body `{ "profile": "<demoSlug>" }` or `{ "guest": true }`. Sets the cookie, returns `Learner` | `404 DEMO_PROFILE_NOT_FOUND`, `400 VALIDATION_FAILED` |
 | `DELETE /session` | `204`, clears the cookie | — |
 | `GET /me` 🔒 | `Learner` | `401` |
-| `POST /quizzes/:quizSlug/attempts` 🔒 | `201 AttemptResult`: score, per-question correctness and explanations, per-topic breakdown with updated mastery, up to 3 recommendations. Scored on the server in one transaction | `404 QUIZ_NOT_FOUND`, `422 QUIZ_INCOMPLETE` / `UNKNOWN_QUESTION` / `DUPLICATE_ANSWER` / `OPTION_NOT_IN_QUESTION` |
+| `POST /quizzes/:quizSlug/attempts` 🔒 | `201 AttemptResult`: score, per-question correctness and explanations, per-topic breakdown with updated mastery, up to 3 recommendations. Scored on the server in one transaction. Optional header `Idempotency-Key` (16–100 of `A-Z a-z 0-9 - _`, a UUID is recommended): one stored attempt per learner and key; a retry returns that attempt (`201`, same body, header `Idempotent-Replayed: true`), also when copies arrive at the same moment. A failed request (4xx) stores nothing, so its key can be retried | `400 VALIDATION_FAILED` (bad key), `404 QUIZ_NOT_FOUND`, `409 IDEMPOTENCY_KEY_REUSED` (same key, different quiz or answers), `422 QUIZ_INCOMPLETE` / `UNKNOWN_QUESTION` / `DUPLICATE_ANSWER` / `OPTION_NOT_IN_QUESTION` |
 | `GET /me/progress?subject=` 🔒 | `Progress`: mastery and lesson completion per topic, each topic's first lesson and topic quiz, **before/after** per topic (the topic in the first CHECKPOINT attempt vs the latest later attempt, computed from stored answers), the subject's CHECKPOINT quizzes with the latest attempt, attempt history (kind, correct/total), current recommendations | `404 SUBJECT_NOT_FOUND` |
 | `GET /me/attempts/:attemptId` 🔒 | `AttemptResult` of one of the current learner's own attempts, rebuilt from the stored answers (the same builder as `POST …/attempts`). Another learner's id answers `404` like an unknown id | `400 VALIDATION_FAILED` (not a cuid), `404 ATTEMPT_NOT_FOUND` |
 | `PUT /me/lessons/:lessonSlug/completion` 🔒 | `LessonCompletion`, idempotent | `404 LESSON_NOT_FOUND` |
@@ -199,6 +199,45 @@ Profiles (D-25). The contract is [`packages/shared/src/profile-api.ts`](../../pa
 | `GET /profiles/:ref` | `PublicProfile` by handle or participant key: hidden blocks are `null`, plus `relation` (me/group/other) and `canMessage` | `404 PROFILE_NOT_FOUND` |
 
 **Communications:** contacts, peers and group members carry `avatarUrl`, so chats show the same photos.
+
+## Implemented: sessions, account security, admin and exam mode (2026-10-30)
+
+Contracts: `packages/shared/src/auth-api.ts`, `admin-api.ts`, `exam-api.ts` (D-26, D-27, D-28). Every route below runs behind the security middleware (rate limits, Origin check for cookie-authenticated writes, security headers).
+
+**Credentials.** Web: httpOnly cookie (`nv_session` learner, `fz_staff` staff) holding an opaque `fzs_…` token. Mobile: `Authorization: Bearer fza_…` (1 h) plus a rotating refresh token `fzr_…` (session ends after 60 days). Every guard accepts either. Only SHA-256 hashes are stored.
+
+| Route | Who | Notes |
+| --- | --- | --- |
+| `POST /auth/login` | anyone | `{email, password, code?}`; 401 `INVALID_CREDENTIALS`, `MFA_REQUIRED`, `MFA_INVALID`; 429 `RATE_LIMITED` |
+| `POST /auth/logout`, `POST /auth/logout-all` | signed in | logout revokes this session on the server; logout-all ends every session of the identity |
+| `GET /auth/sessions`, `DELETE /auth/sessions/:id` | signed in | signed-in devices (device label from the User-Agent, never the raw header) |
+| `POST /auth/token`, `/auth/token/demo`, `/auth/token/refresh`, `/auth/token/revoke` | mobile | refresh reuse → 401 `REFRESH_REUSED` and the session is revoked |
+| `POST /auth/password/forgot` / `reset` / `change` | — / signed in | forgot always 204; reset is single-use (1 h) and signs out every device |
+| `GET /auth/mfa`, `POST /auth/mfa/setup` / `enable` / `disable` | account | TOTP; `account: false` for demo profiles |
+| `GET /admin/overview`, `/admin/organizations`, `/admin/accounts`, `/admin/audit`; `POST /admin/accounts/:id/revoke-sessions`; `PUT /admin/accounts/:id/role` | Super Admin | 401 without session, 403 for everyone else; changes audited |
+| `GET /me/assessments`; `POST /me/assessments/:id/attempts`; `GET /me/assessment-attempts/:id` | learner (group member) | start or re-enter (counted); state for reconnect recovery; 409 `NOT_OPEN_YET`/`CLOSED`/`NO_ATTEMPTS_LEFT`, 423 `READMIT_REQUIRED` |
+| `PUT /me/assessment-attempts/:id/answers/:questionId` | learner | `{optionKey, seq}`; idempotent (older/equal seq → `saved: false`); 409 `ATTEMPT_PAUSED`/`ATTEMPT_CLOSED` |
+| `POST /me/assessment-attempts/:id/events`, `/submit`; `GET …/result` | learner | events go through the policy; result reveals answers per `revealAnswers` |
+| `GET /teach/assessments/:id/live`; `POST /teach/assessment-attempts/:id/actions` | owning teacher | someone else's → 404; actions audited (`exam.*`) |
+
+**Realtime.** Socket.IO at path `/realtime`: namespace `/exam` — learners `exam:join {attemptId}` (connected/disconnected recorded), teachers `exam:watch {assessmentId}`; server events `exam:live` (refetch) and `exam:command` (warning, pause, resume, extend, end, reset, readmit). Clients also poll REST.
+
+## Implemented: push notifications (2026-10-31, D-30)
+
+Contracts: `packages/shared/src/notifications-api.ts`. Any signed-in identity (learner, teacher, center; bearer or cookie); everything is scoped to the caller's own session subject.
+
+| Route | Notes |
+| --- | --- |
+| `POST /notifications/devices` | `{token, platform, locale}`; `204`. Registers or refreshes this app install for the current session. A token held by someone else moves to the caller (audited `push.device.reassign`); a switched-off token is switched on again. 400 for anything that is not an Expo push token |
+| `POST /notifications/devices/unregister` | `{token}`; `204`. Removes only the caller's own device |
+| `GET /notifications/preferences` | `{audience, categories: [{category, enabled}]}` with the caller's categories only |
+| `PUT /notifications/preferences` | `{categories: [{category, enabled}]}`; 400 `CATEGORY_NOT_AVAILABLE` for another role's category |
+
+**Categories.** Learner: `assessment_assigned` (test published for their group), `learning_task` (reserved: no sender until teachers can assign practice), `assessment_result` (attempt closed by time or by the teacher, or answers revealed after the test closes), `learning_reminder` (idle 48 h, once a day, 9–20 h). Teacher: `submission` (counts only), `group_activity` (evening, learners who practised today, a count), `exam_upcoming` (a test of theirs opens within an hour). Center: `participation_summary` (Mondays: active groups and average participation, the same privacy-safe totals as the center screen), `center_event` (an invited teacher accepted).
+
+**Payloads.** Title and body in the device's language (ru, tg, en), naming a test or group and counts at most; `data` is `{category, path}` with an in-app path. Scores, answers and student names never go into a push.
+
+**Delivery.** `PUSH_DELIVERY=log` (default) logs and sends nothing; `expo` uses the Expo push service (free) and needs app builds with push credentials; `off` drops notifications. Each notification is claimed once in `notification_deliveries` before sending; tokens reported as `DeviceNotRegistered` are switched off. Scheduled categories run every 10 minutes when `PUSH_SCHEDULER=on`.
 
 ## Draft resource outline (not a contract)
 

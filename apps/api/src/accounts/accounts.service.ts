@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -10,8 +11,16 @@ import type {
   Plan,
   RegisterRequest,
 } from '@nuvora/shared';
+import { APP_ENV, type AppEnv } from '../config/env.js';
+import { hashToken, newToken } from '../identity/session-tokens.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { staffAccountSubject } from '../staff/staff.guard.js';
 import { hashPassword, verifyPassword } from './password.js';
+import { decryptSecret, encryptSecret, newTotpSecret, otpauthUrl, verifyTotp } from './totp.js';
+
+/** Password reset links work for one hour. */
+export const RESET_TOKEN_MS = 60 * 60 * 1000;
+const RESET_TOKEN_PREFIX = 'fzp_';
 
 /**
  * Plans (handoff pricing): learners are free; teacher and center prices are concept-only
@@ -50,6 +59,9 @@ const accountSelect = {
   role: true,
   userId: true,
   passwordHash: true,
+  platformRole: true,
+  totpSecretEnc: true,
+  totpEnabledAt: true,
   organization: {
     select: {
       id: true,
@@ -66,6 +78,9 @@ type AccountRow = {
   role: AccountView['role'];
   userId: string | null;
   passwordHash: string;
+  platformRole: 'SUPER_ADMIN' | null;
+  totpSecretEnc: string | null;
+  totpEnabledAt: Date | null;
   organization: {
     id: string;
     name: string;
@@ -109,7 +124,10 @@ export function toAccountView(row: AccountRow): AccountView {
 /** Password accounts next to the demo profiles. The session cookie is set by the controller. */
 @Injectable()
 export class AccountsService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(APP_ENV) private readonly env: AppEnv,
+  ) {}
 
   async register(request: RegisterRequest): Promise<AccountRow> {
     const exists = await this.prisma.account.findUnique({
@@ -196,7 +214,90 @@ export class AccountsService {
         code: 'INVALID_CREDENTIALS',
         message: 'Wrong email or password',
       });
+    // Two-factor sign-in: the password alone is not enough once it is switched on.
+    if (account.totpEnabledAt) {
+      if (!request.code) throw new UnauthorizedException({ code: 'MFA_REQUIRED', message: 'Enter the six-digit code from your authenticator app' });
+      if (!this.checkTotp(account, request.code)) throw new UnauthorizedException({ code: 'MFA_INVALID', message: 'The code is not correct' });
+    }
     return account;
+  }
+
+  // ---------- password reset and change ----------
+
+  /** Creates a single-use reset link for an existing account; null for an unknown email (the caller answers the same way). */
+  async createPasswordReset(email: string): Promise<{ account: AccountRow; token: string } | null> {
+    const account = await this.prisma.account.findUnique({ where: { email }, select: accountSelect });
+    if (!account) return null;
+    const token = newToken(RESET_TOKEN_PREFIX);
+    await this.prisma.$transaction([
+      // Only the newest link works.
+      this.prisma.passwordResetToken.updateMany({ where: { accountId: account.id, usedAt: null }, data: { usedAt: new Date() } }),
+      this.prisma.passwordResetToken.create({ data: { accountId: account.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + RESET_TOKEN_MS) } }),
+    ]);
+    return { account, token };
+  }
+
+  /** Sets a new password from a reset link; the link is used up. Returns the account so the caller can end its sessions. */
+  async resetPassword(token: string, password: string): Promise<AccountRow> {
+    const passwordHash = await hashPassword(password);
+    const now = new Date();
+    const accountId = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.passwordResetToken.findUnique({ where: { tokenHash: hashToken(token) }, select: { id: true, accountId: true, usedAt: true, expiresAt: true } });
+      if (!row || row.usedAt || row.expiresAt <= now) return null;
+      const marked = await tx.passwordResetToken.updateMany({ where: { id: row.id, usedAt: null }, data: { usedAt: now } });
+      if (marked.count !== 1) return null;
+      await tx.account.update({ where: { id: row.accountId }, data: { passwordHash } });
+      return row.accountId;
+    });
+    if (!accountId) throw new BadRequestException({ code: 'RESET_LINK_INVALID', message: 'This link has expired or was already used. Ask for a new one.' });
+    return (await this.findById(accountId))!;
+  }
+
+  async changePassword(accountId: string, currentPassword: string, newPassword: string): Promise<AccountRow> {
+    const account = await this.findById(accountId);
+    if (!account || !(await verifyPassword(currentPassword, account.passwordHash)))
+      throw new UnauthorizedException({ code: 'INVALID_CREDENTIALS', message: 'The current password is not correct' });
+    await this.prisma.account.update({ where: { id: accountId }, data: { passwordHash: await hashPassword(newPassword) } });
+    return account;
+  }
+
+  // ---------- two-factor sign-in (TOTP) ----------
+
+  /** Two-factor needs a stable SESSION_SECRET: the stored secret is encrypted with a key derived from it. */
+  mfaAvailable(): boolean {
+    return !!this.env.SESSION_SECRET;
+  }
+
+  /** Starts setup: a new secret is stored (not yet active) and returned once for the authenticator app. */
+  async startMfaSetup(accountId: string): Promise<{ secret: string; otpauthUrl: string }> {
+    if (!this.env.SESSION_SECRET) throw new BadRequestException({ code: 'MFA_UNAVAILABLE', message: 'Two-factor sign-in needs SESSION_SECRET on the server' });
+    const account = await this.findById(accountId);
+    if (!account) throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'Sign in first' });
+    if (account.totpEnabledAt) throw new ConflictException({ code: 'MFA_ALREADY_ON', message: 'Two-factor sign-in is already on' });
+    const secret = newTotpSecret();
+    await this.prisma.account.update({ where: { id: accountId }, data: { totpSecretEnc: encryptSecret(secret, this.env.SESSION_SECRET) } });
+    return { secret, otpauthUrl: otpauthUrl(secret, account.email) };
+  }
+
+  async enableMfa(accountId: string, code: string): Promise<void> {
+    const account = await this.findById(accountId);
+    if (!account?.totpSecretEnc || account.totpEnabledAt) throw new BadRequestException({ code: 'MFA_NOT_STARTED', message: 'Start the setup first' });
+    if (!this.checkTotp(account, code)) throw new BadRequestException({ code: 'MFA_INVALID', message: 'The code is not correct' });
+    await this.prisma.account.update({ where: { id: accountId }, data: { totpEnabledAt: new Date() } });
+  }
+
+  async disableMfa(accountId: string, code: string, password: string): Promise<void> {
+    const account = await this.findById(accountId);
+    if (!account?.totpEnabledAt) throw new BadRequestException({ code: 'MFA_NOT_ON', message: 'Two-factor sign-in is off' });
+    if (!(await verifyPassword(password, account.passwordHash))) throw new UnauthorizedException({ code: 'INVALID_CREDENTIALS', message: 'The password is not correct' });
+    if (!this.checkTotp(account, code)) throw new BadRequestException({ code: 'MFA_INVALID', message: 'The code is not correct' });
+    await this.prisma.account.update({ where: { id: accountId }, data: { totpEnabledAt: null, totpSecretEnc: null } });
+  }
+
+  private checkTotp(account: AccountRow, code: string): boolean {
+    if (!account.totpSecretEnc || !this.env.SESSION_SECRET) return false;
+    const secret = decryptSecret(account.totpSecretEnc, this.env.SESSION_SECRET);
+    return !!secret && verifyTotp(secret, code);
   }
 
   findById(id: string): Promise<AccountRow | null> {
@@ -212,6 +313,11 @@ export class AccountsService {
       select: accountSelect,
     });
   }
+}
+
+/** Every session subject an account can sign in as (its staff identity and, for learners, its user). */
+export function accountSubjects(account: { id: string; role: AccountView['role']; userId: string | null }): string[] {
+  return account.role === 'LEARNER' && account.userId ? [account.userId] : [staffAccountSubject(account.id)];
 }
 
 /** Spends the same scrypt time when the email is unknown (timing does not reveal accounts). */

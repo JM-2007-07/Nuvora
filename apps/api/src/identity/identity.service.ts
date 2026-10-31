@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { DemoProfile, Learner, SessionRequest } from '@nuvora/shared';
 import { APP_ENV, type AppEnv } from '../config/env.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { SessionSigner } from './session-cookie.js';
+import { SessionStore } from './session-store.js';
 
 export interface LearnerRecord {
   id: string;
@@ -23,16 +23,15 @@ export const toLearner = (user: LearnerRecord): Learner => ({ kind: user.kind, d
 /** Demo profiles and guest mode (ADR-0006). No passwords; never for public deployment. */
 @Injectable()
 export class IdentityService {
-  readonly signer: SessionSigner;
-
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(APP_ENV) env: AppEnv,
+    /** Sessions of signed-in devices (database rows with expiry and revocation). */
+    @Inject(SessionStore) readonly sessions: SessionStore,
   ) {
     if (!env.SESSION_SECRET) {
-      new Logger(IdentityService.name).warn('SESSION_SECRET is not set: using a random per-process secret (sessions reset on restart).');
+      new Logger(IdentityService.name).warn('SESSION_SECRET is not set: two-factor sign-in cannot be switched on until it is.');
     }
-    this.signer = new SessionSigner(env.SESSION_SECRET);
   }
 
   async listDemoProfiles(): Promise<DemoProfile[]> {
@@ -56,8 +55,9 @@ export class IdentityService {
 
   /** The learner for a session cookie value, or null if invalid or the user no longer exists. */
   async learnerFromCookie(cookie: string | undefined): Promise<LearnerRecord | null> {
-    const userId = this.signer.verify(cookie);
-    if (!userId) return null;
+    const userId = (await this.sessions.resolve(cookie))?.subject;
+    // Staff sessions ("staff:…") never act as learners.
+    if (!userId || userId.startsWith('staff:')) return null;
     return this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, kind: true, displayName: true, demoSlug: true } });
   }
 }

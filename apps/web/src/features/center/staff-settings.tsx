@@ -15,6 +15,7 @@ import { ApiRequestError } from '@/lib/client-api';
 import { Loaded } from './center-views';
 import { useCenterSettings, useCenterStaff } from './hooks';
 import { inviteUrl, useInvite, useResendInvitation, useRevokeInvitation, useSavePermissions } from './invitations-hooks';
+import { FzSelect } from '@/components/ui/fz-select';
 
 /** dd.mm.yyyy for both YYYY-MM-DD and full ISO dates (D-19: same in every locale). */
 const day = (iso: string | null) => {
@@ -272,11 +273,7 @@ function InviteDialog({ onClose, onCreated }: { onClose: () => void; onCreated: 
               </label>
               <label className="block text-sm font-semibold">
                 {t('language')}
-                <select value={locale} onChange={(e) => setLocale(e.target.value as Locale)} className={field}>
-                  {(['tg', 'ru', 'en'] as const).map((l) => (
-                    <option key={l} value={l} lang={l}>{LOCALE_NATIVE_NAMES[l]}</option>
-                  ))}
-                </select>
+                <FzSelect label={t('language')} value={locale} onValueChange={(v) => setLocale(v as Locale)} options={(['tg', 'ru', 'en'] as const).map((l) => ({ value: l, label: LOCALE_NATIVE_NAMES[l], lang: l }))} />
               </label>
             </div>
             <div className="text-sm">

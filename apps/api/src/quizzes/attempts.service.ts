@@ -1,5 +1,6 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { AttemptRequest, AttemptResult, Locale } from '@nuvora/shared';
+import { isUniqueViolation } from '../accounts/accounts.service.js';
 import { localizeFields } from '../common/i18n/locale.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import type { LearnerRecord } from '../identity/identity.service.js';
@@ -7,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { loadLearningState, toRecommendationDtos } from '../progress/learning-state.js';
 import { masteryStatus } from '../progress/mastery.js';
 import { recommend } from '../recommendations/recommend.js';
+import { attemptRequestHash } from './idempotency.js';
 import { recordAttempt } from './record-attempt.js';
 import { percent } from './scoring.js';
 
@@ -52,10 +54,43 @@ type StoredAttempt = Prisma.QuizAttemptGetPayload<{ select: typeof storedAttempt
 export class AttemptsService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  submit(quizSlug: string, learner: LearnerRecord, request: AttemptRequest, locale: Locale): Promise<AttemptResult> {
+  /**
+   * With an idempotency key, one logical submission is stored once per learner: a retry (also
+   * after the first response was lost, or from a restarted app) gets the stored attempt back, and
+   * two copies arriving together are settled by the unique index on (userId, idempotencyKey).
+   * Keys are scoped to the signed-in learner, so another learner's key never matches. Reusing a
+   * key for a different quiz or different answers is refused with 409. `replayed` is true when
+   * nothing new was stored.
+   */
+  async submit(quizSlug: string, learner: LearnerRecord, request: AttemptRequest, locale: Locale, idempotencyKey?: string): Promise<{ result: AttemptResult; replayed: boolean }> {
+    if (!idempotencyKey) return { result: await this.record(quizSlug, learner, request, locale), replayed: false };
+    const requestHash = attemptRequestHash(quizSlug, request.answers);
+    const earlier = await this.findByKey(learner, idempotencyKey, requestHash, locale);
+    if (earlier) return { result: earlier, replayed: true };
+    try {
+      return { result: await this.record(quizSlug, learner, request, locale, { key: idempotencyKey, requestHash }), replayed: false };
+    } catch (error) {
+      // A concurrent copy committed first: answer with its attempt.
+      if (!isUniqueViolation(error)) throw error;
+      const winner = await this.findByKey(learner, idempotencyKey, requestHash, locale);
+      if (!winner) throw error;
+      return { result: winner, replayed: true };
+    }
+  }
+
+  private record(quizSlug: string, learner: LearnerRecord, request: AttemptRequest, locale: Locale, idempotency?: { key: string; requestHash: string }): Promise<AttemptResult> {
     return this.prisma.$transaction(async (tx) => {
-      const { attempt } = await recordAttempt(tx, learner.id, quizSlug, request.answers);
+      const { attempt } = await recordAttempt(tx, learner.id, quizSlug, request.answers, undefined, idempotency);
       const stored = await tx.quizAttempt.findUniqueOrThrow({ where: { id: attempt.id }, select: storedAttemptSelect });
+      return toAttemptResult(tx, learner.id, stored, locale);
+    });
+  }
+
+  private findByKey(learner: LearnerRecord, key: string, requestHash: string, locale: Locale): Promise<AttemptResult | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const stored = await tx.quizAttempt.findUnique({ where: { userId_idempotencyKey: { userId: learner.id, idempotencyKey: key } }, select: { ...storedAttemptSelect, requestHash: true } });
+      if (!stored) return null;
+      if (stored.requestHash !== requestHash) throw new ConflictException({ code: 'IDEMPOTENCY_KEY_REUSED', message: 'This Idempotency-Key was already used for a different submission' });
       return toAttemptResult(tx, learner.id, stored, locale);
     });
   }

@@ -13,8 +13,8 @@
       "archived": "Archived"
     },
     "source": {
-      "recorded": "recorded",
-      "reference": "reference figures",
+      "recorded": "from answers",
+      "reference": "from the mock-up",
       "synthetic": "synthetic"
     },
     "copy": {
@@ -73,8 +73,8 @@
       "analytics": "Question analytics"
     },
     "map": {
-      "referenceLabel": "reference",
-      "mapReferenceRow": "{groups}: reference figure from the design (weakest topic only), not recorded in this demo."
+      "referenceLabel": "from the mock-up",
+      "mapReferenceRow": "{groups}: figure from the mock-up (weakest topic only), no answers recorded in this demo."
     },
     "centerDash": {
       "staff": "Staff",
@@ -233,6 +233,6 @@
     "compareSub": "Same diagnostic in every group. Not a ranking of teachers. Click a group to open it.",
     "participation": "Diagnostic participation",
     "diagnostic": "diagnostic",
-    "note": "Recorded = computed from answers stored here; reference and synthetic figures come from the design data. These figures don’t prove that any teaching approach works."
+    "note": "“From answers” is computed from saved student answers; “from the mock-up” and synthetic figures come from the design mock-up. These figures don’t prove that any teaching approach works."
   }
 }

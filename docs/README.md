@@ -15,6 +15,7 @@ This folder holds the product, architecture, design, and process documentation o
 | **Faroz design** (current): brand, tokens, fonts, components, screen map, roles, privacy, demo data | [02-design/FAROZ_HANDOFF.md](02-design/FAROZ_HANDOFF.md); logos and tokens in [assets/brand/faroz](../assets/brand/faroz) |
 | Brand: logo, colours, typography, asset usage (Nuvora; superseded by the handoff where they conflict) | [02-design/BRAND_GUIDELINES.md](02-design/BRAND_GUIDELINES.md) |
 | UI design system: theme tokens, UI type, components, motion (Nuvora; superseded by the handoff where they conflict) | [02-design/design-system.md](02-design/design-system.md) |
+| Writing voice for UI copy: tone, address form, glossary, examples (ru/tg/en) | [02-design/VOICE.md](02-design/VOICE.md) |
 | API conventions, errors, draft resource outline | [03-api/api-conventions.md](03-api/api-conventions.md) |
 | Data model and entity relationships | [04-data/data-model.md](04-data/data-model.md) |
 | Schedule to the defense (Mon 2 Nov 2026), Faroz defense phases, implementation sequence, Definition of Done | [05-planning/roadmap.md](05-planning/roadmap.md) |
@@ -22,6 +23,7 @@ This folder holds the product, architecture, design, and process documentation o
 | Agent and contributor workflow: task sizing, planning, delegation, review, safety | [engineering/HARNESS.md](engineering/HARNESS.md) |
 | Which checks a change needs, browser checks, how to report results | [engineering/VERIFICATION.md](engineering/VERIFICATION.md) |
 | Homepage and brand-surface visual contract, imagery, motion/3D stack plan | [engineering/VISUAL_EXPERIENCE.md](engineering/VISUAL_EXPERIENCE.md) (G4-B working brief: [HOMEPAGE_BRIEF.md](engineering/HOMEPAGE_BRIEF.md)) |
+| Technical readiness audit (Phase 0, 2026-10-30): functionality matrix, security findings, mobile readiness, roadmap | [engineering/FAROZ-TECHNICAL-READINESS-REPORT.md](engineering/FAROZ-TECHNICAL-READINESS-REPORT.md) |
 | Dated records of significant changes | [stories/](stories/README.md) |
 | Development workflow: git, commands, conventions, approval gates | [../AGENTS.md](../AGENTS.md) |
 | Claude Code–specific instructions | [../CLAUDE.md](../CLAUDE.md) |

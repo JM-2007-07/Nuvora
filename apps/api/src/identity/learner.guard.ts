@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { IdentityService, type LearnerRecord } from './identity.service.js';
-import { readCookie, SESSION_COOKIE } from './session-cookie.js';
+import { readCredential, SESSION_COOKIE } from './session-cookie.js';
 
 const learners = new WeakMap<Request, LearnerRecord>();
 
@@ -22,7 +22,7 @@ export class LearnerGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    const learner = await this.identity.learnerFromCookie(readCookie(request.headers.cookie, SESSION_COOKIE));
+    const learner = await this.identity.learnerFromCookie(readCredential(request.headers, SESSION_COOKIE));
     if (!learner) throw new UnauthorizedException({ code: 'UNAUTHENTICATED', message: 'Choose a demo learner or continue as a guest' });
     learners.set(request, learner);
     return true;

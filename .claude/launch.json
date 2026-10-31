@@ -4,21 +4,51 @@
     {
       "name": "api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@nuvora/api", "run", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@nuvora/api",
+        "run",
+        "dev"
+      ],
       "port": 4000
     },
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@nuvora/web", "run", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@nuvora/web",
+        "run",
+        "dev"
+      ],
       "port": 3000
     },
     {
       "name": "web-prod",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@nuvora/web", "run", "start"],
+      "runtimeArgs": [
+        "--filter",
+        "@nuvora/web",
+        "run",
+        "start"
+      ],
       "port": 3001,
       "autoPort": true
+    },
+    {
+      "name": "mobile-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@nuvora/mobile",
+        "exec",
+        "expo",
+        "start",
+        "--web",
+        "--port",
+        "8081"
+      ],
+      "port": 8081
     }
   ]
 }

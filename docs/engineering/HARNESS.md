@@ -65,6 +65,7 @@ Skills live in [`.claude/skills/`](../../.claude/skills/) and are invoked as `/<
 | `visual-qa` | Check a running page across viewports, locales, themes, motion, keyboard |
 | `design-review` | Compare a UI proposal or implementation with the visual contract |
 | `new-story` | Create or update a dated story from real changes and real evidence |
+| `humanizer` | Third-party, explicit `/humanizer` only: content-quality pass for UI copy against [VOICE.md](../02-design/VOICE.md) (see below) |
 
 Add a skill only for a task that repeats and has project-specific steps. Don't duplicate a built-in command.
 
@@ -85,6 +86,14 @@ Nothing external was installed. Candidates from the Anthropic plugin directory, 
 - **Use in G4-B:** targeted lookups only, for example `--domain ux` for an accessibility or interaction question, or `--stack nextjs`/`--stack shadcn` for implementation notes. Weigh every result against [VISUAL_EXPERIENCE.md](VISUAL_EXPERIENCE.md), [HOMEPAGE_BRIEF.md](HOMEPAGE_BRIEF.md), and D-22; findings go into `visual-qa`/`design-review` reports, which stay our review workflows.
 - **Never:** `--design-system`, `--persist`, or `--force`. They would generate a competing palette and typography, and write `design-system/<project>/MASTER.md`. No GSAP, even though the skill ships GSAP presets.
 - **Local addition at risk:** a Nuvora rules block at the top of its `SKILL.md` repeats these limits. `uipro update` or `uipro init --force` regenerates that file and removes the block, and `uipro init` would recreate the six sibling skills. After any update, re-add the block and remove the siblings again.
+
+**Humanizer**: added 2026-10-30 with the owner's approval, project-scoped. Source: [blader/humanizer](https://github.com/blader/humanizer), MIT, v3.1.0 at commit `0ef9fe5bc3572734fd3ae6c448fe00a30cd5dcf0`.
+
+- **What it is:** one `SKILL.md` of instructions (26 patterns of AI-sounding prose, from Wikipedia's "Signs of AI writing") and its `LICENSE`. No scripts run. The file was downloaded at that commit and read in full before it was added; the repo's plugin folders and `scripts/validate-package.py` were not copied.
+- **Installed:** `.claude/skills/humanizer/` (`SKILL.md`, `LICENSE`). Not installed through `/plugin` or `npx skills`, so nothing global changes.
+- **Invocation:** explicit only, `"humanizer": "user-invocable-only"` in `.claude/settings.json`.
+- **Use:** a quality pass on user-facing copy in `apps/web/messages/**` (and lesson text together with `add-lesson-content`), against [VOICE.md](../02-design/VOICE.md). It is not used to get past AI detectors, and not on code, identifiers, API values or technical docs.
+- **Local rules:** a Faroz block at the top of its `SKILL.md` overrides the upstream file. The main changes: §8 (no dashes) and §21 (straight quotes) don't apply to Russian and Tajik, where the dash and «ёлочки» are grammar. Facts, data-source labels, keys and ICU placeholders never change. Tajik stays marked for native-speaker review. Updating from upstream removes the block: re-add it.
 
 Not recommended: a Playwright MCP plugin (duplicates the built-in browser and our Playwright setup), and large community "audit suite" bundles (overlap with `/code-review`, `/security-review`, and our skills). After installing a plugin, check that its skills appear in the session's skill list before relying on them.
 

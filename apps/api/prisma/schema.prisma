@@ -43,6 +43,18 @@ enum AccountRole {
   CENTER_ADMIN
 }
 
+/// Platform-wide role, separate from the account role. Granted only by the server-side
+/// bootstrap command (pnpm admin:bootstrap), never by registration, invitations or any HTTP route.
+enum PlatformRole {
+  SUPER_ADMIN
+}
+
+/// How a session authenticates: a web cookie, or bearer tokens with refresh rotation (mobile).
+enum AuthChannel {
+  WEB
+  MOBILE
+}
+
 /// Faroz plans (handoff pricing). Payments are a demo: nothing is charged.
 enum PlanCode {
   FREE
@@ -255,6 +267,7 @@ model User {
   lessonProgress LessonProgress[]
   account        Account?
   memberships    GroupMember[]
+  examAttempts   AssessmentAttempt[]
 
   @@map("users")
 }
@@ -268,6 +281,10 @@ model QuizAttempt {
   totalCount   Int
   /// Integer 0–100
   scorePercent Int
+  /// Client-chosen key for one logical submission (Idempotency-Key header); null for attempts sent without one
+  idempotencyKey String?
+  /// SHA-256 of the quiz slug and the answers: the same key with a different request is refused
+  requestHash    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -277,6 +294,8 @@ model QuizAttempt {
   answers   AttemptAnswer[]
   masteries TopicMastery[]
 
+  /// One attempt per learner and key: a retry, or two copies arriving at once, can never store it twice
+  @@unique([userId, idempotencyKey])
   @@index([userId, submittedAt])
   @@index([quizId])
   @@map("quiz_attempts")
@@ -360,9 +379,16 @@ model Account {
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  /// Null for everyone except the platform owner (see PlatformRole)
+  platformRole   PlatformRole?
+  /// TOTP secret for two-factor sign-in, encrypted with a key derived from SESSION_SECRET
+  totpSecretEnc  String?
+  /// Set when two-factor sign-in is switched on
+  totpEnabledAt  DateTime?
 
   teaching            StudyGroup[]
   acceptedInvitations StaffInvitation[]
+  passwordResets      PasswordResetToken[]
 
   @@index([organizationId])
   @@map("accounts")
@@ -462,13 +488,28 @@ enum AnswerReveal {
 }
 
 /// Who takes it: the whole group, or only students under 60% on the topic in the latest diagnostic
+/// What happens automatically when an exam attempt reaches the policy's action threshold.
+enum ExamViolationAction {
+  FLAG
+  PAUSE
+  END
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  PAUSED
+  SUBMITTED
+  EXPIRED
+  ENDED
+}
+
 enum AssessmentAudience {
   CLASS
   UNDER_60
 }
 
 model Assessment {
-  id               String             @id @default(cuid())
+  id               String              @id @default(cuid())
   /// The owning teacher: staff slug ("dilshod-karimov") or "acct:<accountId>"
   ownerKey         String
   /// Demo group code ("B-12") or a StudyGroup joinCode
@@ -479,23 +520,30 @@ model Assessment {
   description      String?
   purpose          AssessmentPurpose
   languages        Locale[]
-  audience         AssessmentAudience @default(CLASS)
+  audience         AssessmentAudience  @default(CLASS)
   opensAt          DateTime?
   closesAt         DateTime?
   /// Null = no time limit
   timeLimitMinutes Int?
-  attemptsAllowed  Int                @default(1)
-  revealAnswers    AnswerReveal       @default(AFTER_CLOSE)
-  xp               Int                @default(40)
-  shuffleQuestions Boolean            @default(true)
-  shuffleOptions   Boolean            @default(true)
-  notifyStudents   Boolean            @default(true)
+  attemptsAllowed  Int                 @default(1)
+  revealAnswers    AnswerReveal        @default(AFTER_CLOSE)
+  xp               Int                 @default(40)
+  shuffleQuestions Boolean             @default(true)
+  shuffleOptions   Boolean             @default(true)
+  notifyStudents   Boolean             @default(true)
   /// Null while it is a draft
   publishedAt      DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  // ----- Exam mode policy (2026-10-30): counts of focus-lost / fullscreen-exit / background events -----
+  examWarnAfter    Int                 @default(1)
+  examNotifyAfter  Int                 @default(2)
+  examActionAfter  Int                 @default(3)
+  examAction       ExamViolationAction @default(FLAG)
+  examAllowReentry Boolean             @default(true)
 
   questions AssessmentQuestion[]
+  attempts  AssessmentAttempt[]
 
   @@index([ownerKey])
   @@map("assessments")
@@ -521,6 +569,8 @@ model AssessmentQuestion {
   explanation  Json
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  answers AssessmentAnswer[]
 
   @@unique([assessmentId, order])
   @@map("assessment_questions")
@@ -717,4 +767,220 @@ model ProfileAvatar {
   updatedAt      DateTime @updatedAt
 
   @@map("profile_avatars")
+}
+
+// ---------- Sessions, password reset, audit (2026-10-30, owner-approved additive migration) ----------
+
+/// One signed-in device. The token itself is never stored, only its SHA-256.
+/// `subject` is the identity the session acts as: a learner's user id, "staff:<slug>" for demo
+/// staff or "staff:acct:<accountId>" for teacher and center accounts.
+model AuthSession {
+  id              String      @id @default(cuid())
+  subject         String
+  channel         AuthChannel
+  /// SHA-256 of the cookie value (web) or of the current access token (mobile)
+  tokenHash       String      @unique
+  /// The access token stops working at this time (web: same as expiresAt)
+  accessExpiresAt DateTime
+  /// The session ends at this time (mobile: refresh tokens stop working)
+  expiresAt       DateTime
+  createdAt       DateTime    @default(now())
+  lastSeenAt      DateTime    @default(now())
+  revokedAt       DateTime?
+  /// logout, logout-all, password-reset, refresh-reuse, admin, …
+  revokedReason   String?
+  userAgent       String?
+  ip              String?
+  deviceLabel     String?
+
+  refreshTokens AuthRefreshToken[]
+  pushDevices   PushDevice[]
+
+  @@index([subject])
+  @@map("auth_sessions")
+}
+
+/// Mobile refresh tokens: each one works once; presenting a used one again revokes the session (reuse detection).
+model AuthRefreshToken {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tokenHash String      @unique
+  createdAt DateTime    @default(now())
+  usedAt    DateTime?
+
+  @@index([sessionId])
+  @@map("auth_refresh_tokens")
+}
+
+/// Password reset links: single use, expire after one hour; only the SHA-256 is stored.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  accountId String
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@index([accountId])
+  @@map("password_reset_tokens")
+}
+
+/// Append-only record of security-relevant and administrative actions. The application only inserts rows.
+model AuditEvent {
+  id             String   @id @default(cuid())
+  at             DateTime @default(now())
+  /// Session subject of who acted, or null for anonymous events (failed sign-in)
+  actorKey       String?
+  action         String
+  targetType     String?
+  targetId       String?
+  organizationId String?
+  ip             String?
+  /// Small, non-secret details (never passwords, tokens or answers)
+  meta           Json?
+
+  @@index([at])
+  @@index([actorKey])
+  @@index([action])
+  @@map("audit_events")
+}
+
+// ---------- Teacher assessments taken by learners, Standard Exam Mode (2026-10-30, owner-approved additive migration) ----------
+
+/// One learner's attempt at a teacher assessment. The server owns the clock: deadlineAt moves with pauses and extensions.
+model AssessmentAttempt {
+  id            String        @id @default(cuid())
+  assessmentId  String
+  assessment    Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptNo     Int
+  status        AttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime      @default(now())
+  /// Null = no time limit
+  deadlineAt    DateTime?
+  /// Set while paused by the teacher or the policy
+  pausedAt      DateTime?
+  submittedAt   DateTime?
+  /// Last answer the server stored
+  lastSyncAt    DateTime?
+  /// Highest answer sequence number stored from the device (idempotent saves)
+  lastSeq       Int           @default(0)
+  /// Question ids in the order this learner sees them
+  questionOrder Json
+  /// questionId → option keys in display order
+  optionOrder   Json
+  correctCount  Int?
+  totalCount    Int
+  scorePercent  Int?
+  violations    Int           @default(0)
+  warnings      Int           @default(0)
+  flagged       Boolean       @default(false)
+  /// Times the learner came back to the attempt after leaving it
+  reentries     Int           @default(0)
+  /// When the policy forbids re-entry: the teacher opened one more entry (READMIT), used up on entering
+  readmitOpen   Boolean       @default(false)
+  /// Latest teacher message shown to the learner
+  notice        String?
+  /// Set when a teacher reset this attempt (it no longer counts)
+  resetAt       DateTime?
+
+  answers AssessmentAnswer[]
+  events  ExamEvent[]
+
+  @@unique([assessmentId, userId, attemptNo])
+  @@index([assessmentId])
+  @@index([userId])
+  @@map("assessment_attempts")
+}
+
+/// The learner's current choice per question; correctness is computed on submission from the stored question.
+model AssessmentAnswer {
+  attemptId  String
+  attempt    AssessmentAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId String
+  question   AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  /// Index into the question's stored options (not the display position)
+  optionKey  Int
+  answeredAt DateTime           @default(now())
+  isCorrect  Boolean?
+
+  @@id([attemptId, questionId])
+  @@map("assessment_answers")
+}
+
+/// Exam timeline: client signals, server decisions and teacher actions. Rows are never changed (the database refuses
+/// UPDATE); they disappear only together with their attempt (learner or draft assessment removed).
+model ExamEvent {
+  id        String            @id @default(cuid())
+  attemptId String
+  attempt   AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  at        DateTime          @default(now())
+  kind      String
+  /// client | server | teacher
+  source    String
+  actorKey  String?
+  /// When the device says it happened (informational; the server time is `at`)
+  clientAt  String?
+  meta      Json?
+
+  @@index([attemptId, at])
+  @@map("exam_events")
+}
+
+/// A phone that receives push notifications (D-30). Tied to the session that registered it:
+/// signing out, "sign out everywhere" or an expired session stops pushes to it.
+model PushDevice {
+  id             String    @id @default(cuid())
+  /// Session subject of the owner (learner user id or "staff:…")
+  subject        String
+  sessionId      String
+  /// Expo push token; one row per app install (a token that changes hands moves to the new owner)
+  token          String    @unique
+  /// android | ios
+  platform       String
+  /// Language of the notifications (ru | tg | en)
+  locale         String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  lastSeenAt     DateTime  @default(now())
+  /// Set when the push service reports the token as no longer valid
+  disabledAt     DateTime?
+  disabledReason String?
+
+  session AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([subject])
+  @@index([sessionId])
+  @@map("push_devices")
+}
+
+/// Categories a person switched off (everything else is on).
+model NotificationPreference {
+  /// Session subject (learner user id or "staff:…")
+  subject   String   @id
+  disabled  String[]
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_preferences")
+}
+
+/// One row per notification per person: the unique dedupe key keeps a notification from being
+/// sent twice (retries, overlapping scheduler runs). Holds no message text and no answers.
+model NotificationDelivery {
+  id        String   @id @default(cuid())
+  subject   String
+  category  String
+  dedupeKey String
+  createdAt DateTime @default(now())
+  /// sent | partial | failed | no-devices | muted | logged
+  outcome   String
+  devices   Int      @default(0)
+  accepted  Int      @default(0)
+
+  @@unique([subject, dedupeKey])
+  @@index([createdAt])
+  @@map("notification_deliveries")
 }

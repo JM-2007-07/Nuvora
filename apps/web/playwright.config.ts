@@ -17,6 +17,9 @@ export default defineConfig({
     baseURL: 'http://localhost:3000',
     channel: 'msedge',
     headless: true,
+    // Journeys start with a cookie choice already made, so the consent banner does not cover
+    // buttons; cookie-consent.spec.ts clears cookies to test the banner itself.
+    storageState: 'e2e/consent-decided.json',
   },
   webServer: {
     command: 'pnpm run dev',

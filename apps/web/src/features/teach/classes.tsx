@@ -11,7 +11,6 @@ import { ApiRequestError } from '@/lib/client-api';
 import { band } from './cells';
 import { isAccountStaff, useMyGroupDetail, useMyGroups, useTeacherOverview } from './hooks';
 import { DeniedState, isDenied, StaffGate } from './staff-gate';
-import { MAIN_GROUP } from './teacher-dashboard';
 import { CopyButton, CreateGroupButton, PageHead, PercentBar, SearchBox, SourcePill, StatusPill, type GroupStatus, Tabs, useSchedule } from './work-ui';
 
 type Filter = 'all' | GroupStatus;
@@ -32,9 +31,10 @@ function ClassesBody({ staff }: { staff: Staff }) {
   if (overview.isPending) return <LoadingState label={tStates('loading')} />;
   if (overview.isError) return isDenied(overview.error) ? <DeniedState error={overview.error} need={['TEACHER']} /> : <ErrorState error={overview.error} onRetry={() => overview.refetch()} />;
 
-  // Account teachers get their own groups in the overview too; those are shown from my-groups.
-  const demo = isAccountStaff(staff.slug) ? [] : overview.data.groups;
+  // Database groups (own or assigned by a center) come in the overview too; they are shown from my-groups.
   const own = mine.data?.items ?? [];
+  const ownCodes = new Set(own.map((g) => g.joinCode));
+  const demo = isAccountStaff(staff.slug) ? [] : overview.data.groups.filter((g) => !ownCodes.has(g.code));
   const needle = q.trim().toLowerCase();
   const demoShown = demo.filter((g) => (filter === 'all' || g.status === filter) && (!needle || `${g.code} ${g.name}`.toLowerCase().includes(needle)));
   const ownShown = own.filter((g) => (filter === 'all' || filter === 'active') && (!needle || `${g.name} ${g.joinCode}`.toLowerCase().includes(needle)));
@@ -109,7 +109,7 @@ function Tile({ label, value }: { label: string; value: string }) {
 
 function DemoCard({ g, schedule }: { g: TeacherGroup; schedule: (s: string) => string }) {
   const t = useTranslations('Classes');
-  const open = g.recorded && g.code === MAIN_GROUP;
+  const open = g.recorded;
   return (
     <Card as="article" interactive className="grid gap-4">
       <div className="flex items-start justify-between gap-3">
@@ -127,7 +127,7 @@ function DemoCard({ g, schedule }: { g: TeacherGroup; schedule: (s: string) => s
       </dl>
       <PercentBar percent={g.studentCount ? Math.round((g.submitted / g.studentCount) * 100) : 0} tone="blue" />
       <div className="flex flex-wrap items-center gap-2">
-        {open ? <Link href="/teach/analytics" className="fz-btn fz-btn-primary">{t('openAnalytics')}</Link> : null}
+        {open ? <Link href={`/teach/analytics?group=${encodeURIComponent(g.code)}`} className="fz-btn fz-btn-primary">{t('openAnalytics')}</Link> : null}
         <SourcePill recorded={g.recorded} synthetic={g.synthetic} />
       </div>
     </Card>
@@ -154,6 +154,7 @@ function OwnCard({ g, schedule }: { g: StudyGroupView; schedule: (s: string) => 
       <PercentBar percent={g.capacity ? Math.round((g.memberCount / g.capacity) * 100) : 0} tone="blue" />
       <div className="flex flex-wrap gap-2">
         <Link href={`/teach/classes/${encodeURIComponent(g.id)}`} className="fz-btn fz-btn-primary">{t('openClass')}</Link>
+        {g.submitted ? <Link href={`/teach/analytics?group=${encodeURIComponent(g.joinCode)}`} className="fz-btn fz-btn-ghost">{t('openAnalytics')}</Link> : null}
         <CopyButton text={g.joinCode} label={t('copyCode', { code: g.joinCode })} />
       </div>
     </Card>

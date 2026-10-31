@@ -18,6 +18,24 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Security headers for every page. No script-src CSP yet: next-themes and Next.js inject inline
+  // scripts, so a strict policy needs nonces (planned); these directives are safe without them.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" },
+          // Calls need the camera, microphone and screen sharing on this site only.
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), display-capture=(self), geolocation=(), payment=(), usb=()' },
+        ],
+      },
+    ];
+  },
+  poweredByHeader: false,
   async rewrites() {
     return [{ source: '/api/v1/:path*', destination: `${API_URL}/:path*` }];
   },

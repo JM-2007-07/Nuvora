@@ -3,10 +3,11 @@ import { type Staff, type StaffSessionState, StaffSessionRequestSchema } from '@
 import type { Request, Response } from 'express';
 import { IdentityService } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { readCookie, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
+import { readCookie, readCredential, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS } from '../identity/session-cookie.js';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe.js';
 import { DEMO_STAFF, type DemoStaff, findStaff } from './demo-org.js';
-import { signStaff, STAFF_COOKIE, staffFromCookie } from './staff.guard.js';
+import { sessionMeta } from '../identity/request-meta.js';
+import { STAFF_COOKIE, staffFromCookie, staffSubject } from './staff.guard.js';
 
 const cookieOptions = { httpOnly: true, sameSite: 'lax', path: '/' } as const;
 export const toStaff = (s: DemoStaff): Staff => ({ slug: s.slug, name: s.name, role: s.role, title: s.title });
@@ -26,23 +27,27 @@ export class StaffController {
 
   @Get('staff/session')
   async session(@Req() req: Request): Promise<StaffSessionState> {
-    const staff = await staffFromCookie(this.identity, this.prisma, readCookie(req.headers.cookie, STAFF_COOKIE));
+    const staff = await staffFromCookie(this.identity, this.prisma, readCredential(req.headers, STAFF_COOKIE));
     return { staff: staff ? toStaff(staff) : null };
   }
 
   @Post('staff/session')
   @HttpCode(200)
-  start(@Body(new ZodValidationPipe(StaffSessionRequestSchema)) body: { staff: string }, @Res({ passthrough: true }) res: Response): Staff {
+  async start(@Body(new ZodValidationPipe(StaffSessionRequestSchema)) body: { staff: string }, @Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<Staff> {
     const staff = findStaff(body.staff);
     if (!staff) throw new NotFoundException({ code: 'STAFF_NOT_FOUND', message: `Staff "${body.staff}" not found` });
-    res.clearCookie(SESSION_COOKIE, cookieOptions); // one identity per browser
-    res.cookie(STAFF_COOKIE, signStaff(this.identity, staff.slug), { ...cookieOptions, maxAge: SESSION_MAX_AGE_SECONDS * 1000 });
+    // One identity per browser: end the learner session this browser may hold.
+    await this.identity.sessions.revokeToken(readCookie(req.headers.cookie, SESSION_COOKIE), 'switch');
+    res.clearCookie(SESSION_COOKIE, cookieOptions);
+    const session = await this.identity.sessions.issueWeb(staffSubject(staff.slug), sessionMeta(req));
+    res.cookie(STAFF_COOKIE, session.token, { ...cookieOptions, maxAge: SESSION_MAX_AGE_SECONDS * 1000 });
     return toStaff(staff);
   }
 
   @Delete('staff/session')
   @HttpCode(204)
-  end(@Res({ passthrough: true }) res: Response): void {
+  async end(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+    await this.identity.sessions.revokeToken(readCookie(req.headers.cookie, STAFF_COOKIE), 'logout');
     res.clearCookie(STAFF_COOKIE, cookieOptions);
   }
 }

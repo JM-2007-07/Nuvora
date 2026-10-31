@@ -11,5 +11,6 @@ import { CenterService } from './center.service.js';
   imports: [PrismaModule, TeachingModule, GroupsModule, InvitationsModule],
   controllers: [CenterController],
   providers: [CenterService, StaffGuard],
+  exports: [CenterService],
 })
 export class CenterModule {}

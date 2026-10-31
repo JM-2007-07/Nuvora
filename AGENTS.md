@@ -41,6 +41,8 @@ Run from the root as `pnpm <script>` (pnpm, [D-17](docs/01-architecture/decision
 | `db:seed:center` | Prepare the demo center for the group wizard: creates its organization row and the 4 unassigned students if missing; changes or deletes nothing | **Writes: owner approval** |
 | `db:seed:demo` | Reset demo learners and B-12, remove guests, recreate demo teacher Dilshod's draft assessment, clear the demo center's invitations and permissions | **Writes: owner approval** |
 | `pnpm --filter @nuvora/web test:e2e` | Playwright smoke test on the installed Edge | Through the app |
+| `pnpm --filter @nuvora/api test:int` | Integration tests on the real PostgreSQL **test** database (`DATABASE_URL_TEST`, refuses a name without "test"); applies migrations and seed content there | Writes `nuvora_test` only |
+| `admin:bootstrap -- --email <account>` | Grant Super Admin to an existing account (`--replace`, `--revoke`); the only way to grant it (D-27) | **Writes: owner only** |
 
 `db:migrate` and `db:status` read `apps/api/.env`. The local database is the native PostgreSQL ([D-18](docs/01-architecture/decisions.md)). Creating roles or databases, or changing PostgreSQL or firewall configuration, needs the owner's explicit approval each time.
 
@@ -59,6 +61,7 @@ Run from the root as `pnpm <script>` (pnpm, [D-17](docs/01-architecture/decision
 | shadcn/ui | 4.22.1, preset `radix-vega` | Colours mapped to Faroz tokens in `apps/web/src/app/globals.css` |
 | Playwright | `@playwright/test` 1.64.1 (web, dev only) | `channel: 'msedge'`: runs on the installed Microsoft Edge, no browser download |
 | Profiles (D-25) | no new package: the photo crop is canvas in the browser | Public profile pages at `/u/<handle>`; editor at `/app/profile`, `/teach/profile`, `/center/profile` |
+| Expo (mobile, D-29) | `expo` 58.0.21, `react-native` 0.88.1, `expo-router` 58.0.28, `expo-secure-store` 58.0.2, `expo-local-authentication` 58.0.2, `react-native-reanimated` 4.7.1 (exact versions in `apps/mobile/package.json`) | `apps/mobile`. Also `expo-file-system`, `expo-crypto`, `expo-linear-gradient`, `react-native-svg`, `lucide-react-native`, `expo-notifications` 58.1.7 and `expo-device` 58.0.5 (push, D-30, proposed), Google fonts and `react-native-web` for the dev preview (versions in the [mobile story](docs/stories/2026-10-31-mobile-app.md)). `pnpm --filter @nuvora/mobile typecheck` / `test` / `bundle:android` (Metro export, no Android SDK needed); browser preview: `mobile-web` in `.claude/launch.json` (:8081) |
 | Socket.IO | `socket.io` / `socket.io-client` 4.8.4, `@nestjs/websockets` + `@nestjs/platform-socket.io` 12.2.0 (matches NestJS 12.2.0; 12.3.x needs a newer core) | D-24: chat and call signalling. Calls are WebRTC in the browser, no media server |
 
 Homepage visual direction and Motion for React are approved in D-22 ([decisions](docs/01-architecture/decisions.md)); 3D libraries stay conditional, GSAP is not used.

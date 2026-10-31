@@ -12,6 +12,7 @@ import { PageHead, PercentBar, SearchBox, Tabs } from '../work-ui';
 import { ConfirmDialog } from './confirm-dialog';
 import { dayTime, STATUS_TONE } from './format';
 import { useAssessmentAction, useAssessments, useDeleteAssessment } from './hooks';
+import { FzSelect } from '@/components/ui/fz-select';
 
 type Filter = 'all' | AssessmentStatus;
 
@@ -101,15 +102,9 @@ function Body() {
           ]}
         />
         <SearchBox value={q} onChange={setQ} label={t('search')} />
-        <label className="min-w-40">
-          <span className="sr-only">{t('classFilter')}</span>
-          <select value={group} onChange={(e) => setGroup(e.target.value)} className="min-h-12 w-full rounded-[16px] border border-(--line2) bg-(--panel) px-3.5 text-(--text) outline-none focus:border-(--blue)">
-            <option value="all">{t('allClasses')}</option>
-            {codes.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </label>
+        <div className="min-w-44">
+          <FzSelect label={t('classFilter')} surface="panel" className="mt-0" value={group} onValueChange={setGroup} options={[{ value: 'all', label: t('allClasses') }, ...codes.map((c) => ({ value: c, label: c }))]} />
+        </div>
       </div>
 
       {items.length === 0 ? (
@@ -227,6 +222,7 @@ function AverageCell({ r }: { r: AssessmentRow }) {
 /** What each row can do. Reference rows come from the design and offer nothing. */
 function Actions({ r }: { r: AssessmentRow }) {
   const t = useTranslations('Assess.list');
+  const tExam = useTranslations('ExamLive');
   const router = useRouter();
   const duplicate = useAssessmentAction('duplicate');
   const unschedule = useAssessmentAction('unschedule');
@@ -271,6 +267,7 @@ function Actions({ r }: { r: AssessmentRow }) {
   else
     buttons = (
       <>
+        <Link href={`/teach/assessments/${r.id}/live`} className="fz-btn fz-btn-primary min-h-11">{r.status === 'live' ? tExam('linkLive') : tExam('linkResults')}</Link>
         <Link href={`/teach/assessments/${r.id}`} className="fz-btn fz-btn-ghost min-h-11">{t('view')}</Link>
         {copy}
       </>

@@ -64,6 +64,27 @@ Report each item as checked or not checked:
 
 Release-level checks (Lighthouse targets, network-disconnected demo run, Tajik copy review) are in the [release gate](../06-quality/quality-standards.md#quality-gates).
 
+## Mobile app (Android) checklist
+
+Automated checks for `apps/mobile`: `pnpm --filter @nuvora/mobile typecheck`, `test` and `bundle:android` (Metro export; proves the code bundles, not that it runs). The Expo web preview (`mobile-web` in `.claude/launch.json`, port 8081) covers screens and API calls but not native features (secure storage, biometrics, push, background). A real run needs a phone or emulator. Say in the report which of the two was used, and never report a device check that did not happen.
+
+**Setup.** Expo Go cannot receive push notifications on Android, so push needs a development build (`eas build --profile development` or `npx expo run:android` with the Android SDK). For screens without push, Expo Go works: `pnpm --filter @nuvora/mobile exec expo start`, phone and laptop on the same Wi-Fi, `EXPO_PUBLIC_API_URL=http://<laptop-ip>:4000/api/v1`; the API must accept that origin (bearer requests are not origin-checked). Emulator: the default API URL `http://10.0.2.2:4000/api/v1` reaches the laptop.
+
+Run each item in dark and light, and at least once in ru, tg and en:
+
+- [ ] **Sign-in and restore:** demo learner, guest, teacher, center; password sign-in with the two-factor code. Kill the app and reopen: the session comes back without signing in, and the first screen loads data (no empty teacher screen).
+- [ ] **Roles:** learner sees the learner tabs; teacher sees groups, exams, live board; center sees group totals and participation only (no exams tab, no single learner's score).
+- [ ] **PIN and biometrics:** set a PIN; reopen; a wrong code shows the attempts left; five wrong codes sign out. Turn on biometrics (if the phone has it); background the app for more than 60 s → locked; unlock with the fingerprint.
+- [ ] **Offline lessons:** save a lesson; airplane mode; the lesson and its practice open; remove the download.
+- [ ] **Offline practice and sync:** in airplane mode answer the practice → "queued"; kill the app; reopen online → the home card shows it sent, and the server has exactly one attempt (`quiz_attempts` row with that `idempotencyKey`).
+- [ ] **Idempotent retry:** send practice, cut the network while the request is in flight (or kill the API right after it answers); after reconnecting the queue sends again and the result is the same attempt (response header `Idempotent-Replayed: true`), not a second one.
+- [ ] **Online exam:** start, answer, background the app (teacher's board shows the signal), come back, submit; reopen the attempt → the result, not "no attempts left".
+- [ ] **Network loss during the exam:** airplane mode mid-exam → "No network, answers queued"; answer two questions; back online → "All answers saved" within 10 s; the teacher sees both answers.
+- [ ] **Push permission:** the home card explains first; the system dialog appears only after "Turn on". Settings → Notifications shows "On"; `push_devices` has the token with this session. "Turn off on this phone" removes it. Denied permission shows the "open phone settings" button.
+- [ ] **Push delivery** (only with `PUSH_DELIVERY=expo` and a build with Firebase credentials): a teacher publishes a test → the learner's phone shows "New test"; a learner submits → the teacher sees "Work submitted" with counts only. Foreground: a banner shows. Background and killed app: tapping opens the tests list or the live board.
+- [ ] **Sign-out:** after sign-out, publishing a test sends nothing to this phone (`notification_deliveries.outcome` is `no-devices`).
+- [ ] **Layout:** safe areas on a phone with a notch and gesture bar; the keyboard does not cover the sign-in fields or the two-factor code; Android back button and back swipe behave (the exam screen does not close on a swipe).
+
 ## Docs and tooling changes
 
 - Every linked path exists (`docs/`, `.claude/`, scripts named in docs exist in a `package.json`).

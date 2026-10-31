@@ -16,6 +16,7 @@ import { localizeFields } from '../common/i18n/locale.js';
 import type { LearnerRecord } from '../identity/identity.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { percent } from '../quizzes/scoring.js';
+import { centerSafeTotals } from '../center/center-view.js';
 import { isUniqueViolation } from '../accounts/accounts.service.js';
 import { centerOrganizationId, type DemoStaff } from '../staff/demo-org.js';
 
@@ -168,7 +169,7 @@ export class GroupsService {
       orderBy: { createdAt: 'desc' },
       select: groupSelect,
     });
-    return this.views(rows, locale);
+    return (await this.views(rows, locale)).map(centerSafeTotals);
   }
 
   /** A center's database group by its code: the totals view plus who took the diagnostic (yes/no only, never scores). */
@@ -184,7 +185,7 @@ export class GroupsService {
       select: groupSelect,
     });
     if (!row) return null;
-    const [group] = await this.views([row], locale);
+    const group = centerSafeTotals((await this.views([row], locale))[0]!);
     const diagnostics = await this.firstDiagnostics(
       row.members.map((m) => m.userId),
       row.subjectSlug,

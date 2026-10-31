@@ -1,0 +1,57 @@
+import type { ExamEventKind } from '@nuvora/shared';
+import {
+  BellRing,
+  CircleCheckBig,
+  DoorOpen,
+  Eye,
+  EyeOff,
+  Flag,
+  FlagOff,
+  Hourglass,
+  LogIn,
+  type LucideIcon,
+  Maximize2,
+  Minimize2,
+  Pause,
+  Play,
+  Plug,
+  RotateCcw,
+  Smartphone,
+  Square,
+  Timer,
+  TriangleAlert,
+  Unplug,
+  Wifi,
+  WifiOff,
+} from 'lucide-react-native';
+import type { Tone } from '@/components/ui';
+
+/** How each exam event looks on the teacher's board (same mapping as the website). */
+export const EVENT_META: Record<ExamEventKind, { icon: LucideIcon; tone: Tone; violation?: boolean }> = {
+  FOCUS_LOST: { icon: EyeOff, tone: 'mag', violation: true },
+  FULLSCREEN_EXIT: { icon: Minimize2, tone: 'mag', violation: true },
+  APP_BACKGROUND: { icon: Smartphone, tone: 'mag', violation: true },
+  OFFLINE: { icon: WifiOff, tone: 'gold' },
+  ONLINE: { icon: Wifi, tone: 'mint' },
+  FOCUS_RETURNED: { icon: Eye, tone: 'neutral' },
+  FULLSCREEN_ENTER: { icon: Maximize2, tone: 'neutral' },
+  APP_FOREGROUND: { icon: Smartphone, tone: 'neutral' },
+  STARTED: { icon: Play, tone: 'blue' },
+  RESUMED: { icon: LogIn, tone: 'blue' },
+  CONNECTED: { icon: Plug, tone: 'mint' },
+  DISCONNECTED: { icon: Unplug, tone: 'gold' },
+  WARNING: { icon: TriangleAlert, tone: 'gold' },
+  TEACHER_NOTIFIED: { icon: BellRing, tone: 'gold' },
+  PAUSED: { icon: Pause, tone: 'blue' },
+  RESUMED_BY_TEACHER: { icon: Play, tone: 'blue' },
+  TIME_EXTENDED: { icon: Timer, tone: 'blue' },
+  READMITTED: { icon: DoorOpen, tone: 'blue' },
+  RESET: { icon: RotateCcw, tone: 'neutral' },
+  FLAGGED: { icon: Flag, tone: 'mag' },
+  UNFLAGGED: { icon: FlagOff, tone: 'neutral' },
+  ENDED_BY_TEACHER: { icon: Square, tone: 'mag' },
+  SUBMITTED: { icon: CircleCheckBig, tone: 'mint' },
+  EXPIRED: { icon: Hourglass, tone: 'gold' },
+};
+
+export const SIGNAL_CHIPS = ['FOCUS_LOST', 'FULLSCREEN_EXIT', 'APP_BACKGROUND', 'OFFLINE'] as const;

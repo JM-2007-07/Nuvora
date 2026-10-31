@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 const LOCALES = ['tg', 'ru', 'en'];
-const PARTS = ['site', 'learn', 'work', 'assess']; // = MESSAGE_PARTS in src/i18n/request.ts
+const PARTS = ['site', 'learn', 'work', 'assess', 'consent', 'account', 'admin', 'exam']; // = MESSAGE_PARTS in src/i18n/request.ts
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'));
 const load = (locale) => {
   const main = read(`../messages/${locale}.json`);

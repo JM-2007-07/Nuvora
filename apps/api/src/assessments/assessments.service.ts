@@ -15,6 +15,9 @@ import {
 import { localizeFields } from '../common/i18n/locale.js';
 import type { Prisma } from '../generated/prisma/client.js';
 import { GroupsService } from '../groups/groups.service.js';
+import { shortWhen } from '../notifications/notification-rules.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { groupLearnerSubjects } from '../notifications/recipients.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type DemoStaff, DEMO_GROUPS, type DemoGroup } from '../staff/demo-org.js';
 import { TeachingService } from '../teaching/teaching.service.js';
@@ -50,6 +53,7 @@ export class AssessmentsService {
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(TeachingService) private readonly teaching: TeachingService,
     @Inject(GroupsService) private readonly groups: GroupsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   /** Overridable in tests. */
@@ -139,6 +143,7 @@ export class AssessmentsService {
     const status = assessmentStatus(existing, this.now());
     if (status === 'live' || status === 'closed') throw locked(status);
     if (status === 'scheduled' && !canPublish(draft)) throw checksFailed(draft);
+    await this.refuseIfTaken(id);
     const group = await this.ownGroup(staff, draft.groupCode, locale);
     const updated = await this.prisma.$transaction(async (tx) => {
       await tx.assessmentQuestion.deleteMany({ where: { assessmentId: id } });
@@ -158,7 +163,15 @@ export class AssessmentsService {
     const draft = toDraft(existing);
     if (!canPublish(draft)) throw checksFailed(draft);
     const updated = await this.prisma.assessment.update({ where: { id }, data: { publishedAt: this.now() }, include: withQuestions });
+    this.notifications.later(() => this.notifyAssigned(updated.id, updated.title, updated.groupCode, updated.opensAt));
     return toAssessment(updated, this.now());
+  }
+
+  /** The group's learners hear about a newly published test (title and opening time only). */
+  private async notifyAssigned(id: string, title: string, groupCode: string, opensAt: Date | null): Promise<void> {
+    const learners = await groupLearnerSubjects(this.prisma, groupCode);
+    const later = opensAt && opensAt > this.now();
+    await this.notifications.notifyMany(learners, { category: 'assessment_assigned', dedupeKey: `assessment-assigned:${id}`, params: { title, ...(later ? { when: shortWhen(opensAt) } : {}) }, path: '/tests' });
   }
 
   /** Back to a draft; only before it opens. */
@@ -166,6 +179,7 @@ export class AssessmentsService {
     const existing = await this.own(staff, id);
     const status = assessmentStatus(existing, this.now());
     if (status !== 'scheduled') throw new ConflictException({ code: 'NOT_SCHEDULED', message: 'Only a scheduled assessment can be unscheduled' });
+    await this.refuseIfTaken(id);
     const updated = await this.prisma.assessment.update({ where: { id }, data: { publishedAt: null }, include: withQuestions });
     return toAssessment(updated, this.now());
   }
@@ -234,6 +248,11 @@ export class AssessmentsService {
   }
 
   // ---------- helpers ----------
+
+  /** Learners' answers point at the stored questions: once anyone has started, the questions stay as they are. */
+  private async refuseIfTaken(id: string): Promise<void> {
+    if (await this.prisma.assessmentAttempt.count({ where: { assessmentId: id } })) throw new ConflictException({ code: 'HAS_ATTEMPTS', message: 'Learners have already started this assessment' });
+  }
 
   /** The teacher's groups that have content to assess. */
   private async ownGroups(staff: DemoStaff, locale: Locale): Promise<OwnGroup[]> {

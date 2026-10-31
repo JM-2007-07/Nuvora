@@ -39,3 +39,13 @@ export function readCookie(header: string | undefined, name: string): string | u
   }
   return undefined;
 }
+
+/**
+ * The session credential of a request: `Authorization: Bearer <token>` (mobile app) when present,
+ * otherwise the named cookie (web). A bearer token can never be sent by a cross-site page.
+ */
+export function readCredential(headers: { authorization?: string; cookie?: string }, cookieName: string): string | undefined {
+  const auth = headers.authorization;
+  if (auth?.startsWith('Bearer ')) return auth.slice(7).trim() || undefined;
+  return readCookie(headers.cookie, cookieName);
+}

@@ -10,6 +10,8 @@ import { configureApp } from '../src/app.setup.js';
 import { SESSION_COOKIE, SessionSigner } from '../src/identity/session-cookie.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { STAFF_COOKIE } from '../src/staff/staff.guard.js';
+import { SessionStore } from '../src/identity/session-store.js';
+import { SignedTestSessions } from './support/signed-sessions.js';
 
 const SESSION_SECRET = 's'.repeat(32);
 const env = { DATABASE_URL: 'postgresql://test:test@localhost:5432/unused', API_PORT: 4000, WEB_ORIGIN: 'http://localhost:3000', SESSION_SECRET };
@@ -144,6 +146,8 @@ describe('Comms (e2e, in-memory data, real sockets)', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule.forRoot(env)] })
+      .overrideProvider(SessionStore)
+      .useValue(new SignedTestSessions(SESSION_SECRET))
       .overrideProvider(PrismaService)
       .useValue(fake.prisma)
       .compile();
@@ -202,7 +206,8 @@ describe('Comms (e2e, in-memory data, real sockets)', () => {
   });
 
   it('voice messages upload, list with a URL and play back only for members', async () => {
-    const audio = Buffer.from('fake-opus-audio');
+    // WebM (EBML) signature followed by filler: the server checks the first bytes.
+    const audio = Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.from('fake-opus-audio')]);
     const res = await request(app.getHttpServer())
       .post(`/api/v1/comms/conversations/${directId}/voice`)
       .set('Cookie', AMINA)
@@ -220,6 +225,13 @@ describe('Comms (e2e, in-memory data, real sockets)', () => {
       .set('Cookie', AMINA)
       .field('durationMs', '2400')
       .attach('audio', Buffer.from('x'), { filename: 'v.txt', contentType: 'text/plain' })
+      .expect(400);
+    // An HTML file renamed to audio/webm is refused by its signature.
+    await request(app.getHttpServer())
+      .post(`/api/v1/comms/conversations/${directId}/voice`)
+      .set('Cookie', AMINA)
+      .field('durationMs', '2400')
+      .attach('audio', Buffer.from('<html><script>alert(1)</script></html>'), { filename: 'v.webm', contentType: 'audio/webm' })
       .expect(400);
     const page = MessagesPageSchema.parse((await request(app.getHttpServer()).get(`/api/v1/comms/conversations/${directId}/messages?limit=1`).set('Cookie', DILSHOD)).body);
     expect(page).toMatchObject({ hasMore: true, items: [{ kind: 'VOICE' }] });
