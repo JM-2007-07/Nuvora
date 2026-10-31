@@ -1,6 +1,6 @@
 # 2026-10-31: Ready to deploy on Render, and an app download page
 
-Status: **implemented; production checks unit-tested, real-time tickets integration-tested on PostgreSQL, the site's production build checked locally.** Not verified: an actual Render deployment (needs the owner's Render account), the start script against a real database (the local run was blocked by the agent's safety check because it loads the test database address from `.env`), an EAS build of the APK.
+Status: **deployed on Render and verified live on 2026-10-31** (https://faroz-web.onrender.com, https://faroz-api.onrender.com). Not verified: an EAS build of the APK, the mobile app on a phone against Render.
 Gate: G4 (Faroz)   Decisions: D-31 (Render hosting, proposed), D-30 (push, proposed), D-10
 
 ## Context
@@ -34,6 +34,19 @@ The owner wants the defense to run from Render and later from a VPS ("MVPS"), an
 | Site production build with a test `ANDROID_APK_URL` + `next start` | `/download` is rendered per request (`ƒ`); the button links to the APK, "Версия 0.1.0" shown |
 | Browser (dev server): `/ru/download` at 1440 px dark, 375 px light, `/tg/download` 375 px dark | layout, "coming soon" state, nav and footer links, no console errors |
 | Repo-wide lint / typecheck / test / build / test:int / Android bundle | pass / pass / api 247 + 119, web 7, mobile 9 / pass / 48/48 / pass |
+
+## Live deployment (2026-10-31)
+
+Done in the owner's Render account through the built-in browser. The owner's existing workspace already used its one free database (another project), so a separate free workspace **Faroz** was created (owner's choice; no card needed) and the Blueprint deployed from `feat/faroz-platform` at `f9e3196`.
+
+| Check on Render | Result |
+| --- | --- |
+| Start script log | `prisma migrate deploy` → `learning content (db:seed)` → `demo data check` → `demo data (db:seed:demo, first start)` → `starting the API` |
+| `GET /api/v1/health` | `ok`, PostgreSQL 18.6 up |
+| Site `/ru`, `/tg/download`, `/ru/download`, `/en` | 200 |
+| Demo teacher on the site | dashboard with seeded data (2 groups, 48 learners, 45 diagnostics); `POST /api/v1/realtime/ticket` 200; no console errors |
+| Socket to the API domain (`/comms`) | with a ticket: connected; without or with a forged ticket: disconnected by the server |
+| Mobile-style bearer flow (demo token → `/me/progress`, `/me/stats`) | 200 |
 
 ## Known limitations and follow-ups
 
