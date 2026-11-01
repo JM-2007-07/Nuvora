@@ -55,3 +55,12 @@ The owner's teacher said the "How it works" panels (Amina's skill scan, Arrays b
 - `apps/web/src/features/home/learning-loop.tsx`: tabs are quieter (neutral icon tile, step number in a faint colour, inactive tabs without border or track). Only the open step shows a thin line, and it fills over the 5 s autoplay (`.fz-loop-timer` in `faroz-site.css`, off under reduced motion). The panel radius is 20 px instead of 24 px, and the columns stretch to the same height.
 - Checked: `lint`, `typecheck`, `test` (7/7), `build` pass. Browser: 1440×900 dark (ru, en) and light (ru), 390×844 light (ru, no horizontal overflow). The scan and quest panels were not changed.
 - This departs from the handoff's tile design for these two panels; the owner asked for it.
+
+## Update 2026-11-01: waking the sleeping API
+
+After the push, signing in on Render showed "Faroz can't reach its server". The free API had been asleep: the first request to `https://faroz-api.onrender.com/api/v1/plans` took 64 s, so the sign-in request failed, while later requests answered in under a second.
+
+- `apps/web/src/components/wake-api.tsx` (new): pings `/api/v1/health` (the same health check Render uses) when a public page opens, at most once per 10 minutes of browsing. Fire and forget, nothing shown. Rendered in the `(site)` layout (home, `/start` and the rest of the site) and the `(auth)` layout (sign-in, sign-up, password reset).
+- `docs/engineering/DEPLOYMENT.md`: the free-plan section mentions it.
+- Checked: `lint`, `typecheck`, `test` (7/7), `build` pass. On local `/ru/login` the browser sent exactly one `GET /api/v1/health` (200), with no console errors. Not checked on Render yet: it needs a push and the API asleep again.
+- Limit: a sign-in sent within the first minute of a cold start can still fail. Opening the site a few minutes before the defense is still the safe path.

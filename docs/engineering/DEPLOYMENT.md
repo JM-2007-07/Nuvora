@@ -67,7 +67,7 @@ Website (`faroz-web`): `NEXT_PUBLIC_API_URL` (the API's https address + `/api/v1
 
 ## Free plan behaviour (plan around it on the defense day)
 
-- Services sleep after ~15 minutes without traffic; the first request then takes up to a minute. Open the site and the API health URL 5 minutes before presenting, and keep a tab open.
+- Services sleep after ~15 minutes without traffic; the first request then takes up to a minute. Open the site and the API health URL 5 minutes before presenting, and keep a tab open. The site's public pages (home, `/start`, sign-in, sign-up, password reset) ping `/api/v1/health` when they open (`apps/web/src/components/wake-api.tsx`), so the API usually wakes while a visitor reads or types. A sign-in sent during that first minute can still fail with "can't reach its server"; retrying works once the API is up.
 - The free database expires after 30 days. Export with `pg_dump` before then, or move to the paid plan or the VPS.
 - One API instance: in-memory rate limits and call registry are per instance (fine for one instance).
 - Free instances have 512 MB of memory. If a build fails with "out of memory" (most likely the site's `next build`), add `NODE_OPTIONS=--max-old-space-size=460` to that service or use the Starter plan.
