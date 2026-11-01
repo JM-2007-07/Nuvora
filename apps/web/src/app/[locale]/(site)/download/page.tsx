@@ -7,24 +7,7 @@ import { RevealGroup, RevealItem } from '@/components/motion/reveal-group';
 import { Icon, ICONS } from '@/features/home/icon';
 import { Link } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
-
-/**
- * Where the Android build is offered. Set on the server (Render: faroz-web environment):
- * ANDROID_APK_URL — an https link to the APK (an EAS build artifact or a GitHub release asset);
- * ANDROID_APP_VERSION — optional, shown next to the button. Without a link the page says the
- * build is coming instead of offering a broken download.
- */
-function androidBuild(): { url: string; version: string | null } | null {
-  const url = process.env.ANDROID_APK_URL;
-  if (!url) return null;
-  try {
-    if (new URL(url).protocol !== 'https:') return null;
-  } catch {
-    return null;
-  }
-  const version = process.env.ANDROID_APP_VERSION?.trim();
-  return { url, version: version && /^[\w.+-]{1,32}$/.test(version) ? version : null };
-}
+import { androidBuild, APK_PATH } from '@/lib/android-build';
 
 export async function generateMetadata({ params }: PageProps<'/[locale]/download'>): Promise<Metadata> {
   const { locale } = await params;
@@ -75,7 +58,7 @@ export default async function DownloadPage({ params }: PageProps<'/[locale]/down
             <RevealItem className="flex flex-col gap-3">
               {build ? (
                 <div className="flex flex-wrap items-center gap-3">
-                  <a href={build.url} className="fz-btn fz-btn-primary fz-btn-lg" rel="noopener" download>
+                  <a href={APK_PATH} className="fz-btn fz-btn-primary fz-btn-lg" download="Faroz.apk">
                     <Icon d={DOWNLOAD} size={20} stroke={2.4} />
                     {t('android')}
                   </a>
