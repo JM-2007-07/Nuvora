@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { GroupAnalyticsSchema, StudentAnswersSchema, TeacherOverviewSchema } from '@nuvora/shared';
+import { AssessmentListSchema, GroupAnalyticsSchema, StudentAnswersSchema, TeacherOverviewSchema } from '@nuvora/shared';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import type { PrismaClient } from '../../src/generated/prisma/client.js';
@@ -80,6 +80,69 @@ describe.skipIf(!url)('teacher analytics for any authorized group (real database
   it('another teacher cannot open the group or its students (404, codes cannot be probed)', async () => {
     await request(app.getHttpServer()).get(`/api/v1/teach/groups/${code}`).set('Cookie', staffCookie(otherTeacherId)).expect(404);
     await request(app.getHttpServer()).get(`/api/v1/teach/groups/${code}/students/${memberIds[0]}`).set('Cookie', staffCookie(otherTeacherId)).expect(404);
+  });
+
+  it("the teacher's own closed test: Submitted and Average in the list, answers on the student page", async () => {
+    const text = (en: string) => ({ en });
+    const now = Date.now();
+    const test = await prisma.assessment.create({
+      data: {
+        ownerKey: `acct:${teacherId}`,
+        groupCode: code,
+        subjectSlug: 'javascript',
+        title: 'Football',
+        purpose: 'CHECK',
+        languages: ['en'],
+        opensAt: new Date(now - 7_200_000),
+        closesAt: new Date(now - 60_000),
+        attemptsAllowed: 2,
+        revealAnswers: 'AFTER_CLOSE',
+        publishedAt: new Date(now - 7_300_000),
+        questions: { create: [0, 1, 2].map((i) => ({ order: i, topicSlug: 'js-variables', prompt: text(`Question ${i + 1}`), options: [{ text: text('A') }, { text: text('B') }, { text: text('C') }], correctIndex: 0, explanation: text('') })) },
+      },
+      include: { questions: { orderBy: { order: 'asc' } } },
+    });
+    const [q1, q2, q3] = test.questions.map((q) => q.id) as [string, string, string];
+    const attempt = (userId: string, attemptNo: number, correct: number | null, answers: [string, number][], resetAt: Date | null = null) =>
+      prisma.assessmentAttempt.create({
+        data: {
+          assessmentId: test.id,
+          userId,
+          attemptNo,
+          status: correct === null ? 'IN_PROGRESS' : 'SUBMITTED',
+          submittedAt: correct === null ? null : new Date(now - 3_600_000 + attemptNo * 1000),
+          questionOrder: [q1, q2, q3],
+          optionOrder: {},
+          correctCount: correct,
+          totalCount: 3,
+          scorePercent: correct === null ? null : Math.round((correct / 3) * 100),
+          resetAt,
+          answers: { create: answers.map(([questionId, optionKey]) => ({ questionId, optionKey, isCorrect: optionKey === 0 })) },
+        },
+      });
+    // Ali: a reset first try (ignored), then 2 of 3 with the last question unanswered. Bibi: 0 of 3.
+    await attempt(memberIds[0]!, 1, 0, [[q1, 2]], new Date(now - 3_000_000));
+    await attempt(memberIds[0]!, 2, 2, [[q1, 0], [q2, 0]]);
+    await attempt(memberIds[1]!, 1, 0, [[q1, 1], [q2, 1], [q3, 2]]);
+
+    const list = AssessmentListSchema.parse((await request(app.getHttpServer()).get('/api/v1/teach/assessments').set('Cookie', staffCookie(teacherId)).expect(200)).body);
+    expect(list.items.find((r) => r.id === test.id)).toMatchObject({ status: 'closed', submitted: { count: 2, of: 3 }, averagePercent: 34 });
+
+    const s = StudentAnswersSchema.parse((await request(app.getHttpServer()).get(`/api/v1/teach/groups/${code}/students/${memberIds[0]}`).set('Cookie', staffCookie(teacherId)).expect(200)).body);
+    const football = s.attempts.filter((a) => a.quiz.title.startsWith('Football'));
+    expect(football.map((a) => [a.quiz.title, a.score.correct, a.score.total])).toEqual([['Football · #2', 2, 3]]);
+    expect(football[0]!.answers.map((a) => [a.number, a.chosen, a.correctOption, a.isCorrect])).toEqual([
+      [1, 'A', 'A', true],
+      [2, 'A', 'A', true],
+      [3, '—', 'A', false],
+    ]);
+
+    // Another teacher's test for the same group stays out of this teacher's view.
+    const own = s.attempts.length;
+    const foreign = await prisma.assessment.create({ data: { ownerKey: `acct:${otherTeacherId}`, groupCode: code, subjectSlug: 'javascript', title: 'Not mine', purpose: 'CHECK', languages: ['en'], questions: { create: [] } } });
+    await prisma.assessmentAttempt.create({ data: { assessmentId: foreign.id, userId: memberIds[0]!, attemptNo: 1, status: 'SUBMITTED', submittedAt: new Date(), questionOrder: [], optionOrder: {}, correctCount: 0, totalCount: 0, scorePercent: 0 } });
+    const again = StudentAnswersSchema.parse((await request(app.getHttpServer()).get(`/api/v1/teach/groups/${code}/students/${memberIds[0]}`).set('Cookie', staffCookie(teacherId)).expect(200)).body);
+    expect(again.attempts).toHaveLength(own);
   });
 
   it('a non-member id in the group → 404', async () => {

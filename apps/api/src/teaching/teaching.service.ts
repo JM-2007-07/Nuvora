@@ -2,6 +2,7 @@ import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nest
 import type { GroupAnalytics, Locale, StudentAnswers, StudyGroupView, TeacherGroup, TeacherOverview } from '@nuvora/shared';
 import { localizeFields } from '../common/i18n/locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { teacherText } from '../exam/exam-rules.js';
 import { percent } from '../quizzes/scoring.js';
 import { type DemoGroup, type DemoStaff, DEMO_GROUPS, findGroup, REFERENCE_TOPIC_TITLES } from '../staff/demo-org.js';
 import { GroupsService } from '../groups/groups.service.js';
@@ -84,10 +85,7 @@ export class TeachingService {
     });
     const ref = (row: { slug: string; title: unknown }) => ({ slug: row.slug, ...localizeFields(locale, { title: row.title }) });
     const optionText = (option: { text: unknown } | undefined) => (option ? localizeFields(locale, { text: option.text }).text : '');
-    return {
-      student: { slug: studentSlug, name: user.displayName },
-      group: { code: group.code, name: group.name },
-      attempts: attempts.map((a) => {
+    const quizAttempts: StudentAnswers['attempts'] = attempts.map((a) => {
         const byQuestion = new Map(a.answers.map((x) => [x.questionId, x]));
         return {
           id: a.id,
@@ -110,8 +108,63 @@ export class TeachingService {
             ];
           }),
         };
-      }),
+      });
+    const testAttempts = await this.assessmentAttempts(staff, group.code, user.id, locale);
+    return {
+      student: { slug: studentSlug, name: user.displayName },
+      group: { code: group.code, name: group.name },
+      // Diagnostics and the teacher's own tests together, oldest first.
+      attempts: [...quizAttempts, ...testAttempts].sort((x, y) => x.submittedAt.localeCompare(y.submittedAt)),
     };
+  }
+
+  /**
+   * The student's finished attempts at this teacher's own tests for the group (exam mode), answer by
+   * answer, in the shape of a diagnostic attempt so every client shows them without changes. Reset
+   * attempts are left out; an unanswered question shows "—" and counts as wrong, as in the score.
+   */
+  private async assessmentAttempts(staff: DemoStaff, groupCode: string, userId: string, locale: Locale): Promise<StudentAnswers['attempts']> {
+    const rows = await this.prisma.assessmentAttempt.findMany({
+      where: { userId, resetAt: null, submittedAt: { not: null }, correctCount: { not: null }, assessment: { groupCode, ownerKey: staff.slug } },
+      orderBy: { submittedAt: 'asc' },
+      select: {
+        id: true,
+        attemptNo: true,
+        submittedAt: true,
+        correctCount: true,
+        totalCount: true,
+        assessment: { select: { title: true, questions: { orderBy: { order: 'asc' }, select: { id: true, topicSlug: true, prompt: true, options: true, correctIndex: true } } } },
+        answers: { select: { questionId: true, optionKey: true } },
+      },
+    });
+    if (!rows.length) return [];
+    const slugs = [...new Set(rows.flatMap((r) => r.assessment.questions.map((q) => q.topicSlug)))];
+    const topics = await this.prisma.topic.findMany({ where: { slug: { in: slugs } }, select: { slug: true, title: true } });
+    const topicRef = new Map(topics.map((t) => [t.slug, { slug: t.slug, ...localizeFields(locale, { title: t.title }) }]));
+    const text = (value: unknown) => teacherText(value, locale).text;
+    return rows.map((r) => {
+      const chosen = new Map(r.answers.map((a) => [a.questionId, a.optionKey]));
+      const correct = r.correctCount ?? 0;
+      return {
+        id: r.id,
+        quiz: { slug: `assessment-${r.id}`, title: r.attemptNo > 1 ? `${r.assessment.title} · #${r.attemptNo}` : r.assessment.title, fallbackFields: [] },
+        submittedAt: r.submittedAt!.toISOString(),
+        score: { correct, total: r.totalCount, percent: percent(correct, r.totalCount) },
+        answers: r.assessment.questions.map((q, i) => {
+          const options = q.options as { text: unknown }[];
+          const key = chosen.get(q.id);
+          return {
+            key: q.id,
+            number: i + 1,
+            topic: topicRef.get(q.topicSlug) ?? { slug: q.topicSlug, title: q.topicSlug, fallbackFields: [] },
+            prompt: text(q.prompt),
+            chosen: key === undefined ? '—' : text(options[key]?.text),
+            correctOption: text(options[q.correctIndex]?.text),
+            isCorrect: key === q.correctIndex,
+          };
+        }),
+      };
+    });
   }
 
   /** The group if it exists and the teacher teaches it: unknown → 404, someone else's → 403. */

@@ -1,5 +1,5 @@
 import { type AssessmentDraft, assessmentChecks, canPublish, type DraftQuestion, questionProblem } from '@nuvora/shared';
-import { assessmentStatus, defaultSchedule, sortRows, splitCode } from './assessment-rules.js';
+import { assessmentStatus, attemptSummary, defaultSchedule, sortRows, splitCode } from './assessment-rules.js';
 
 const at = (iso: string) => new Date(iso);
 const text = (en: string, ru = '', tg = '') => ({ en, ru, tg });
@@ -101,5 +101,28 @@ describe('sortRows', () => {
       ({ id, status, closesAt, opensAt: null, updatedAt: null }) as Parameters<typeof sortRows>[0][number];
     const sorted = sortRows([row('old', 'closed', '2026-10-06'), row('d', 'draft', null), row('new', 'closed', '2026-10-13'), row('s', 'scheduled', null), row('l', 'live', '2026-10-16')]);
     expect(sorted.map((r) => r.id)).toEqual(['d', 'l', 's', 'new', 'old']);
+  });
+});
+
+describe('attemptSummary', () => {
+  const t = (userId: string, attemptNo: number, scorePercent: number | null) => ({ userId, attemptNo, scorePercent });
+
+  it('shows nothing before the assessment opens', () => {
+    expect(attemptSummary([t('a', 1, 80)], 'draft', 3)).toEqual({ submitted: null, averagePercent: null });
+    expect(attemptSummary([], 'scheduled', 3)).toEqual({ submitted: null, averagePercent: null });
+  });
+
+  it('counts each student once, by the latest attempt, and hides the average while live', () => {
+    const rows = [t('a', 1, 40), t('a', 2, 100), t('b', 1, null)];
+    expect(attemptSummary(rows, 'live', 2)).toEqual({ submitted: { count: 1, of: 2 }, averagePercent: null });
+  });
+
+  it('a running second attempt does not count as submitted', () => {
+    expect(attemptSummary([t('a', 1, 60), t('a', 2, null)], 'live', 1)).toEqual({ submitted: { count: 0, of: 1 }, averagePercent: null });
+  });
+
+  it('shows the rounded average once closed', () => {
+    expect(attemptSummary([t('a', 1, 100), t('b', 1, 33), t('c', 1, 50)], 'closed', 4)).toEqual({ submitted: { count: 3, of: 4 }, averagePercent: 61 });
+    expect(attemptSummary([], 'closed', 4)).toEqual({ submitted: { count: 0, of: 4 }, averagePercent: null });
   });
 });

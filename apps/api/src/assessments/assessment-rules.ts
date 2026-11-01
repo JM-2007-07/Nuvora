@@ -12,6 +12,29 @@ export function assessmentStatus(row: { publishedAt: Date | null; opensAt: Date 
   return 'closed';
 }
 
+/**
+ * "Submitted" and "Average" for a teacher's own assessment, from its stored attempts. Like the live
+ * board, each student counts with their latest attempt that was not reset; it counts as submitted
+ * once it has a score. The average stays hidden (null) until the assessment closes.
+ */
+export function attemptSummary(
+  attempts: { userId: string; attemptNo: number; scorePercent: number | null }[],
+  status: AssessmentStatus,
+  groupSize: number | null,
+): Pick<AssessmentRow, 'submitted' | 'averagePercent'> {
+  const latest = new Map<string, { attemptNo: number; scorePercent: number | null }>();
+  for (const a of attempts) {
+    const seen = latest.get(a.userId);
+    if (!seen || a.attemptNo > seen.attemptNo) latest.set(a.userId, a);
+  }
+  const scores = [...latest.values()].flatMap((a) => (a.scorePercent === null ? [] : [a.scorePercent]));
+  if (status === 'draft' || status === 'scheduled') return { submitted: null, averagePercent: null };
+  return {
+    submitted: { count: scores.length, of: groupSize },
+    averagePercent: status === 'closed' && scores.length ? Math.round(scores.reduce((n, x) => n + x, 0) / scores.length) : null,
+  };
+}
+
 /** Default schedule for a new draft: tomorrow 16:00 → two days later 20:00, local server time. */
 export function defaultSchedule(now: Date): { opensAt: Date; closesAt: Date } {
   const opensAt = new Date(now);

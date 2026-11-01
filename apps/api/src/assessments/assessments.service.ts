@@ -23,6 +23,7 @@ import { type DemoStaff, DEMO_GROUPS, type DemoGroup } from '../staff/demo-org.j
 import { TeachingService } from '../teaching/teaching.service.js';
 import {
   assessmentStatus,
+  attemptSummary,
   B12_PRACTICE_GROUP_SIZE,
   bankDraft,
   DEMO_GROUP_SUBJECT,
@@ -72,6 +73,14 @@ export class AssessmentsService {
       locale,
     );
     const now = this.now();
+    // Students' attempts at these assessments (exam mode), for "Submitted" and "Average".
+    const attempts = stored.length
+      ? await this.prisma.assessmentAttempt.findMany({
+          where: { assessmentId: { in: stored.map((a) => a.id) }, resetAt: null },
+          select: { assessmentId: true, userId: true, attemptNo: true, scorePercent: true },
+        })
+      : [];
+    const groupSize = new Map(groups.map((g) => [g.code, g.studentCount]));
     const rows: AssessmentRow[] = stored.map((a) => ({
       id: a.id,
       source: 'stored',
@@ -86,8 +95,11 @@ export class AssessmentsService {
       closesAt: a.closesAt?.toISOString() ?? null,
       updatedAt: a.updatedAt.toISOString(),
       questionCount: a.questions.length,
-      submitted: null, // learners can't take teacher assessments yet
-      averagePercent: null,
+      ...attemptSummary(
+        attempts.filter((t) => t.assessmentId === a.id),
+        assessmentStatus(a, now),
+        groupSize.get(a.groupCode) ?? null,
+      ),
       analyticsGroup: null,
       quizSlug: null,
     }));

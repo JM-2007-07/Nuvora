@@ -64,3 +64,15 @@ After the push, signing in on Render showed "Faroz can't reach its server". The 
 - `docs/engineering/DEPLOYMENT.md`: the free-plan section mentions it.
 - Checked: `lint`, `typecheck`, `test` (7/7), `build` pass. On local `/ru/login` the browser sent exactly one `GET /api/v1/health` (200), with no console errors. Not checked on Render yet: it needs a push and the API asleep again.
 - Limit: a sign-in sent within the first minute of a cold start can still fail. Opening the site a few minutes before the defense is still the safe path.
+
+## Update 2026-11-01: results of teachers' own tests
+
+On the live site, a teacher's own test showed "—" under Submitted and Average, and the student page did not show how a student did, although the exam board for that test had the score (5/5). Causes: `AssessmentsService.list` still returned `submitted: null` for stored assessments ("learners can't take teacher assessments yet", written before exam mode), and the student page read only diagnostic quiz attempts.
+
+- `apps/api/src/assessments/assessment-rules.ts`: `attemptSummary` (pure, unit-tested). Each student counts with their latest attempt that was not reset, like the live board. Submitted = attempts with a score, out of the group size. The average stays hidden while the test is live, as the list already says.
+- `assessments.service.ts`: the list fills Submitted and Average for stored assessments from `AssessmentAttempt`.
+- `teaching/teaching.service.ts`: the student page adds the student's finished attempts at this teacher's own tests for that group, answer by answer (chosen option, correct option; an unanswered question shows "—" and counts as wrong). Other teachers' tests and reset attempts are left out.
+- No schema or contract change. The attempts use the existing `attempts` shape (title "Test · #2" for a second attempt), so the web page and the already-built Android app show them without an update.
+- Not changed: the dashboard card "Diagnostic taken" and the group analytics still count the diagnostic only.
+- Content on Render (owner's request, through the app as teacher Asil): 19 football questions (EN and RU, no Tajik) were saved into the empty "Футбол" draft of group JS-ERK8. Still a draft, settings unchanged.
+- Checked: api `lint`, `typecheck`, `build`; unit 251/251; e2e 119/119 (the first run reported 115/119 with no failing test, and a re-run passed); integration on `nuvora_test` 49/49 with a new test (closed test with a reset attempt, an unanswered question and another teacher's test). The first integration run had one worker crash and the re-run passed. Not checked in a browser: no local teacher account with test attempts exists, and creating one in `nuvora_dev` needs the owner's approval.
