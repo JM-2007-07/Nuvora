@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { SignupForm } from '@/features/auth/signup-form';
+import { AuthExperience } from '@/features/auth/auth-experience';
 import { parseEmail, parseNext, parseRole } from '@/features/auth/roles';
 import { routing } from '@/i18n/routing';
 
@@ -19,5 +19,5 @@ export default async function SignupPage({ params, searchParams }: PageProps<'/[
   const { role, email, next } = await searchParams;
   // key: a new ?role= (client navigation) resets the form to that role.
   const initialRole = parseRole(role) ?? 'learner';
-  return <SignupForm key={initialRole} initialRole={initialRole} initialEmail={parseEmail(email)} next={parseNext(next)} />;
+  return <AuthExperience key={initialRole} initialMode="signup" initialRole={initialRole} initialEmail={parseEmail(email)} next={parseNext(next)} />;
 }

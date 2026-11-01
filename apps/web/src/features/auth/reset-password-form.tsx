@@ -41,7 +41,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   }
 
   return (
-    <AuthScreen variant="login" showcaseSide="left">
+    <AuthScreen>
       {done ? (
         <>
           <div className="flex flex-col gap-2">

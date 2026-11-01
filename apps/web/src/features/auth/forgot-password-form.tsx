@@ -42,7 +42,7 @@ export function ForgotPasswordForm({ initialEmail = '' }: { initialEmail?: strin
   }
 
   return (
-    <AuthScreen variant="login" showcaseSide="left">
+    <AuthScreen>
       <div className="flex flex-col gap-2">
         <h1 className="m-0 text-[30px] leading-tight font-bold">{ts('forgotTitle')}</h1>
         <p className="m-0 text-[15px] text-(--muted)">{ts('forgotSub')}</p>

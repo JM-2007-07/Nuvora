@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { LoginForm } from '@/features/auth/login-form';
-import { parseEmail, parseNext } from '@/features/auth/roles';
+import { AuthExperience } from '@/features/auth/auth-experience';
+import { parseEmail, parseNext, parseRole } from '@/features/auth/roles';
 import { routing } from '@/i18n/routing';
 
 export async function generateMetadata({ params }: PageProps<'/[locale]/login'>): Promise<Metadata> {
@@ -16,6 +16,7 @@ export default async function LoginPage({ params, searchParams }: PageProps<'/[l
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  const { email, next } = await searchParams;
-  return <LoginForm initialEmail={parseEmail(email)} next={parseNext(next)} />;
+  const { email, next, role } = await searchParams;
+  // Sign-in and sign-up are one screen; switching between them slides in place (AuthExperience).
+  return <AuthExperience initialMode="login" initialRole={parseRole(role) ?? 'learner'} initialEmail={parseEmail(email)} next={parseNext(next)} />;
 }

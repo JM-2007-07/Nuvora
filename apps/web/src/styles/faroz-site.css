@@ -735,51 +735,235 @@ button:focus-visible,
   }
 }
 
-/* Sign-in / sign-up screen (features/auth/auth-screen.tsx, auth-showcase.tsx). */
+/*
+ * Sign-in / sign-up (features/auth: auth-experience.tsx, auth-screen.tsx, auth-showcase.tsx,
+ * flowing-light.tsx). Switching is one coordinated move: the brand panel travels to the other half
+ * (--fz-auth-slide), the leaving form fades out in the panel's direction while the new one fades in
+ * as the panel uncovers it, the panel copy cross-fades, and the light ribbons shift at slightly
+ * different speeds. Only transform and opacity animate. At rest the ribbons drift very slowly.
+ * Below 960 px there is no panel: the forms cross-fade under a compact brand strip.
+ */
+:root {
+  --fz-auth-ease: cubic-bezier(0.65, 0, 0.25, 1);
+  --fz-auth-slide: 640ms;
+  --fz-auth-dir: 1;
+}
 @layer components {
-  /* Orbit-coloured light behind the large atom. */
-  .fz-auth-glow {
-    top: 50%;
-    left: 50%;
-    width: 130%;
-    aspect-ratio: 1;
-    border-radius: 9999px;
-    transform: translate(-50%, -62%);
-    background: radial-gradient(
-      circle,
-      color-mix(in srgb, var(--orbit-blue) 34%, transparent),
-      color-mix(in srgb, var(--orbit-violet) 14%, transparent) 40%,
-      transparent 62%
-    );
+  .fz-auth {
+    position: relative;
+    display: grid;
+    flex: 1;
+    min-height: 100dvh;
+    background: var(--bg);
+    overflow-x: clip;
   }
-  /* Phone strip: the same light behind the small atom. */
-  .fz-auth-glow-strip {
-    top: -60%;
-    left: -15%;
-    width: 60%;
-    aspect-ratio: 1;
-    border-radius: 9999px;
-    background: radial-gradient(circle, color-mix(in srgb, var(--orbit-violet) 32%, transparent), transparent 65%);
+  /* 1 = towards sign-up (the panel moves right), -1 = back to sign-in. */
+  .fz-auth[data-dir='-1'] {
+    --fz-auth-dir: -1;
+  }
+  .fz-auth-col {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    flex-direction: column;
+    grid-area: 1 / 1;
+    min-width: 0;
+    min-height: 100dvh;
+  }
+  .fz-auth-panel {
+    display: none;
+  }
+  .fz-auth-link {
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--line2);
+    text-underline-offset: 4px;
+    transition: text-decoration-color 0.15s ease;
+  }
+  .fz-auth-link:hover {
+    text-decoration-color: var(--blue);
+  }
+  .fz-auth-link:focus-visible {
+    outline: 3px solid var(--sel);
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 960px) {
+    .fz-auth {
+      grid-template-columns: 1fr 1fr;
+    }
+    .fz-auth-col[data-col='signup'] {
+      grid-area: 1 / 1;
+    }
+    .fz-auth-col[data-col='login'] {
+      grid-area: 1 / 2;
+    }
+    .fz-auth-panel {
+      display: block;
+      position: absolute;
+      inset-block: 0;
+      left: 0;
+      z-index: 20;
+      width: 50%;
+      transform: translate3d(0, 0, 0);
+      transition: transform var(--fz-auth-slide) var(--fz-auth-ease);
+    }
+    .fz-auth-panel[data-side='right'] {
+      transform: translate3d(100%, 0, 0);
+    }
+  }
+
+  /* Forms: the leaving one goes with the panel, the new one follows it in. */
+  .fz-auth-col[data-anim='in'] {
+    animation: fz-auth-in 460ms var(--fz-auth-ease) 200ms backwards;
+  }
+  .fz-auth-col[data-anim='out'] {
+    pointer-events: none;
+    animation: fz-auth-out 300ms cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+  @media (max-width: 959.98px) {
+    .fz-auth-col[data-anim='out'] {
+      display: none;
+    }
+    .fz-auth-col[data-anim='in'] {
+      animation: fz-auth-in-sm 340ms ease-out backwards;
+    }
+  }
+
+  /* Panel copy: sign-in and sign-up texts stacked in one cell, cross-fading with a small shift. */
+  .fz-auth-copy {
+    grid-area: 1 / 1;
+    transition:
+      opacity 380ms var(--fz-auth-ease) 200ms,
+      transform 440ms var(--fz-auth-ease) 160ms,
+      visibility 0s;
+  }
+  .fz-auth-copy[data-on='false'] {
+    visibility: hidden;
+    opacity: 0;
+    transform: translate3d(calc(var(--fz-auth-dir) * 24px), 0, 0);
+    transition:
+      opacity 240ms ease-in,
+      transform 320ms ease-in,
+      visibility 0s 320ms;
+  }
+
+  /* Flowing Light: soft washes and three ribbon layers. */
+  .fz-light {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .fz-light-wash {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(70% 55% at 88% 6%, color-mix(in srgb, var(--orbit-blue) 30%, transparent), transparent 70%),
+      radial-gradient(65% 50% at 0% 100%, color-mix(in srgb, var(--orbit-violet) 20%, transparent), transparent 72%);
+  }
+  .fz-light-layer {
+    position: absolute;
+    top: -6%;
+    left: -14%;
+    width: 128%;
+    height: 112%;
+    will-change: transform;
+    transition: translate var(--fz-auth-slide) var(--fz-auth-ease);
+  }
+  /* Back layers follow a little later and less far than the front one: depth without clutter. */
+  .fz-light-l1 {
+    transition-duration: 860ms;
+  }
+  .fz-light-l2 {
+    transition-duration: 740ms;
+  }
+  .fz-auth-panel[data-side='right'] .fz-light-l1 {
+    translate: 3% 0;
+  }
+  .fz-auth-panel[data-side='right'] .fz-light-l2 {
+    translate: 5.5% -1%;
+  }
+  .fz-auth-panel[data-side='right'] .fz-light-l3 {
+    translate: 8% 0.5%;
+  }
+  /* Phone strip: a wide, short band, so the ribbons are placed to cross it. */
+  .fz-light-compact .fz-light-layer {
+    top: -260%;
+    height: 620%;
+  }
+  .fz-stop-blue {
+    stop-color: var(--orbit-blue);
+  }
+  .fz-stop-violet {
+    stop-color: var(--orbit-violet);
+  }
+  .fz-stop-cyan {
+    stop-color: var(--orbit-cyan);
   }
 }
 
-/*
- * Sign-in / sign-up swap (features/auth/auth-screen.tsx): the brand half and the form half swap sides;
- * inside each, old and new content crossfade.
- */
-::view-transition-group(.fz-auth-swap) {
-  animation-duration: 620ms;
-  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+@keyframes fz-auth-in {
+  from {
+    opacity: 0;
+    transform: translate3d(calc(var(--fz-auth-dir) * -28px), 0, 0);
+  }
 }
-::view-transition-old(.fz-auth-swap) {
-  animation: fz-page-dim 260ms ease-in both;
+@keyframes fz-auth-out {
+  to {
+    opacity: 0;
+    transform: translate3d(calc(var(--fz-auth-dir) * 28px), 0, 0);
+  }
 }
-::view-transition-new(.fz-auth-swap) {
-  animation: fz-page-dim 360ms ease-out 180ms reverse both;
+@keyframes fz-auth-in-sm {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
 }
+@keyframes fz-light-drift {
+  from {
+    transform: translate3d(-1.2%, 0.6%, 0);
+  }
+  to {
+    transform: translate3d(1.2%, -0.8%, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-light-l1 {
+    animation: fz-light-drift 26s ease-in-out infinite alternate;
+  }
+  .fz-light-l2 {
+    animation: fz-light-drift 21s ease-in-out -7s infinite alternate-reverse;
+  }
+  .fz-light-l3 {
+    animation: fz-light-drift 17s ease-in-out -3s infinite alternate;
+  }
+}
+/* Reduced motion: the panel changes sides at once, texts and forms only cross-fade briefly. */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(.fz-auth-swap) {
-    animation-duration: 0s;
+  .fz-auth-panel,
+  .fz-light-layer {
+    transition: none;
+  }
+  .fz-auth-copy {
+    transform: none;
+    transition: opacity 160ms linear;
+  }
+  .fz-auth-copy[data-on='false'] {
+    transform: none;
+    transition:
+      opacity 160ms linear,
+      visibility 0s 160ms;
+  }
+  .fz-auth-col[data-anim='in'] {
+    animation: fz-fade-in 180ms linear backwards;
+  }
+  .fz-auth-col[data-anim='out'] {
+    display: none;
   }
 }
 
@@ -912,5 +1096,22 @@ button:focus-visible,
       0 0 0 4px var(--panel),
       0 0 0 7px var(--accent),
       0 18px 40px -18px var(--accent);
+  }
+}
+
+/* Homepage "How it works" (features/home/learning-loop.tsx): the open step's line fills during the 5 s autoplay. */
+@layer components {
+  .fz-loop-timer {
+    transform-origin: left;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fz-loop-timer {
+    animation: fz-loop-timer 5s linear both;
+  }
+}
+@keyframes fz-loop-timer {
+  from {
+    transform: scaleX(0);
   }
 }

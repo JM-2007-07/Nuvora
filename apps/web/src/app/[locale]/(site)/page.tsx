@@ -21,6 +21,15 @@ const TONES = {
 } as const;
 type Tone = keyof typeof TONES;
 
+/** Status colour for the skill-scan rows: only the small dot and the bar carry it. */
+const DOT = { mint: 'bg-(--mint)', blue: 'bg-(--blue)', mag: 'bg-(--mag)', gold: 'bg-(--gold)' } as const;
+
+/** "4/5" -> 80 (bar width for a demo score). */
+const fraction = (score: string) => {
+  const [got, of] = score.split('/').map(Number);
+  return of ? Math.round((got / of) * 100) : 0;
+};
+
 /** Score bands used by the demo tiles: strong ≥ 80 %, getting there ≥ 60 %, else needs practice. */
 const band = (percent: number): Tone => (percent >= 80 ? 'mint' : percent >= 60 ? 'blue' : 'mag');
 
@@ -95,24 +104,31 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
       </div>
     </Fragment>,
     <Fragment key="spot">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-4">
         <span className="font-brand text-xl font-semibold tracking-[-0.02em]">{t('p1Title')}</span>
-        <span className="font-brand text-lg font-bold">
+        <span className="font-brand text-lg font-bold tabular-nums">
           13<span className="text-(--faint)">/20</span>
         </span>
       </div>
-      <div className="grid grid-cols-5 gap-2.5 text-center">
+      {/* A plain per-topic report: the colour sits only in the bar and the status dot. */}
+      <ul className="m-0 flex list-none flex-col p-0">
         {scan.map((s) => (
-          <span key={s.key} className="flex flex-col items-center gap-2">
-            <span className={`flex aspect-square w-full items-center justify-center rounded-[18px] border-2 font-brand text-[17px] font-bold ${TONES[s.tone]}`}>
-              {s.score}
+          <li key={s.key} className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)_2.75rem] items-center gap-x-4 gap-y-1.5 border-t border-(--line) py-3.5 max-[520px]:grid-cols-[minmax(0,1fr)_2.75rem]">
+            <span className="flex flex-col">
+              <span className="text-sm font-semibold">{t(`topics.${s.key}`)}</span>
+              <span className="flex items-center gap-1.5 text-xs text-(--muted)">
+                <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT[s.tone]}`} />
+                {s.label}
+              </span>
             </span>
-            <span className="text-xs font-bold">{t(`topics.${s.key}`)}</span>
-            <span className={`text-[11px] font-semibold ${TONES[s.tone].split(' ')[1]}`}>{s.label}</span>
-          </span>
+            <span className="block h-1.5 overflow-hidden rounded-full bg-(--track) max-[520px]:order-last max-[520px]:col-span-2">
+              <span className={`fz-bar-grow block h-full rounded-full ${DOT[s.tone]}`} style={{ width: `${fraction(s.score)}%` }} />
+            </span>
+            <span className="text-right font-brand text-sm font-bold tabular-nums">{s.score}</span>
+          </li>
         ))}
-      </div>
-      <p className="m-0 rounded-[14px] border border-(--mag) bg-(--mag-tint) px-4 py-3.5 text-sm leading-relaxed">
+      </ul>
+      <p className="m-0 mt-auto border-l-2 border-(--mag) pl-4 text-sm leading-relaxed text-(--muted) [&_strong]:text-(--text)">
         {t.rich('p1Pattern', { b: (chunks) => <strong>{chunks}</strong> })}
       </p>
     </Fragment>,
@@ -144,17 +160,24 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
     </Fragment>,
     <Fragment key="retest">
       <span className="font-brand text-xl font-semibold tracking-[-0.02em]">{t('p3Title')}</span>
-      <div className="grid grid-cols-2 gap-3.5">
-        <div className="flex flex-col gap-2.5 rounded-[18px] border border-(--mag) bg-(--mag-tint) p-5">
-          <span className="text-[13px] text-(--muted)">{t('p3Diag')}</span>
-          <span className="font-brand text-[40px] font-bold text-(--mag-ink)">1/4</span>
-        </div>
-        <div className="flex flex-col gap-2.5 rounded-[18px] border border-(--mint) bg-(--mint-tint) p-5">
-          <span className="text-[13px] text-(--muted)">{t('p3Retest')}</span>
-          <span className="font-brand text-[40px] font-bold text-(--mint-ink)">4/5</span>
-        </div>
+      {/* Before and after on one scale, so the change is read from the bars, not from coloured boxes. */}
+      <div className="flex flex-col gap-6 border-t border-(--line) pt-5">
+        {[
+          { label: t('p3Diag'), score: '1/4', fill: 'bg-(--faint)', ink: 'text-(--muted)' },
+          { label: t('p3Retest'), score: '4/5', fill: 'bg-(--mint)', ink: 'text-(--text)' },
+        ].map((row) => (
+          <div key={row.score} className="flex flex-col gap-2.5">
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-[13px] text-(--muted)">{row.label}</span>
+              <span className={`font-brand text-[32px] leading-none font-bold tabular-nums ${row.ink}`}>{row.score}</span>
+            </div>
+            <span className="block h-2 overflow-hidden rounded-full bg-(--track)">
+              <span className={`fz-bar-grow block h-full rounded-full ${row.fill}`} style={{ width: `${fraction(row.score)}%` }} />
+            </span>
+          </div>
+        ))}
       </div>
-      <p className="m-0 text-sm leading-relaxed text-(--muted)">{t('p3Note')}</p>
+      <p className="m-0 max-w-[60ch] border-t border-(--line) pt-5 text-sm leading-relaxed text-(--muted)">{t('p3Note')}</p>
     </Fragment>,
   ];
 

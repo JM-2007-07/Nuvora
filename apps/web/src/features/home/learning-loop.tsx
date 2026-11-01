@@ -40,8 +40,8 @@ export function LearningLoop({ label, steps, panels }: { label: string; steps: L
   }
 
   return (
-    <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-start gap-8 max-[960px]:grid-cols-1">
-      <div role="tablist" aria-label={label} aria-orientation="vertical" onKeyDown={onKeyDown} className="flex flex-col gap-2.5">
+    <div className="grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-stretch gap-8 max-[960px]:grid-cols-1">
+      <div role="tablist" aria-label={label} aria-orientation="vertical" onKeyDown={onKeyDown} className="flex flex-col gap-1.5">
         {steps.map((s, i) => {
           const on = i === active;
           return (
@@ -57,21 +57,25 @@ export function LearningLoop({ label, steps, panels }: { label: string; steps: L
               aria-controls="loop-panel"
               tabIndex={on ? 0 : -1}
               onClick={() => pick(i)}
-              className={`grid cursor-pointer grid-cols-[52px_minmax(0,1fr)] items-center gap-3.5 rounded-[18px] border p-4 text-left text-(--text) ${
-                on ? 'border-(--hud-border) bg-(--panel)' : 'border-(--line) bg-transparent'
+              className={`grid cursor-pointer grid-cols-[44px_minmax(0,1fr)] items-start gap-4 rounded-[14px] border px-4 py-4 text-left text-(--text) transition-colors duration-150 motion-reduce:transition-none ${
+                on ? 'border-(--line) bg-(--panel)' : 'border-transparent bg-transparent hover:bg-(--panel)'
               }`}
             >
-              <span className={`flex size-[52px] items-center justify-center rounded-2xl ${on ? 'bg-(--sel) text-(--sel-ink)' : 'bg-(--panel2) text-(--muted)'}`}>
-                <Icon d={s.icon} size={22} />
+              <span className={`flex size-11 items-center justify-center rounded-xl border border-(--line) ${on ? 'bg-(--panel2) text-(--text)' : 'text-(--faint)'}`}>
+                <Icon d={s.icon} size={20} />
               </span>
               <span className="flex flex-col gap-1">
                 <span className="font-brand text-base font-semibold tracking-[-0.02em]">
-                  0{i + 1} · {s.title}
+                  <span className="mr-2 text-(--faint) tabular-nums">0{i + 1}</span>
+                  {s.title}
                 </span>
-                <span className="text-sm leading-normal text-(--muted)">{s.body}</span>
-                <span className="mt-1 block h-[3px] w-full overflow-hidden rounded-[3px] bg-(--track)">
-                  <span className="block h-full bg-(--mint)" style={{ width: on ? '100%' : '0%' }} />
-                </span>
+                <span className={`text-sm leading-normal ${on ? 'text-(--muted)' : 'text-(--faint)'}`}>{s.body}</span>
+                {/* Only the open step has a line: it fills over the 5 s until the next step while the loop plays. */}
+                {on ? (
+                  <span className="mt-2 block h-0.5 w-full overflow-hidden rounded-full bg-(--track)">
+                    <span key={active} className={`block h-full bg-(--text) ${picked ? '' : 'fz-loop-timer'}`} />
+                  </span>
+                ) : null}
               </span>
             </button>
           );
@@ -81,7 +85,7 @@ export function LearningLoop({ label, steps, panels }: { label: string; steps: L
         id="loop-panel"
         role="tabpanel"
         aria-labelledby={`loop-tab-${active}`}
-        className="flex min-h-[440px] flex-col gap-[18px] rounded-3xl border border-(--line) bg-(--panel) p-[26px]"
+        className="flex min-h-[440px] flex-col gap-5 rounded-[20px] border border-(--line) bg-(--panel) p-7 max-[640px]:p-5"
       >
         {panels[active]}
       </div>

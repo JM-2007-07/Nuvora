@@ -4,7 +4,7 @@ import { ViewTransition } from 'react';
  * Route wrapper: keeps the flex column the layouts rely on. A template re-mounts only when the
  * top section changes (site, sign-in/sign-up, learner app, teacher, center), so this
  * ViewTransition animates those jumps; page changes inside a section are animated by
- * PageTransition, and sign-in ↔ sign-up by AuthScreen's swap.
+ * PageTransition, and sign-in ↔ sign-up inside AuthExperience (features/auth).
  */
 export default function LocaleTemplate({ children }: { children: React.ReactNode }) {
   return (
