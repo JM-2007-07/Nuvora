@@ -3,8 +3,19 @@ import type { AiAccess } from '@nuvora/shared';
 /** Pure rules of the AI assistant (D-32): age, access and daily limits. No Nest or Prisma imports. */
 
 export const AI_MIN_AGE = 18;
-export const DEFAULT_CHAT_MODEL = 'gemini-3.8-flash';
-export const DEFAULT_GENERATE_MODEL = 'gemini-4-argon';
+/**
+ * Models in order of preference: the next one is used when one is overloaded or silent. Checked
+ * against the API on 2026-11-02: gemini-3.8-flash and 3.7-flash did not answer within a minute, and
+ * gemini-4-argon has no free-tier quota.
+ */
+export const DEFAULT_CHAT_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
+export const DEFAULT_GENERATE_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash'];
+
+/** AI_MODEL_CHAT / AI_MODEL_GENERATE: one id or a comma-separated list; empty or missing → the defaults. */
+export function modelList(value: string | undefined, defaults: string[]): string[] {
+  const models = (value ?? '').split(',').map((m) => m.trim()).filter(Boolean);
+  return models.length ? models : defaults;
+}
 
 /** Requests per person per day. */
 export const DAILY_LIMITS = { chat: 40, generate: 10 } as const;

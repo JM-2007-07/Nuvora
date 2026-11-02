@@ -4,7 +4,7 @@ import { cleanGenerated } from './ai-jobs.service.js';
 import { filePart } from './ai-files.js';
 import { errorFromGemini, outputText, parseStreamData, splitSse } from './ai-model.js';
 import { generationSchema, tutorInput, tutorSystem } from './ai-prompts.js';
-import { aiAccess, birthDateProblem, birthdayAtAge, dushanbeDay, isAdultOn, remainingOf } from './ai-rules.js';
+import { aiAccess, birthDateProblem, birthdayAtAge, DEFAULT_CHAT_MODELS, dushanbeDay, isAdultOn, modelList, remainingOf } from './ai-rules.js';
 import { docxText } from './docx-text.js';
 
 /** A minimal zip with one deflated entry, as a .docx is. */
@@ -62,6 +62,12 @@ describe('age rules', () => {
     expect(aiAccess({ kind: 'account', birthDate: null }, today).access).toBe('NEEDS_BIRTH_DATE');
     expect(aiAccess({ kind: 'account', birthDate: '2000-01-01' }, today)).toEqual({ access: 'AVAILABLE', availableOn: null });
     expect(aiAccess({ kind: 'account', birthDate: '2010-05-20' }, today)).toEqual({ access: 'UNDER_18', availableOn: '2028-05-20' });
+  });
+
+  it('reads a model list from the environment, falling back to the defaults', () => {
+    expect(modelList(undefined, DEFAULT_CHAT_MODELS)).toEqual(DEFAULT_CHAT_MODELS);
+    expect(modelList(' ', DEFAULT_CHAT_MODELS)).toEqual(DEFAULT_CHAT_MODELS);
+    expect(modelList('a, b,', DEFAULT_CHAT_MODELS)).toEqual(['a', 'b']);
   });
 
   it('never reports a negative number of requests', () => {

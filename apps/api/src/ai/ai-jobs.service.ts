@@ -9,7 +9,7 @@ import type { DemoStaff } from '../staff/demo-org.js';
 import { filePart } from './ai-files.js';
 import { AiModel, AiModelError, type AiPart } from './ai-model.js';
 import { generationSchema, generationSystem, testInput, topicInput } from './ai-prompts.js';
-import { DEFAULT_GENERATE_MODEL, JOB_STALE_MS } from './ai-rules.js';
+import { DEFAULT_GENERATE_MODELS, JOB_STALE_MS, modelList } from './ai-rules.js';
 import { type AiActor, AiService } from './ai.service.js';
 import { TeacherLessonsService } from './teacher-lessons.service.js';
 
@@ -82,7 +82,7 @@ export class AiJobsService {
       const slugs = topics.map((t) => t.slug);
       const prompt = request.kind === 'TEST' ? testInput(request.instructions, request.questionCount) : topicInput(request.instructions, request.questionCount, request.language);
       const input: AiPart[] = [...(part ? [part] : []), { type: 'text', text: prompt }];
-      const generated = await this.generate({ model: this.env.AI_MODEL_GENERATE ?? DEFAULT_GENERATE_MODEL, system: generationSystem(request.language, topics), input, schema: generationSchema(request.kind, slugs, request.questionCount) }, request.kind);
+      const generated = await this.generate({ models: modelList(this.env.AI_MODEL_GENERATE, DEFAULT_GENERATE_MODELS), system: generationSystem(request.language, topics), input, schema: generationSchema(request.kind, slugs, request.questionCount) }, request.kind);
       const cleaned = cleanGenerated(generated.test, slugs, request.language);
       if (!cleaned.questions.length || !cleaned.title) throw new AiModelError('AI_BAD_RESPONSE');
       const assessment = await this.assessments.create(staff, aiDraft(cleaned, request.groupCode, request.language), locale);
@@ -97,7 +97,7 @@ export class AiJobsService {
   }
 
   /** One retry when the answer does not fit the schema. */
-  private async generate(request: { model: string; system: string; input: AiPart[]; schema: Record<string, unknown> }, kind: 'TEST' | 'TOPIC'): Promise<{ test: AiGeneratedTest; lesson: { title: string; body: string } | null }> {
+  private async generate(request: { models: string[]; system: string; input: AiPart[]; schema: Record<string, unknown> }, kind: 'TEST' | 'TOPIC'): Promise<{ test: AiGeneratedTest; lesson: { title: string; body: string } | null }> {
     for (let attempt = 0; attempt < 2; attempt++) {
       const raw = await this.model.json({ ...request, maxOutputTokens: MAX_OUTPUT_TOKENS, signal: AbortSignal.timeout(JOB_TIMEOUT_MS) });
       if (kind === 'TEST') {

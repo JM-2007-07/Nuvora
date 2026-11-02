@@ -9,7 +9,7 @@ The owner asked for an AI assistant: a person can ask about anything they did no
 
 ## Decisions
 
-- **Interactions API over plain `fetch`, no package.** Google's docs recommend it for new projects. `store: false`, so Google keeps no conversation state for us. Default models: `gemini-3.8-flash` for chat, `gemini-4-argon` for generation (`AI_MODEL_CHAT`, `AI_MODEL_GENERATE`). `AiModel` is an abstract class, so the provider can change in one place.
+- **Interactions API over plain `fetch`, no package.** Google's docs recommend it for new projects. `store: false`, so Google keeps no conversation state for us. Default models (changed after the first real calls, see the update below): `gemini-3.6-flash`, then `gemini-3.5-flash-lite` for chat; `gemini-3.6-flash`, then `gemini-3.5-flash` for generation (`AI_MODEL_CHAT`, `AI_MODEL_GENERATE`: one id or a comma-separated list). `AiModel` is an abstract class, so the provider can change in one place.
 - **Date of birth on the account, set once, self-reported.** Asked at sign-up on the site, optional in the API because the built APK does not send it; existing accounts are asked inside the assistant or in settings. It is not shown to anyone, including teachers and centers. A correction goes through the team.
 - **Access rules, on the server:** account 18+ → available; under 18 → locked with the opening date; no date → asked for it; guests → no. Demo profiles have no date of birth and are off unless `AI_DEMO_PROFILES=on`. Center roles have no assistant. Age uses the Dushanbe date; 29 February birthdays fall on 1 March in other years.
 - **Under-18s see nothing new except one settings line**: no menu item, no buttons; the API answers 403 before any model call.
@@ -51,3 +51,23 @@ Found and fixed in the browser: the sheet's first focus was on Close, so Enter c
 - The date of birth is self-reported.
 - Not on the mobile app yet (web only; a new APK is needed), and teacher lessons have no question from the mobile side.
 - Daily limits in the proxy-level rate limiter are per instance; the daily counters are in the database.
+
+## Update the same day: first real calls to Gemini
+
+The owner added a key to `apps/api/.env` and asked for a check. It ran on a second local API (:4010, built from this branch); the owner's own servers were not touched.
+
+- **The key is on Google's free tier.** `gemini-4-argon` answers 429 `too_many_requests` ("limit: 0 ... on Free Tier"). On the free tier Google may use prompts and answers to improve its products, so Cloud Billing must be on before real people use the assistant.
+- **`gemini-3.8-flash` and `gemini-3.7-flash` did not answer within 60 seconds** (generateContent and Interactions alike; `gemini-flash-latest` answered 503 "high demand"). `gemini-3.6-flash`, `gemini-3.5-flash` and `gemini-3.5-flash-lite` answered in 1–2 s (streaming) and about 12 s (structured output).
+- **Change:** default models moved to `gemini-3.6-flash` with a fallback; the client tries the next model when one answers 429/503, fails to connect, or sends no text within 25 s (chat) or 150 s (structured output). `modelList()` reads the environment (unit-tested).
+- **Event format confirmed:** `interaction.created`, `interaction.status_update`, `step.start`, `step.delta` (`delta.type: "text"`), `step.stop`, `interaction.completed`, then `event: done` / `data: [DONE]`; structured output comes as `thought` and `model_output` steps. The parser needed no change.
+
+| Real check (adult test learner and teacher accounts in `nuvora_dev`) | Result |
+| --- | --- |
+| Chat about the lesson "js-arrays-methods-return" in Russian | first text after 6 s, done after 7 s; correct answer with an example and a check question |
+| Test from a text file (3 questions, ru) | done in about 12 s; 3 valid questions, ru filled, tg empty, unpublished draft |
+| Topic "closures" (3 questions, ru) | done in about 18 s; lesson "Замыкания в JavaScript" and 3 questions on `js-functions` |
+| Topic in Tajik | lesson in Tajik (needs native review) |
+
+A first topic run returned a lesson about arrays because the shell sent the Russian text in the wrong encoding; sent as UTF-8 (as the browser does) it was correct. The drafts were deleted. Test accounts `ai-check-adult@demo.tj` and `ai-check-teacher@demo.tj` (random, discarded passwords) and the group "AI check group" remain in `nuvora_dev`.
+
+Not checked with the real model: PDF and image uploads, the browser screens (checked earlier with the mock model).

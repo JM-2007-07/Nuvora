@@ -19,7 +19,7 @@ import type { DemoStaff } from '../staff/demo-org.js';
 import { staffSubject } from '../staff/staff.guard.js';
 import { AiModel, type AiTextRequest } from './ai-model.js';
 import { attemptMaterial, tutorInput, tutorSystem } from './ai-prompts.js';
-import { aiAccess, type AiPerson, type AiUsageKind, birthDateProblem, DAILY_LIMITS, DEFAULT_CHAT_MODEL, DEFAULT_PLATFORM_DAILY_LIMIT, dushanbeDay, isAdultOn, remainingOf } from './ai-rules.js';
+import { aiAccess, type AiPerson, type AiUsageKind, birthDateProblem, DAILY_LIMITS, DEFAULT_CHAT_MODELS, DEFAULT_PLATFORM_DAILY_LIMIT, dushanbeDay, isAdultOn, modelList, remainingOf } from './ai-rules.js';
 import { TeacherLessonsService } from './teacher-lessons.service.js';
 
 export type AiActor = { role: 'learner'; learner: LearnerRecord } | { role: 'staff'; staff: DemoStaff };
@@ -146,7 +146,7 @@ export class AiService {
     const material = await this.material(actor, request, locale);
     await this.reserve(actor, 'chat');
     return {
-      model: this.env.AI_MODEL_CHAT ?? DEFAULT_CHAT_MODEL,
+      models: modelList(this.env.AI_MODEL_CHAT, DEFAULT_CHAT_MODELS),
       system: tutorSystem(locale, actor.role === 'learner' ? 'learner' : 'teacher'),
       input: tutorInput(material, request.messages),
       maxOutputTokens: CHAT_MAX_OUTPUT_TOKENS,

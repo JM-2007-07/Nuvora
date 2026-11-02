@@ -13,7 +13,8 @@ export class AiModelError extends Error {
 export type AiPart = { type: 'text'; text: string } | { type: 'document' | 'image'; data: string; mimeType: string };
 
 export interface AiTextRequest {
-  model: string;
+  /** In order of preference: the next is tried when one is busy, unavailable or silent. */
+  models: string[];
   system: string;
   input: string;
   maxOutputTokens: number;
@@ -21,7 +22,7 @@ export interface AiTextRequest {
 }
 
 export interface AiJsonRequest {
-  model: string;
+  models: string[];
   system: string;
   input: AiPart[];
   /** JSON Schema of the answer. */
@@ -38,6 +39,12 @@ export abstract class AiModel {
 }
 
 const API = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+/** A model that has not started answering by then is treated as overloaded. */
+const FIRST_TEXT_MS = 25_000;
+/** One model's turn at a structured answer. */
+const JSON_MODEL_MS = 150_000;
+/** Worth trying the next model after these. */
+const RETRYABLE: AiModelErrorCode[] = ['AI_BUSY', 'AI_UNAVAILABLE'];
 
 /** Maps an HTTP status and error code of the Interactions API to our error. */
 export function errorFromGemini(status: number, code: string | undefined): AiModelError {
@@ -133,10 +140,35 @@ export class GeminiModel extends AiModel {
   }
 
   async *stream(request: AiTextRequest): AsyncIterable<string> {
+    for (const [i, model] of request.models.entries()) {
+      const last = i === request.models.length - 1;
+      const silent = new AbortController();
+      const timer = setTimeout(() => silent.abort(), FIRST_TEXT_MS);
+      const signal = request.signal ? AbortSignal.any([request.signal, silent.signal]) : silent.signal;
+      let started = false;
+      try {
+        for await (const text of this.streamOne(model, request, signal)) {
+          if (!started) clearTimeout(timer);
+          started = true;
+          yield text;
+        }
+        return;
+      } catch (error) {
+        if (request.signal?.aborted) throw error;
+        const retryable = silent.signal.aborted || (error instanceof AiModelError && RETRYABLE.includes(error.code));
+        if (started || last || !retryable) throw silent.signal.aborted ? new AiModelError('AI_BUSY') : error;
+        this.logger.warn(`Gemini model ${model} did not answer; trying the next one`);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+  }
+
+  private async *streamOne(model: string, request: AiTextRequest, signal: AbortSignal): AsyncIterable<string> {
     const response = await this.post(
       '?alt=sse',
-      { model: request.model, system_instruction: request.system, input: request.input, stream: true, store: false, generation_config: { max_output_tokens: request.maxOutputTokens } },
-      request.signal,
+      { model, system_instruction: request.system, input: request.input, stream: true, store: false, generation_config: { max_output_tokens: request.maxOutputTokens } },
+      signal,
     );
     if (!response.body) throw new AiModelError('AI_UNAVAILABLE');
     const decoder = new TextDecoder();
@@ -155,18 +187,33 @@ export class GeminiModel extends AiModel {
   }
 
   async json(request: AiJsonRequest): Promise<unknown> {
+    for (const [i, model] of request.models.entries()) {
+      const signal = AbortSignal.any([...(request.signal ? [request.signal] : []), AbortSignal.timeout(JSON_MODEL_MS)]);
+      try {
+        return await this.jsonOne(model, request, signal);
+      } catch (error) {
+        if (request.signal?.aborted || i === request.models.length - 1) throw signal.aborted ? new AiModelError('AI_BUSY') : error;
+        const retryable = signal.aborted || (error instanceof AiModelError && RETRYABLE.includes(error.code));
+        if (!retryable) throw error;
+        this.logger.warn(`Gemini model ${model} did not answer; trying the next one`);
+      }
+    }
+    throw new AiModelError('AI_UNAVAILABLE');
+  }
+
+  private async jsonOne(model: string, request: AiJsonRequest, signal: AbortSignal): Promise<unknown> {
     const input = request.input.map((part) => (part.type === 'text' ? part : { type: part.type, data: part.data, mime_type: part.mimeType }));
     const response = await this.post(
       '',
       {
-        model: request.model,
+        model,
         system_instruction: request.system,
         input,
         store: false,
         generation_config: { max_output_tokens: request.maxOutputTokens },
         response_format: { type: 'text', mime_type: 'application/json', schema: request.schema },
       },
-      request.signal,
+      signal,
     );
     const text = outputText(await response.json().catch(() => null));
     if (!text) throw new AiModelError('AI_BLOCKED');

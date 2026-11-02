@@ -36,7 +36,7 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(10).optional(),
   /** "gemini" (default) or "mock" (canned answers without network, for local checks; refused in production). */
   AI_PROVIDER: z.enum(['gemini', 'mock']).optional(),
-  /** Model ids; defaults in ai/ai-rules.ts. */
+  /** Model ids, one or a comma-separated fallback list; defaults in ai/ai-rules.ts. */
   AI_MODEL_CHAT: z.string().min(3).optional(),
   AI_MODEL_GENERATE: z.string().min(3).optional(),
   /** "on" also opens the assistant to demo profiles, which have no date of birth. Default: off. */
