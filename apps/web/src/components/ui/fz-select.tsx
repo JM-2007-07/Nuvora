@@ -47,7 +47,7 @@ export function FzSelect({
             key={o.value || EMPTY}
             value={o.value || EMPTY}
             lang={o.lang}
-            className="min-h-11 cursor-pointer rounded-[10px] px-3 text-[15px] text-(--text) focus:bg-(--panel2) focus:text-(--text) data-[state=checked]:font-semibold data-[state=checked]:text-(--mint-ink)"
+            className="min-h-11 cursor-pointer rounded-[10px] px-3 text-[15px] text-(--text) focus:bg-(--panel2) focus:text-(--text) not-data-[variant=destructive]:focus:**:text-inherit data-[state=checked]:font-semibold data-[state=checked]:text-(--mint-ink)"
           >
             {o.label}
           </SelectItem>

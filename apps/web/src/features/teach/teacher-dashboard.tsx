@@ -3,11 +3,13 @@
 import type { GroupAnalytics, Staff, TeacherGroup } from '@nuvora/shared';
 import { ArrowRightIcon, CheckIcon, CircleIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Suspense } from 'react';
 import { Markdown } from '@/components/markdown';
 import { Reveal } from '@/components/motion/reveal';
 import { shortDate } from '@/features/app/bits';
 import { Card, ErrorState, LoadingState } from '@/features/app/states';
 import { Link } from '@/i18n/navigation';
+import { useActiveGroup } from './active-group';
 import { band } from './cells';
 import { useGroupAnalytics, useTeacherOverview } from './hooks';
 import { DeniedState, isDenied, StaffGate } from './staff-gate';
@@ -17,14 +19,17 @@ export const MAIN_GROUP = 'B-12';
 
 /** Teacher home (handoff TDashboard): next step in the loop, classes, who needs attention, topic map. */
 export function TeacherDashboard() {
-  return <StaffGate>{(staff) => <Body staff={staff} />}</StaffGate>;
+  return <StaffGate>{(staff) => <Suspense><Body staff={staff} /></Suspense>}</StaffGate>;
 }
 
 function Body({ staff }: { staff: Staff }) {
   const t = useTranslations('Teach.dashboard');
   const tStates = useTranslations('Teach.states');
   const overview = useTeacherOverview(true);
-  const group = useGroupAnalytics(MAIN_GROUP, overview.isSuccess && overview.data.groups.some((g) => g.code === MAIN_GROUP && g.recorded));
+  // B-12 for the demo teacher, otherwise the teacher's first group with stored answers. A teacher
+  // without such a group sees the page without the group blocks (a disabled query stays pending).
+  const shown = useActiveGroup(overview.data?.groups).code;
+  const group = useGroupAnalytics(shown ?? '', shown !== null);
 
   if (overview.isPending) return <LoadingState label={tStates('loading')} />;
   if (overview.isError) return isDenied(overview.error) ? <DeniedState error={overview.error} need={['TEACHER']} /> : <ErrorState error={overview.error} onRetry={() => overview.refetch()} />;
@@ -37,7 +42,7 @@ function Body({ staff }: { staff: Staff }) {
         <p className="mt-1.5 text-(--muted)">{t('subtitle', { count: active.length })}</p>
       </div>
       <Kpis groups={active} />
-      {group.isPending ? <LoadingState label={tStates('loading')} /> : group.isError ? <ErrorState error={group.error} onRetry={() => group.refetch()} /> : <NextStep g={group.data} />}
+      {shown === null ? null : group.isPending ? <LoadingState label={tStates('loading')} /> : group.isError ? <ErrorState error={group.error} onRetry={() => group.refetch()} /> : <NextStep g={group.data} />}
       <div className="grid gap-5 lg:grid-cols-2">
         <Classes groups={overview.data.groups} />
         {group.data ? <Attention g={group.data} /> : null}
