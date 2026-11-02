@@ -33,8 +33,10 @@ The owner asked for an AI assistant: a person can ask about anything they did no
 | Check | Result |
 | --- | --- |
 | `pnpm --filter @nuvora/api exec vitest run src/ai` | 18/18 |
-| `pnpm --filter @nuvora/api test:int` with `ai.int-spec.ts` (15 new) on `nuvora_test` | see the repo-wide row; one run ended with a worker crash and no failed test, as noted in earlier stories, and re-runs passed |
-| Repo-wide lint, typecheck, test, build, `test:int` | see the update below |
+| `pnpm --filter @nuvora/api test:int` on `nuvora_test` (15 new in `ai.int-spec.ts`) | 64/64; one earlier run ended with a worker crash and no failed test, as in earlier stories |
+| `pnpm lint`, `typecheck`, `seed:check`, `db:validate`, `build` | pass |
+| `pnpm test` | api 271 unit + 119 e2e, web 7, mobile 9: pass (the notification test now counts the one-off category on purpose) |
+| Playwright on the production build (:3001, API :4000) | accounts journey with the new date field, learner journey, center journey: pass. Language and theme: failed once on a language switch, then on a suspended network; teacher journey: fails because Amina in `nuvora_dev` has extra attempts from earlier checks (no file of this change is involved). The dev server on :3000 from another session did not answer and was left alone |
 | Browser, production build, API with `AI_PROVIDER=mock` | Streaming through the site's proxy arrives in pieces (0, 45, 90 ms). Amina: assistant page, lesson sheet (focus in the input, Enter sends, no overflow), reviewed question. Dilshod: draft topic → lesson editor → publish; Amina sees it in quests and reads it, with the AI note. Under-18 account: no menu item, settings line, locked page, API 403. Sign-up in tg shows the date field. 390 px in ru and tg, dark and forced light: no horizontal scroll |
 
 Found and fixed in the browser: the sheet's first focus was on Close, so Enter closed it; the teacher form overflowed at 348 px.
