@@ -20,6 +20,8 @@ const staffCookie = (id: string) => `${STAFF_COOKIE}=${encodeURIComponent(signer
 const FARHOD = staffCookie('farhod-jalilov');
 const KOMILA = staffCookie('komila-rasulova');
 const DILSHOD = staffCookie('dilshod-karimov');
+// Always in the future: a group counts as upcoming only until its start date.
+const STARTS_ON = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
 
 type Group = Record<string, unknown> & { id: string; organizationId: string; displayCode: string | null; teacherKey: string | null; teacherAccountId: string | null; createdAt: Date };
 
@@ -122,7 +124,7 @@ describe('Center group wizard (e2e)', () => {
     code: 'b-18',
     subjectSlug: 'javascript',
     schedule: 'Tue, Thu · 16:00',
-    startsOn: '2026-11-02',
+    startsOn: STARTS_ON,
     capacity: 16,
     languages: ['tg', 'ru'],
     teacherKey: 'dilshod-karimov',
@@ -144,7 +146,7 @@ describe('Center group wizard (e2e)', () => {
   it('creates the group; the center sees totals and participation, Dilshod sees it in his classes', async () => {
     await start();
     const g = StudyGroupViewSchema.parse((await create(FARHOD).expect(201)).body);
-    expect(g).toMatchObject({ displayCode: 'B-18', teacher: 'Dilshod Karimov', memberCount: 2, capacity: 16, startsOn: '2026-11-02', languages: ['tg', 'ru'], name: 'JavaScript' });
+    expect(g).toMatchObject({ displayCode: 'B-18', teacher: 'Dilshod Karimov', memberCount: 2, capacity: 16, startsOn: STARTS_ON, languages: ['tg', 'ru'], name: 'JavaScript' });
     expect(g.joinCode).toMatch(/^JS-[A-Z0-9]{4}$/);
 
     const after = GroupWizardOptionsSchema.parse((await http().get('/api/v1/center/group-wizard').set('Cookie', FARHOD).expect(200)).body);
