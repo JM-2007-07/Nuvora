@@ -3,6 +3,7 @@
 import { ArrowRightIcon, CheckIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Markdown } from '@/components/markdown';
+import { AskAi } from '@/features/ai/ai-access';
 import { useCompleteLesson, useLearner, useLesson, useProgress, useTopic } from '@/features/learning/hooks';
 import { Link } from '@/i18n/navigation';
 import { ApiRequestError } from '@/lib/client-api';
@@ -11,6 +12,7 @@ import { Card, EmptyState, ErrorState, LoadingState } from './states';
 /** A lesson inside the app (replaces the old public lesson page): reading, "Mark complete", then the retest. */
 export function LessonView({ slug }: { slug: string }) {
   const t = useTranslations('Learn.lesson');
+  const tAi = useTranslations('Ai');
   const tStates = useTranslations('App.states');
   const lesson = useLesson(slug);
   const topic = useTopic(lesson.data?.topic.slug ?? '', !!lesson.data);
@@ -51,6 +53,7 @@ export function LessonView({ slug }: { slug: string }) {
       </Card>
 
       <Card aria-label={t('next')} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        {learner.data ? <AskAi context={{ kind: 'lesson', lessonSlug: d.slug }} suggestions={[tAi('sugLesson1'), tAi('sugLesson2'), tAi('sugLesson3')]} /> : null}
         <button
           type="button"
           className={`fz-btn ${done ? 'fz-btn-ghost' : 'fz-btn-primary'} min-h-12`}

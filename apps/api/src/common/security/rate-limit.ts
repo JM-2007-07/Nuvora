@@ -25,6 +25,8 @@ export const RATE_RULES: RateRule[] = [
   { name: 'session', method: 'POST', path: /^\/(session|staff\/session)$/, limit: 60, windowMs: 10 * MINUTE },
   { name: 'upload', method: 'PUT', path: /^\/me\/profile\/avatar$/, limit: 30, windowMs: MINUTE },
   { name: 'upload', method: 'POST', path: /^\/comms\/conversations\/[^/]+\/voice$/, limit: 30, windowMs: MINUTE },
+  { name: 'ai-chat', method: 'POST', path: /^\/(me|teach)\/ai\/chat$/, limit: 20, windowMs: MINUTE },
+  { name: 'ai-job', method: 'POST', path: /^\/teach\/ai\/jobs$/, limit: 6, windowMs: MINUTE },
   { name: 'invitation', method: 'POST', path: /^\/invitations\/[^/]+\/accept$/, limit: 20, windowMs: 10 * MINUTE },
 ];
 export const GLOBAL_RULE: RateRule = { name: 'global', method: '*', path: /.*/, limit: 1200, windowMs: MINUTE };

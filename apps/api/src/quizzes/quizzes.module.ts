@@ -9,5 +9,6 @@ import { QuizzesService } from './quizzes.service.js';
   imports: [PrismaModule],
   controllers: [QuizzesController, AttemptsController, MyAttemptsController],
   providers: [QuizzesService, AttemptsService],
+  exports: [AttemptsService],
 })
 export class QuizzesModule {}

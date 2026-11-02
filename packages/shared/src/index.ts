@@ -15,3 +15,4 @@ export * from './auth-api.js';
 export * from './admin-api.js';
 export * from './exam-api.js';
 export * from './notifications-api.js';
+export * from './ai-api.js';

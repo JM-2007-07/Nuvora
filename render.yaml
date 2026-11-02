@@ -44,6 +44,9 @@ services:
       # Render's proxy sits in front of the API: client addresses come from X-Forwarded-For.
       - key: TRUST_PROXY
         value: 'on'
+      # AI assistant (D-32): set the key in the Render dashboard, never in this file.
+      - key: GEMINI_API_KEY
+        sync: false
       # Demo sign-in without passwords, for the defense. Switch "off" for real users.
       - key: DEMO_LOGINS
         value: 'on'

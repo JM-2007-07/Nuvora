@@ -86,5 +86,6 @@ export class ExamGateway implements OnGatewayInit, OnGatewayDisconnect {
   imports: [PrismaModule],
   controllers: [LearnerExamController, TeacherExamController],
   providers: [ExamService, ExamHub, ExamGateway],
+  exports: [ExamService],
 })
 export class ExamModule {}

@@ -11,6 +11,7 @@ import type {
   Plan,
   RegisterRequest,
 } from '@nuvora/shared';
+import { birthDateProblem, dushanbeDay, isAdultOn } from '../ai/ai-rules.js';
 import { APP_ENV, type AppEnv } from '../config/env.js';
 import { hashToken, newToken } from '../identity/session-tokens.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -139,6 +140,10 @@ export class AccountsService {
         code: 'EMAIL_TAKEN',
         message: 'An account with this email already exists',
       });
+    const today = dushanbeDay(new Date());
+    if (request.birthDate && birthDateProblem(request.birthDate, today))
+      throw new BadRequestException({ code: 'BIRTH_DATE_INVALID', message: 'This date of birth is not valid' });
+    const birth = request.birthDate ? { birthDate: new Date(`${request.birthDate}T00:00:00Z`), aiNoticePending: !isAdultOn(request.birthDate, today) } : {};
     const passwordHash = await hashPassword(request.password);
 
     return this.prisma
@@ -155,6 +160,7 @@ export class AccountsService {
               name: request.name,
               role: 'LEARNER',
               userId: user.id,
+              ...birth,
             },
             select: accountSelect,
           });
@@ -185,6 +191,7 @@ export class AccountsService {
             name: request.name,
             role: request.role,
             organizationId: organization.id,
+            ...birth,
           },
           select: accountSelect,
         });

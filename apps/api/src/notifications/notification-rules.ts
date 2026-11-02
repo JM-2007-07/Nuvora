@@ -1,4 +1,4 @@
-import { CATEGORIES_BY_AUDIENCE, type NotificationAudience, type NotificationCategory, type StaffRole } from '@nuvora/shared';
+import { ALWAYS_ON_CATEGORIES, CATEGORIES_BY_AUDIENCE, type NotificationAudience, type NotificationCategory, type StaffRole } from '@nuvora/shared';
 
 /** Pure rules for notifications: who may get which category, and the time keys used for dedupe. */
 
@@ -9,7 +9,7 @@ export function audienceOf(role: StaffRole | null): NotificationAudience {
 }
 
 export function allowedFor(audience: NotificationAudience, category: NotificationCategory): boolean {
-  return CATEGORIES_BY_AUDIENCE[audience].includes(category);
+  return CATEGORIES_BY_AUDIENCE[audience].includes(category) || ALWAYS_ON_CATEGORIES.includes(category);
 }
 
 /** "2026-10-31" in server local time: one reminder or daily summary per person per day. */

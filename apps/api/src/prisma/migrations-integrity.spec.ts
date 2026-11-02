@@ -28,6 +28,7 @@ const APPLIED_MIGRATIONS: Record<string, string> = {
   '20261030230000_exam_mode': '40a6382dc279975ff0758c52c92d2651a7e38ee1ce82c5865b086d454e231f25',
   '20261031090000_practice_idempotency': '4106d092039b6d9d4e24994ac0f28ceb951a878526e284078c79a94c4f7d554f',
   '20261031110000_push_notifications': '6a4e0d164204b64b7007a852b425995e59e17f32b829e8a733a92c3d7ca1fd9d',
+  '20261102100000_ai_assistant': 'dcabf4516d71ae30c6f063743fc165d9868b258897cba93aedaa09472bd92bc5',
 };
 
 const migrationsDir = fileURLToPath(new URL('../../prisma/migrations/', import.meta.url));

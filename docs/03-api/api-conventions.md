@@ -2,6 +2,12 @@
 
 Status: conventions **Approved** (G0 baseline, owner, 2026-10-25). The resource outline at the end is a **draft for planning only**. It isn't a contract. The contract is the set of Zod schemas in `packages/shared`, written feature by feature after the data model is approved at G2.
 
+## Implemented: AI assistant (D-32)
+
+Learners: `GET /me/ai/status`, `PUT /me/birth-date` (once), `POST /me/ai/notice`, `POST /me/ai/chat`, `GET /me/teacher-lessons`, `GET /me/teacher-lessons/:id`. Teachers: `GET /teach/ai/status`, `PUT /teach/birth-date`, `POST /teach/ai/notice`, `POST /teach/ai/chat`, `POST /teach/ai/jobs` (multipart, optional `file`), `GET /teach/ai/jobs/:id`, and `/teach/lessons` (list, read, update, delete, publish, unpublish; creating drafts by hand is `POST`). Schemas: `packages/shared/src/ai-api.ts`.
+
+Chat answers are server-sent events (`AiStreamEventSchema`: `delta`, `done`, `error`). Refusals come before the stream as normal errors: 403 `AI_UNDER_18`, `AI_NEEDS_BIRTH_DATE`, `AI_NOT_ELIGIBLE`; 409 `AI_EXAM_ACTIVE`; 429 `AI_DAILY_LIMIT`; 503 `AI_NOT_CONFIGURED`, `AI_BUSY`. Generated tests and lessons are unpublished drafts. Chats and uploaded files are not stored.
+
 ## General
 
 - REST over HTTPS, JSON bodies, `camelCase` field names.

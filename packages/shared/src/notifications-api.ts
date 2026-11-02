@@ -17,6 +17,8 @@ export const NOTIFICATION_CATEGORIES = [
   'learning_task',
   'assessment_result',
   'learning_reminder',
+  // one-off: the AI assistant opened on the 18th birthday
+  'ai_available',
   // teacher
   'submission',
   'group_activity',
@@ -33,6 +35,12 @@ export const CATEGORIES_BY_AUDIENCE: Readonly<Record<NotificationAudience, reado
   teacher: ['submission', 'group_activity', 'exam_upcoming'],
   center: ['participation_summary', 'center_event'],
 };
+
+/**
+ * One-off notices anyone may receive. They stay out of CATEGORIES_BY_AUDIENCE, so preferences (and app
+ * builds that do not know them) never list them.
+ */
+export const ALWAYS_ON_CATEGORIES: readonly NotificationCategory[] = ['ai_available'];
 
 /** Expo push token as returned by expo-notifications (`ExponentPushToken[…]` or `ExpoPushToken[…]`). */
 export const ExpoPushTokenSchema = z.string().max(200).regex(/^Expo(nent)?PushToken\[[A-Za-z0-9_-]+\]$/, 'not an Expo push token');

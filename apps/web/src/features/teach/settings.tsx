@@ -2,6 +2,7 @@
 
 import { LogOutIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AiAccessCard } from '@/features/ai/ai-access';
 import { Card, ErrorState, LoadingState } from '@/features/app/states';
 import { SecurityPanels } from '@/features/auth/security-panels';
 import { formatDate } from '@/lib/format';
@@ -31,6 +32,7 @@ function Body({ staff, scope }: { staff: StaffInfo; scope: 'teach' | 'center' })
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHead title={t('title')} subtitle={t(scope === 'teach' ? 'subtitleTeach' : 'subtitleCenter')} />
       <AccountPanels staff={staff} />
+      {scope === 'teach' ? <AiAccessCard scope="teach" /> : null}
     </div>
   );
 }

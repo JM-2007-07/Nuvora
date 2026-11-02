@@ -4,7 +4,8 @@ import { CenterService } from '../center/center.service.js';
 import { APP_ENV, type AppEnv } from '../config/env.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { staffFromSubject } from '../staff/staff.guard.js';
+import { dushanbeDay, isAdultOn } from '../ai/ai-rules.js';
+import { staffAccountSubject, staffFromSubject } from '../staff/staff.guard.js';
 import { audienceOf, clockTime, DELIVERY_RETENTION_DAYS, dayKey, inDaytime, REMINDER_IDLE_HOURS, UPCOMING_WINDOW_MINUTES, weekKey } from './notification-rules.js';
 import { NotificationsService } from './notifications.service.js';
 import { groupLearnerSubjects, ownerSubject } from './recipients.js';
@@ -54,6 +55,7 @@ export class NotificationsScheduler implements OnModuleInit, OnModuleDestroy {
   async runOnce(now: Date): Promise<void> {
     await this.upcomingExams(now);
     await this.resultsAfterClose(now);
+    await this.aiUnlocked(now);
     for (const subject of await this.notifications.subjectsWithDevices()) await this.forSubject(subject, now);
     await this.notifications.cleanupDeliveries(DELIVERY_RETENTION_DAYS);
   }
@@ -66,6 +68,17 @@ export class NotificationsScheduler implements OnModuleInit, OnModuleDestroy {
     });
     for (const a of soon) {
       await this.notifications.notify({ subject: ownerSubject(a.ownerKey), category: 'exam_upcoming', dedupeKey: `exam-upcoming:${a.id}`, params: { title: a.title, group: a.groupCode, when: clockTime(a.opensAt!) }, path: `/live/${a.id}` });
+    }
+  }
+
+  /** People who were under 18 at sign-up: the assistant opened on their birthday (D-32). The in-app notice stays until they see it. */
+  private async aiUnlocked(now: Date): Promise<void> {
+    const today = dushanbeDay(now);
+    const pending = await this.prisma.account.findMany({ where: { aiNoticePending: true, birthDate: { not: null } }, select: { id: true, role: true, userId: true, birthDate: true } });
+    for (const a of pending) {
+      if (!isAdultOn(a.birthDate!.toISOString().slice(0, 10), today)) continue;
+      const subject = a.role === 'LEARNER' ? a.userId : staffAccountSubject(a.id);
+      if (subject) await this.notifications.notify({ subject, category: 'ai_available', dedupeKey: `ai-available:${a.id}`, params: {}, path: '/learn' });
     }
   }
 

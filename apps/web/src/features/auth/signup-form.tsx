@@ -4,6 +4,7 @@ import type { RegisterRequest } from '@nuvora/shared';
 import { useLocale, useTranslations } from 'next-intl';
 import { type FormEvent, type MouseEvent, useRef, useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
+import { ApiRequestError } from '@/lib/client-api';
 import { Building2Icon, GraduationCapIcon, type LucideIcon, PresentationIcon } from 'lucide-react';
 import { authErrorKey } from './errors';
 import { Field, FormError, SubmitButton } from './field';
@@ -13,7 +14,7 @@ import { SITE_ROLES, type SiteRole } from './roles';
 
 const EMAIL = /^\S+@\S+\.\S+$/;
 const ROLE_ICONS: Record<SiteRole, LucideIcon> = { learner: GraduationCapIcon, teacher: PresentationIcon, center: Building2Icon };
-type Errors = { name?: string; email?: string; password?: string; organization?: string };
+type Errors = { name?: string; email?: string; password?: string; organization?: string; birthDate?: string };
 
 /**
  * Sign-up form (inside AuthExperience): role, details, and for paid roles a plan step. The role and
@@ -36,6 +37,7 @@ export function SignupForm({
   onSwitch?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const t = useTranslations('Auth');
+  const tAi = useTranslations('Ai');
   const locale = useLocale();
   const router = useRouter();
   const register = useRegister();
@@ -43,6 +45,7 @@ export function SignupForm({
   const [step, setStep] = useState<'details' | 'plan'>('details');
   const [name, setName] = useState('');
   const [organization, setOrganization] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -57,11 +60,12 @@ export function SignupForm({
       organization: role === 'center' && organization.trim().length < 2 ? t('errOrganization') : undefined,
       email: EMAIL.test(email.trim()) ? undefined : t('errEmail'),
       password: password.length >= 8 ? undefined : t('errPassword'),
+      birthDate: birthDate ? undefined : tAi('birthRequired'),
     };
   }
 
   function build(): RegisterRequest {
-    const base = { name: name.trim(), email: email.trim(), password };
+    const base = { name: name.trim(), email: email.trim(), password, birthDate };
     if (role === 'teacher') return { role: 'TEACHER', plan: 'TEACHER', ...base };
     if (role === 'center') return { role: 'CENTER_ADMIN', plan: 'CENTER', organizationName: organization.trim(), ...base };
     return { role: 'LEARNER', ...base };
@@ -80,6 +84,9 @@ export function SignupForm({
       if (key === 'errEmailTaken') {
         setStep('details');
         setErrors({ email: t('errEmailTaken') });
+      } else if (error instanceof ApiRequestError && error.code === 'BIRTH_DATE_INVALID') {
+        setStep('details');
+        setErrors({ birthDate: tAi('birthInvalid') });
       } else setFormError(t(key));
     }
   }
@@ -144,6 +151,16 @@ export function SignupForm({
             {role === 'center' ? (
               <Field id="signup-org" label={t('organization')} autoComplete="organization" maxLength={120} value={organization} onChange={(e) => setOrganization(e.target.value)} error={errors.organization} />
             ) : null}
+            <Field
+              id="signup-birth"
+              label={tAi('birthLabel')}
+              type="date"
+              autoComplete="bday"
+              hint={tAi('birthHint')}
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              error={errors.birthDate}
+            />
             <Field
               id="signup-email"
               label={t('email')}

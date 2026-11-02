@@ -1,7 +1,9 @@
 'use client';
 
-import { BarChart3Icon, ClipboardCheckIcon, GraduationCapIcon, LayoutDashboardIcon, MessagesSquareIcon, SearchIcon, SettingsIcon, UsersIcon } from 'lucide-react';
+import { BarChart3Icon, ClipboardCheckIcon, GraduationCapIcon, LayoutDashboardIcon, MessagesSquareIcon, SparklesIcon, SearchIcon, SettingsIcon, UsersIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AiUnlockNotice } from '@/features/ai/ai-access';
+import { useAiStatus } from '@/features/ai/hooks';
 import { PersonCard, WorkspaceShell } from '@/features/app/workspace-shell';
 import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
@@ -30,11 +32,15 @@ function TeachShellInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const tw = useTranslations('WorkNav');
   const ta = useTranslations('Assess');
+  const tAi = useTranslations('Ai');
+  const teacher = useStaff().data?.role === 'TEACHER';
+  const access = useAiStatus('teach', teacher).data?.access;
   const items = [
     { href: '/teach', label: t('dashboard'), Icon: LayoutDashboardIcon, active: pathname === '/teach' },
     { href: '/teach/classes', label: tw('classes'), Icon: GraduationCapIcon, active: pathname.startsWith('/teach/classes') },
     { href: '/teach/students', label: tw('students'), Icon: UsersIcon, active: pathname.startsWith('/teach/students') },
     { href: '/teach/assessments', label: ta('nav'), Icon: ClipboardCheckIcon, active: pathname.startsWith('/teach/assessments') },
+    ...(access === 'AVAILABLE' || access === 'NEEDS_BIRTH_DATE' ? [{ href: '/teach/assistant', label: tAi('name'), Icon: SparklesIcon, active: pathname.startsWith('/teach/assistant') || pathname.startsWith('/teach/lessons') }] : []),
     { href: '/teach/messages', label: tc('nav'), Icon: MessagesSquareIcon, active: pathname.startsWith('/teach/messages'), badge: unread },
     { href: '/teach/insights', label: t('insights'), Icon: SearchIcon, active: pathname.startsWith('/teach/insights') },
     { href: '/teach/analytics', label: tw('analytics'), Icon: BarChart3Icon, active: pathname.startsWith('/teach/analytics') },
@@ -42,6 +48,7 @@ function TeachShellInner({ children }: { children: React.ReactNode }) {
   ];
   return (
     <WorkspaceShell items={items} chip={t('chip')} person={<StaffCard />}>
+      <AiUnlockNotice scope="teach" enabled={teacher} />
       {children}
     </WorkspaceShell>
   );

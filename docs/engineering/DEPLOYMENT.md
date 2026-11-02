@@ -36,6 +36,9 @@ API (`faroz-api`). The server refuses to start in production without `SESSION_SE
 | `DEMO_LOGINS` | `on` | Demo learners and staff without passwords. **Turn `off` for real users** |
 | `SEED_ON_START` | `demo` | `off` · `content` · `demo` (demo data only on the first start) · `reset-demo` (resets demo learners on every start; use once before the defense, then back to `demo`) |
 | `PUSH_DELIVERY` / `PUSH_SCHEDULER` | `log` / `off` | Push stays local until EAS/Firebase credentials exist ([mobile story](../stories/2026-10-31-mobile-app.md)) |
+| `GEMINI_API_KEY` | set by the owner in Render | The AI assistant (D-32). Key from Google AI Studio with Cloud Billing on: a Gemini subscription does not include API use, and the free tier may be used to improve Google's products. Without it the assistant says it is not connected; everything else works |
+| `AI_DEMO_PROFILES` | — | `on` opens the assistant to demo profiles, which have no date of birth. Anyone with the address could then spend the limit; keep it off in public |
+| `AI_DAILY_LIMIT` | — | Requests per day across the platform (default 1000): the hard stop for the bill |
 | `TZ` | `Asia/Dushanbe` | Dates in notifications and daily windows |
 | `PORT` | set by Render | The API listens on it (`API_PORT` wins if set) |
 

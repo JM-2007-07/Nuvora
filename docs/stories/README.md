@@ -74,3 +74,4 @@ The `new-story` skill ([`.claude/skills/new-story/SKILL.md`](../../.claude/skill
 | 2026-10-31 | [Native mobile app: learner, teacher, center, exam, offline, PIN](2026-10-31-mobile-app.md) | implemented; idempotent sync and push integration-tested; verified in the web preview and an Android bundle export; device run and real push delivery pending |
 | 2026-10-31 | [Ready to deploy on Render, and an app download page](2026-10-31-render-deployment.md) | deployed on Render and verified live; APK build pending |
 | 2026-11-01 | [Sign-in and sign-up: Flowing Light panel and the panel slide](2026-11-01-auth-flowing-light.md) | implemented and verified in the browser; reduced motion, demo and successful sign-in not run; update: calmer "How it works" panels |
+| 2026-11-02 | [AI assistant on Gemini (18+)](2026-11-02-ai-assistant.md) | implemented; real model call not verified |

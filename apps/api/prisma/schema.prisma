@@ -385,6 +385,10 @@ model Account {
   totpSecretEnc  String?
   /// Set when two-factor sign-in is switched on
   totpEnabledAt  DateTime?
+  /// Date of birth the person gave (self-reported, D-32): decides access to the AI assistant; shown to nobody else
+  birthDate       DateTime? @db.Date
+  /// Set while the person is under 18: tells them once that the AI assistant opened on their 18th birthday
+  aiNoticePending Boolean  @default(false)
 
   teaching            StudyGroup[]
   acceptedInvitations StaffInvitation[]
@@ -983,4 +987,68 @@ model NotificationDelivery {
   @@unique([subject, dedupeKey])
   @@index([createdAt])
   @@map("notification_deliveries")
+}
+
+// ---------- AI assistant (D-32, 2026-11-02, additive migration) ------
+
+enum AiJobKind {
+  TEST
+  TOPIC
+}
+
+enum AiJobStatus {
+  PENDING
+  DONE
+  FAILED
+}
+
+/// Requests per person (or "*" for the whole platform), per kind, per day. Holds no question text.
+model AiUsage {
+  subject String
+  /// "2026-11-02" in Dushanbe time
+  day     String
+  /// "chat" or "generate"
+  kind    String
+  count   Int    @default(0)
+
+  @@id([subject, day, kind])
+  @@map("ai_usage")
+}
+
+/// A teacher's background generation. The uploaded file is never stored; the result is a draft.
+model AiJob {
+  id           String      @id @default(cuid())
+  /// The owning teacher: staff slug or "acct:<accountId>", like Assessment.ownerKey
+  ownerKey     String
+  kind         AiJobKind
+  status       AiJobStatus @default(PENDING)
+  errorCode    String?
+  assessmentId String?
+  lessonId     String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([ownerKey, createdAt])
+  @@map("ai_jobs")
+}
+
+/// A lesson a teacher publishes to one group, written by hand or drafted by the assistant.
+model TeacherLesson {
+  id          String    @id @default(cuid())
+  ownerKey    String
+  /// Demo group code ("B-12") or a StudyGroup joinCode
+  groupCode   String
+  title       String
+  /// Markdown (rendered without raw HTML)
+  body        String
+  language    Locale
+  aiGenerated Boolean   @default(false)
+  /// Null while it is a draft
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([ownerKey, updatedAt])
+  @@index([groupCode, publishedAt])
+  @@map("teacher_lessons")
 }

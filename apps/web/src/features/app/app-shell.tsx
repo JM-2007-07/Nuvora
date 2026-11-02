@@ -1,7 +1,9 @@
 'use client';
 
-import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSquareIcon, NetworkIcon, SettingsIcon, ZapIcon } from 'lucide-react';
+import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSquareIcon, NetworkIcon, SettingsIcon, SparklesIcon, ZapIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { AiUnlockNotice } from '@/features/ai/ai-access';
+import { useAiStatus } from '@/features/ai/hooks';
 import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
 import { useLeave, useLearner } from '@/features/learning/hooks';
@@ -26,6 +28,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
+  const tAi = useTranslations('Ai');
+  const signedIn = !!useLearner().data;
+  // Under-18s, guests and demo profiles do not see the assistant in the menu.
+  const access = useAiStatus('me', signedIn).data?.access;
   const t = useTranslations('App.nav');
   const tc = useTranslations('Comms');
   const unread = useCommsUnread();
@@ -37,6 +43,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     { href: '/app/results', label: t('results'), Icon: ClipboardCheckIcon, active: on('/app/results') },
     { href: '/app/skills', label: t('skills'), Icon: NetworkIcon, active: on('/app/skills') || on('/app/topics') || on('/app/lessons') },
     { href: '/app/progress', label: t('progress'), Icon: LineChartIcon, active: on('/app/progress') },
+    ...(access === 'AVAILABLE' || access === 'NEEDS_BIRTH_DATE' ? [{ href: '/app/assistant', label: tAi('name'), Icon: SparklesIcon, active: on('/app/assistant') }] : []),
     { href: '/app/messages', label: tc('nav'), Icon: MessagesSquareIcon, active: on('/app/messages'), badge: unread },
     { href: '/library', label: t('library'), Icon: BookmarkIcon, active: false },
     { href: '/app/settings', label: t('settings'), Icon: SettingsIcon, active: on('/app/settings') },
@@ -51,6 +58,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         </>
       }
     >
+      <AiUnlockNotice scope="me" enabled={signedIn} />
       {children}
     </WorkspaceShell>
   );

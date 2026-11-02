@@ -32,6 +32,17 @@ const EnvSchema = z.object({
   EXPO_ACCESS_TOKEN: z.string().min(10).optional(),
   /** "on" runs scheduled notifications (reminders, upcoming tests, summaries) every 10 minutes. Default: off. */
   PUSH_SCHEDULER: z.enum(['on', 'off']).optional(),
+  /** Gemini API key (D-32). Without it the assistant answers AI_NOT_CONFIGURED; the rest of the product is unaffected. */
+  GEMINI_API_KEY: z.string().min(10).optional(),
+  /** "gemini" (default) or "mock" (canned answers without network, for local checks; refused in production). */
+  AI_PROVIDER: z.enum(['gemini', 'mock']).optional(),
+  /** Model ids; defaults in ai/ai-rules.ts. */
+  AI_MODEL_CHAT: z.string().min(3).optional(),
+  AI_MODEL_GENERATE: z.string().min(3).optional(),
+  /** "on" also opens the assistant to demo profiles, which have no date of birth. Default: off. */
+  AI_DEMO_PROFILES: z.enum(['on', 'off']).optional(),
+  /** Requests per day across the whole platform: the hard stop for the bill. Default in ai/ai-rules.ts. */
+  AI_DAILY_LIMIT: z.coerce.number().int().min(0).optional(),
   /** Optional STUN/TURN servers for calls across networks, as a JSON array (see comms). */
   COMMS_ICE_SERVERS: z
     .string()
@@ -84,6 +95,7 @@ export function productionProblems(env: AppEnv): string[] {
   if (web.protocol !== 'https:') problems.push('WEB_ORIGIN: must be an https:// address in production');
   if (web.hostname === 'localhost' || web.hostname === '127.0.0.1') problems.push('WEB_ORIGIN: must be the public site address in production, not localhost');
   if (env.RATE_LIMIT === 'off') problems.push('RATE_LIMIT: cannot be off in production');
+  if (env.AI_PROVIDER === 'mock') problems.push('AI_PROVIDER: mock cannot run in production');
   return problems;
 }
 

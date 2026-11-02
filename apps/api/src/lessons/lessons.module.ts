@@ -7,5 +7,6 @@ import { LessonsService } from './lessons.service.js';
   imports: [PrismaModule],
   controllers: [LessonsController],
   providers: [LessonsService],
+  exports: [LessonsService],
 })
 export class LessonsModule {}

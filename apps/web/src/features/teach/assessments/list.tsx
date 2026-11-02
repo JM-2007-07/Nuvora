@@ -1,7 +1,8 @@
 'use client';
 
 import type { AssessmentRow, AssessmentStatus } from '@nuvora/shared';
-import { ArrowRightIcon, PlusIcon } from 'lucide-react';
+import { ArrowRightIcon, PlusIcon, SparklesIcon } from 'lucide-react';
+import { useAiStatus } from '@/features/ai/hooks';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Reveal } from '@/components/motion/reveal';
@@ -28,6 +29,8 @@ function Body() {
   const [tab, setTab] = useState<Filter>('all');
   const [q, setQ] = useState('');
   const [group, setGroup] = useState('all');
+  const tAi = useTranslations('Ai');
+  const aiAccess = useAiStatus('teach').data?.access;
 
   if (list.isPending) return <LoadingState label={tStates('loading')} />;
   if (list.isError) return isDenied(list.error) ? <DeniedState error={list.error} need={['TEACHER']} /> : <ErrorState error={list.error} onRetry={() => list.refetch()} />;
@@ -46,10 +49,18 @@ function Body() {
         title={t('title')}
         subtitle={t('subtitle')}
         action={
-          <Link href="/teach/assessments/new" className="fz-btn fz-btn-primary">
-            <PlusIcon aria-hidden="true" className="size-4" />
-            {t('new')}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {aiAccess === 'AVAILABLE' ? (
+              <Link href="/teach/assistant" className="fz-btn fz-btn-ghost">
+                <SparklesIcon aria-hidden="true" className="size-4" />
+                {tAi('createWithAi')}
+              </Link>
+            ) : null}
+            <Link href="/teach/assessments/new" className="fz-btn fz-btn-primary">
+              <PlusIcon aria-hidden="true" className="size-4" />
+              {t('new')}
+            </Link>
+          </div>
         }
       />
 

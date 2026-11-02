@@ -1,4 +1,4 @@
-import { CATEGORIES_BY_AUDIENCE, isPushPath, LOCALES, NOTIFICATION_CATEGORIES } from '@nuvora/shared';
+import { ALWAYS_ON_CATEGORIES, CATEGORIES_BY_AUDIENCE, isPushPath, LOCALES, NOTIFICATION_CATEGORIES } from '@nuvora/shared';
 import { PUSH_CATALOGS, pushMessage } from './messages.js';
 import { allowedFor, audienceOf, dayKey, inDaytime, shortWhen, weekKey } from './notification-rules.js';
 import { ExpoPushTransport } from './push-transport.js';
@@ -35,7 +35,8 @@ describe('notification rules', () => {
     expect(allowedFor('learner', 'assessment_result')).toBe(true);
     expect(allowedFor('center', 'submission')).toBe(false);
     expect(allowedFor('teacher', 'learning_reminder')).toBe(false);
-    const all = Object.values(CATEGORIES_BY_AUDIENCE).flat();
+    const all = [...Object.values(CATEGORIES_BY_AUDIENCE).flat(), ...ALWAYS_ON_CATEGORIES];
+    expect(allowedFor('teacher', 'ai_available')).toBe(true);
     expect(new Set(all).size).toBe(NOTIFICATION_CATEGORIES.length);
   });
 

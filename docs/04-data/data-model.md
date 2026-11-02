@@ -2,6 +2,10 @@
 
 Status: **Approved** (G0 baseline, owner, 2026-10-25). This is a conceptual model. The Prisma schema is written and approved at Gate G2. Field names may change then, but entities and relationships shouldn't without updating this document.
 
+## AI assistant (D-32)
+
+`accounts.birthDate` (self-reported, set once, shown to nobody) and `accounts.aiNoticePending` (tells a person once that the assistant opened at 18). `ai_usage`: requests per subject, day and kind, no text. `ai_jobs`: teacher generations, no file contents. `teacher_lessons`: Markdown lessons a teacher publishes to one group. Chats are not stored. Migration `20261102100000_ai_assistant`.
+
 ## Conventions
 
 - PostgreSQL via Prisma. Model names are `PascalCase` singular. Table names are mapped to `snake_case` plural.

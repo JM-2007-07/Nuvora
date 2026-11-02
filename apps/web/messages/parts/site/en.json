@@ -163,7 +163,9 @@
       "s5Title": "Payments",
       "s5Body": "Plans are a concept with demo checkout. No card details are asked for and nothing is charged.",
       "s6Title": "Your choices",
-      "s6Body": "Sign out at any time. To remove your data, ask the project team to delete it."
+      "s6Body": "Sign out at any time. To remove your data, ask the project team to delete it.",
+      "s7Title": "AI assistant",
+      "s7Body": "The assistant is for accounts aged 18 and over. That is why we ask for your date of birth: only you see it, and we do not check it against documents. Questions, lesson material and files uploaded by teachers are sent to Google Gemini for processing. Faroz does not keep the chats or the files."
     },
     "terms": {
       "metaTitle": "Terms",

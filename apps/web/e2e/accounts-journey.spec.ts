@@ -13,6 +13,7 @@ test('teacher signs up, creates a group; learner signs up and joins with the cod
   await page.goto('/en/signup?role=teacher');
   await page.getByLabel('Your name').fill('E2E Teacher');
   await page.getByLabel('Email').fill(`teacher-${run}@demo.tj`);
+  await page.getByLabel('Date of birth').fill('1990-05-05');
   await page.getByLabel('Password', { exact: true }).fill('longenough1');
   await page.getByRole('button', { name: /Continue|Create account/ }).first().click();
   await expect(page.getByText('Concept pricing, demo checkout. Nothing is charged.')).toBeVisible();
@@ -35,6 +36,7 @@ test('teacher signs up, creates a group; learner signs up and joins with the cod
   await learner.goto('/en/signup?role=learner');
   await learner.getByLabel('Your name').fill('E2E Learner');
   await learner.getByLabel('Email').fill(`learner-${run}@demo.tj`);
+  await learner.getByLabel('Date of birth').fill('2008-05-05');
   await learner.getByLabel('Password', { exact: true }).fill('longenough1');
   await learner.getByRole('button', { name: 'Create account' }).click();
   await expect(learner).toHaveURL(/\/en\/app/);

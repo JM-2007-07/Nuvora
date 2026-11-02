@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { AiAccessCard } from '@/features/ai/ai-access';
 import { SecurityPanels } from '@/features/auth/security-panels';
 import { routing } from '@/i18n/routing';
 
@@ -23,6 +24,7 @@ export default async function Page({ params }: PageProps<'/[locale]/app/settings
         <h1 className="text-3xl font-bold sm:text-4xl">{t('pageTitle')}</h1>
         <p className="mt-1.5 text-(--muted)">{t('pageSub')}</p>
       </div>
+      <AiAccessCard scope="me" />
       <SecurityPanels />
     </div>
   );

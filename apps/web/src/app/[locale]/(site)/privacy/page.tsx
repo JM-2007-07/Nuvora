@@ -19,7 +19,7 @@ export default async function PrivacyPage({ params }: PageProps<'/[locale]/priva
   const t = await getTranslations('Consent');
   return (
     <>
-      <LegalPage doc="privacy" sections={[1, 2, 3, 4, 5, 6]} />
+      <LegalPage doc="privacy" sections={[1, 2, 3, 4, 5, 6, 7]} />
       {/* Cookies section: points to the full cookie policy (the "Cookies and tracking" section above is the summary) */}
       <section aria-labelledby="privacy-cookies" className="fz-wrap -mt-8 pb-16">
         <div className="mx-auto flex max-w-[760px] flex-col gap-2 border-t border-(--line) pt-6">

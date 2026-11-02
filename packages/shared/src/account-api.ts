@@ -16,15 +16,18 @@ export type PlanCode = (typeof PLAN_CODES)[number];
 const Email = z.string().trim().toLowerCase().email().max(200);
 const Password = z.string().min(8, 'At least 8 characters').max(200);
 const Name = z.string().trim().min(2).max(80);
+/** Date of birth, "2008-03-14". Optional in the API (older app builds do not send it); the site asks for it at sign-up. */
+const BirthDate = z.iso.date().optional();
 
 export const RegisterRequestSchema = z.discriminatedUnion('role', [
-  z.strictObject({ role: z.literal('LEARNER'), name: Name, email: Email, password: Password }),
-  z.strictObject({ role: z.literal('TEACHER'), name: Name, email: Email, password: Password, plan: z.literal('TEACHER') }),
+  z.strictObject({ role: z.literal('LEARNER'), name: Name, email: Email, password: Password, birthDate: BirthDate }),
+  z.strictObject({ role: z.literal('TEACHER'), name: Name, email: Email, password: Password, birthDate: BirthDate, plan: z.literal('TEACHER') }),
   z.strictObject({
     role: z.literal('CENTER_ADMIN'),
     name: Name,
     email: Email,
     password: Password,
+    birthDate: BirthDate,
     organizationName: z.string().trim().min(2).max(120),
     plan: z.literal('CENTER'),
   }),

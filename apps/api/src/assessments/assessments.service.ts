@@ -286,7 +286,7 @@ export class AssessmentsService {
     );
   }
 
-  private async ownGroup(staff: DemoStaff, code: string, locale: Locale): Promise<OwnGroup> {
+  async ownGroup(staff: DemoStaff, code: string, locale: Locale): Promise<OwnGroup> {
     const group = (await this.ownGroups(staff, locale)).find((g) => g.code === code);
     if (!group) throw new ForbiddenException({ code: 'FORBIDDEN', message: 'You do not teach this group' });
     return group;

@@ -4,6 +4,7 @@ import type { AttemptResult, Progress } from '@nuvora/shared';
 import { ArrowRightIcon, CheckIcon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { AskAi } from '@/features/ai/ai-access';
 import { InlineMarkdown, Markdown } from '@/components/markdown';
 import { useAttempt, useProgress } from '@/features/learning/hooks';
 import { Link } from '@/i18n/navigation';
@@ -191,6 +192,7 @@ function AcrossAttempts({ result, progress }: { result: AttemptResult; progress:
 }
 
 function QuestionReview({ result }: { result: AttemptResult }) {
+  const tAi = useTranslations('Ai');
   const t = useTranslations('App.results');
   const missed = result.questions.filter((q) => !q.isCorrect);
   const [onlyMissed, setOnlyMissed] = useState(missed.length > 0);
@@ -249,6 +251,7 @@ function QuestionReview({ result }: { result: AttemptResult }) {
                       ) : null}
                     </div>
                     <div className="text-(--text)"><Markdown>{q.explanation}</Markdown></div>
+                    <div><AskAi context={{ kind: 'attempt', attemptId: result.attemptId, questionKey: q.key }} label={tAi('askQuestion')} suggestions={[tAi('sugWhy'), tAi('sugSimilar')]} /></div>
                   </div>
                 </details>
               </li>

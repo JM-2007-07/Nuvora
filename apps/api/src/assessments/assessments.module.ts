@@ -10,5 +10,6 @@ import { AssessmentsService } from './assessments.service.js';
   imports: [PrismaModule, GroupsModule, TeachingModule],
   controllers: [AssessmentsController],
   providers: [AssessmentsService, StaffGuard],
+  exports: [AssessmentsService],
 })
 export class AssessmentsModule {}
