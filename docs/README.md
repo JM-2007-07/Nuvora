@@ -9,6 +9,7 @@ This folder holds the product, architecture, design, and process documentation o
 | Vision, target users, problems solved | [00-product/vision.md](00-product/vision.md) |
 | User journeys, functional requirements, acceptance criteria | [00-product/requirements.md](00-product/requirements.md) |
 | MVP scope vs. deferred features | [00-product/mvp-scope.md](00-product/mvp-scope.md) |
+| Defense speech, demo script, Q&A (Russian) | [00-product/defense-script.md](00-product/defense-script.md) |
 | System architecture, module boundaries, auth, i18n, theming | [01-architecture/architecture.md](01-architecture/architecture.md) |
 | Status of every decision (approved / proposed / open) | [01-architecture/decisions.md](01-architecture/decisions.md) |
 | Reasoning behind individual decisions | [01-architecture/adr/](01-architecture/adr/) |
