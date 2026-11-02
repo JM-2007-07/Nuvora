@@ -3,6 +3,7 @@
 import { BarChart3Icon, ClipboardCheckIcon, GraduationCapIcon, LayoutDashboardIcon, MessagesSquareIcon, SparklesIcon, SearchIcon, SettingsIcon, UsersIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AiUnlockNotice } from '@/features/ai/ai-access';
+import { AiDock } from '@/features/ai/ai-dock';
 import { useAiStatus } from '@/features/ai/hooks';
 import { PersonCard, WorkspaceShell } from '@/features/app/workspace-shell';
 import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
@@ -20,6 +21,7 @@ export function TeachShell({ children }: { children: React.ReactNode }) {
       <TeachShellInner>{children}</TeachShellInner>
       {/* Outside the page area, so page transitions never move or blink it. */}
       <ChatDock />
+      <AiDock scope="teach" enabled={staff.data?.role === 'TEACHER'} />
       <ChatToasts />
     </CommsProvider>
   );

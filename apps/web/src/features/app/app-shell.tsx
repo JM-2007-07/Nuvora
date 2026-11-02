@@ -3,6 +3,7 @@
 import { BookmarkIcon, ClipboardCheckIcon, HomeIcon, LineChartIcon, MessagesSquareIcon, NetworkIcon, SettingsIcon, SparklesIcon, ZapIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { AiUnlockNotice } from '@/features/ai/ai-access';
+import { AiDock } from '@/features/ai/ai-dock';
 import { useAiStatus } from '@/features/ai/hooks';
 import { ChatDock, ChatToasts } from '@/features/comms/chat-dock';
 import { CommsProvider, useCommsUnread } from '@/features/comms/comms-provider';
@@ -22,6 +23,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <AppShellInner>{children}</AppShellInner>
       {/* Outside the page area, so page transitions never move or blink it. */}
       <ChatDock />
+      <AiDock scope="me" enabled={!!learner.data} />
       <ChatToasts />
     </CommsProvider>
   );

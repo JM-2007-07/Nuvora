@@ -15,6 +15,7 @@
     "send": "Send",
     "stop": "Stop",
     "retry": "Try again",
+    "openFull": "Open full page",
     "close": "Close",
     "tooLong": "The message is too long: {max} characters at most.",
     "disclaimer": "AI can make mistakes, so check anything important. Faroz doesn't save this chat; Google Gemini processes it.",

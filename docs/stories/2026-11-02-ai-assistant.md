@@ -71,3 +71,9 @@ The owner added a key to `apps/api/.env` and asked for a check. It ran on a seco
 A first topic run returned a lesson about arrays because the shell sent the Russian text in the wrong encoding; sent as UTF-8 (as the browser does) it was correct. The drafts were deleted. Test accounts `ai-check-adult@demo.tj` and `ai-check-teacher@demo.tj` (random, discarded passwords) and the group "AI check group" remain in `nuvora_dev`.
 
 Not checked with the real model: PDF and image uploads, the browser screens (checked earlier with the mock model).
+
+## Update: floating assistant button
+
+At the owner's request the assistant also has a floating button next to the chat button (`features/ai/ai-dock.tsx`), in the learner app and the teacher workspace, for people with access only. Same size, place and panel as the chat; blue instead of mint. One panel at a time: opening the assistant closes the chat, and the assistant waits behind the chat while it is open. The conversation stays while the panel is closed and is forgotten when the page is left. Hidden on the assistant page itself. Checked on the local dev server with a real Gemini answer (a new adult test account `ai-check-dock@demo.tj`), at 1280 px and 278 px.
+
+The example env files now list every variable the API reads (`NODE_ENV`, `ALLOWED_ORIGINS`, `RATE_LIMIT`, `PORT`, `TZ`, `COMMS_ICE_SERVERS` were missing), and `apps/mobile/.env.example` documents `EXPO_PUBLIC_API_URL`.
